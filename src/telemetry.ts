@@ -8,7 +8,7 @@ export const logger = {
     inference: Channel.create<typeof Presets.Level, string>(
         Presets.Level,
         (chunk: string, level) => Exporter.getGlobalExporter().stream({
-            scope: '@zimtsui/brainswitch',
+            scope: '@zimtsui/typechat',
             channel: 'Inference',
             level: Presets.Level[level],
             payload: chunk,
@@ -17,7 +17,7 @@ export const logger = {
     message: Channel.create<typeof Presets.Level, unknown>(
         Presets.Level,
         (payload: unknown, level) => Exporter.getGlobalExporter().monolith({
-            scope: '@zimtsui/brainswitch',
+            scope: '@zimtsui/typechat',
             channel: 'Message',
             level: Presets.Level[level],
             payload: formatWithOptions({ depth: null, colors: !!stderr.isTTY }, payload)

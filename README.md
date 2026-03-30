@@ -1,10 +1,8 @@
-<!-- 本文档由 GPT-5 辅助生成 -->
+# TypeChat
 
-# Brainswitch
+[![NPM Version](https://img.shields.io/npm/v/@zimtsui/typechat?style=flat-square)](https://www.npmjs.com/package/@zimtsui/typechat)
 
-[![NPM Version](https://img.shields.io/npm/v/@zimtsui/brainswitch?style=flat-square)](https://www.npmjs.com/package/@zimtsui/brainswitch)
-
-Brainswitch 是一个强类型的 LLM 推理 API 适配器。
+TypeChat 是一个强类型的 LLM 推理 API 适配器。
 
 ## 支持服务商 API 类型
 
@@ -13,18 +11,10 @@ Brainswitch 是一个强类型的 LLM 推理 API 适配器。
 -   阿里云 OpenAI Chat Completions Compatible
 -   Anthropic
 
-## 安装
-
-环境要求：Node.js >= 22。
-
-```bash
-npm install @zimtsui/brainswitch
-```
-
 ## 核心概念
 
 - `Session`：会话状态。
-- `InferenceContext`：工作流环境，包含 [TypeLog](https://github.com/zimtsui/typelog) Logger、`AbortSignal`、用户防止并发过载的[读写锁](https://github.com/zimtsui/coroutine-locks)。
+- `InferenceContext`：工作流环境，包含 [Typelemetry](https://github.com/zimtsui/typelemetry) Logger、`AbortSignal`、用户防止并发过载的[读写锁](https://github.com/zimtsui/typelocks)。
 - `Engine`：推理引擎，从一个会话状态生成下一个会话状态。
 - `Endpoint`：代表一家服务商的一个模型的 API 端点。
 - `Adaptor`：Engine 工厂。
@@ -34,11 +24,11 @@ npm install @zimtsui/brainswitch
 ## 配置
 
 ```ts
-import { type Config } from '@zimtsui/brainswitch';
+import { type Config } from '@zimtsui/typechat';
 
 // 配置推理服务商 API 接入点
 export const config: Config = {
-    brainswitch: {
+    typechat: {
         endpoints: {
             'gpt-5.4-mini': {
                 name: 'GPT-5.4 mini',
@@ -62,7 +52,7 @@ export const config: Config = {
 ## 对话
 
 ```ts
-import { Adaptor, RoleMessage, type Session } from '@zimtsui/brainswitch';
+import { Adaptor, RoleMessage, type Session } from '@zimtsui/typechat';
 import { config } from './config.ts';
 
 
@@ -91,7 +81,7 @@ console.log(response.getText());
 ## 智能体
 
 ```ts
-import { Adaptor, agentloop, RoleMessage, Function, type Session, Structuring } from '@zimtsui/brainswitch';
+import { Adaptor, agentloop, RoleMessage, Function, type Session, Structuring } from '@zimtsui/typechat';
 import { Type } from '@sinclair/typebox';
 import { config } from './config.ts';
 
@@ -165,9 +155,9 @@ When a LLM outputs structured data in JSON format, if there are too many special
 XML Verbatim Channel is designed to avoid escaping in structured output of large text.
 
 ```ts
-import { Adaptor, RoleMessage, type Session, Structuring, Verbatim } from '@zimtsui/brainswitch';
-import Assets from '@zimtsui/brainswitch/assets';
-import * as Codec from '@zimtsui/brainswitch/codec';
+import { Adaptor, RoleMessage, type Session, Structuring, Verbatim } from '@zimtsui/typechat';
+import Assets from '@zimtsui/typechat/assets';
+import * as Codec from '@zimtsui/typechat/codec';
 import { config } from './config.ts';
 
 // 声明 XML Verbatim 频道
@@ -189,7 +179,7 @@ type vdu = Verbatim.Decl.From<vdm>;
 // 创建会话
 const session: Session<never, vdu> = {
     developerMessage: new RoleMessage.Developer([
-        Assets.verbatim.instruction,
+        RoleMessage.Part.Text.paragraph(Assets.verbatim.instruction),
         RoleMessage.Part.Text.paragraph('# Available Verbatim Channels'),
         RoleMessage.Part.Text.paragraph(Codec.Declarations.encode(vdm)),
     ]),

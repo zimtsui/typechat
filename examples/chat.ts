@@ -1,4 +1,4 @@
-import { Adaptor, RoleMessage, type Session } from '@zimtsui/brainswitch';
+import { Adaptor, RoleMessage, type Session } from '@zimtsui/typechat';
 import { config } from './config.ts';
 
 

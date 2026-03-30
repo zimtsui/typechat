@@ -69,7 +69,7 @@ test('Throttle acquires and releases busy lock when rpm is finite', async t => {
 
 test('Adaptor creates compatible engines matching endpoint apiType', t => {
     const adaptor = Adaptor.create({
-        brainswitch: {
+        typechat: {
             endpoints: {
                 openai: {
                     apiType: 'openai-responses',
@@ -106,7 +106,7 @@ test('Adaptor creates compatible engines matching endpoint apiType', t => {
 
 test('Adaptor creates native engines matching endpoint apiType', t => {
     const adaptor = Adaptor.create({
-        brainswitch: {
+        typechat: {
             endpoints: {
                 openai: {
                     apiType: 'openai-responses',
@@ -143,7 +143,7 @@ test('Adaptor creates native engines matching endpoint apiType', t => {
 
 test('Adaptor rejects unknown endpoint ids', t => {
     const adaptor = Adaptor.create({
-        brainswitch: {
+        typechat: {
             endpoints: {},
         },
     });
@@ -159,7 +159,7 @@ test('Adaptor rejects unknown endpoint ids', t => {
 
 test('Google native engine rejects disabling parallel tool calls', t => {
     const adaptor = Adaptor.create({
-        brainswitch: {
+        typechat: {
             endpoints: {
                 google: {
                     apiType: 'google',

@@ -1,5 +1,5 @@
 {
-  "name": "@zimtsui/brainswitch",
+  "name": "@zimtsui/typechat",
   "version": "0.0.60",
   "exports": {
     ".": "./build/exports.js",
@@ -21,7 +21,7 @@
   "author": "Zim",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/zimtsui/brainswitch.git"
+    "url": "git+https://github.com/zimtsui/typechat.git"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",

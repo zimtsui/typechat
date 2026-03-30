@@ -1,9 +1,9 @@
-import { type Config } from '@zimtsui/brainswitch';
+import { type Config } from '@zimtsui/typechat';
 
 
 // 配置推理服务商 API 接入点
 export const config: Config = {
-    brainswitch: {
+    typechat: {
         endpoints: {
             'gpt-5.4-mini': {
                 name: 'GPT-5.4 mini',

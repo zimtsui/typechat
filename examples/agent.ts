@@ -1,4 +1,4 @@
-import { Adaptor, agentloop, RoleMessage, Function, type Session, Structuring } from '@zimtsui/brainswitch';
+import { Adaptor, agentloop, RoleMessage, Function, type Session, Structuring } from '@zimtsui/typechat';
 import { Type } from '@sinclair/typebox';
 import { config } from './config.ts';
 

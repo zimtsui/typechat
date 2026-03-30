@@ -1,6 +1,6 @@
-import { Adaptor, RoleMessage, type Session, Structuring, Verbatim } from '@zimtsui/brainswitch';
-import Assets from '@zimtsui/brainswitch/assets';
-import * as Codec from '@zimtsui/brainswitch/codec';
+import { Adaptor, RoleMessage, type Session, Structuring, Verbatim } from '@zimtsui/typechat';
+import Assets from '@zimtsui/typechat/assets';
+import * as Codec from '@zimtsui/typechat/codec';
 import { config } from './config.ts';
 
 // 声明 XML Verbatim 频道
@@ -22,7 +22,7 @@ type vdu = Verbatim.Decl.From<vdm>;
 // 创建会话
 const session: Session<never, vdu> = {
     developerMessage: new RoleMessage.Developer([
-        Assets.verbatim.instruction,
+        RoleMessage.Part.Text.paragraph(Assets.verbatim.instruction),
         RoleMessage.Part.Text.paragraph('# Available Verbatim Channels'),
         RoleMessage.Part.Text.paragraph(Codec.Declarations.encode(vdm)),
     ]),
