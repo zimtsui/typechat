@@ -2,7 +2,7 @@ import { Verbatim } from '../../verbatim.ts';
 
 
 /**
- * @throws {@link RequestInvalid}
+ * @throws {@link Invalid}
  */
 export function decode<
     vdm extends Verbatim.Decl.Map.Proto,
