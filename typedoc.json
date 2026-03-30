@@ -1,8 +1,0 @@
-{
-    "$schema": "https://typedoc.org/schema.json",
-    "disableSources": true,
-    "excludePrivate": true,
-    "excludeProtected": true,
-    "cleanOutputDir": true,
-    "readme": "none"
-}
