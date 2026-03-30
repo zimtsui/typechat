@@ -4,11 +4,10 @@
         "module": "preserve",
         "moduleDetection": "force",
         "lib": ["esnext"],
+        "types": [],
         "sourceMap": true,
-        "strict": true,
         "experimentalDecorators": true,
         "noUncheckedIndexedAccess": true,
-        "noUncheckedSideEffectImports": true,
         "allowSyntheticDefaultImports": true,
         "rewriteRelativeImportExtensions": true,
         "allowJs": true,
@@ -17,10 +16,11 @@
         "resolveJsonModule": true,
         "checkJs": true,
         "composite": true,
+        "rootDir": ".",
         "outDir": "../build",
-        "skipLibCheck": true,
+        "skipLibCheck": true
     },
     "include": [
         "./**/*",
-    ],
+    ]
 }
