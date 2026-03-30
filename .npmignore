@@ -1,11 +1,2 @@
-# Node.js
-/node_modules
-
-# source
 /src
-
-# TypeDoc
-/docs
-
-# Test
 /test
