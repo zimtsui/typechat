@@ -1,4 +1,4 @@
-import { RWLock } from '@zimtsui/coroutine-locks';
+import { RWLock } from '@zimtsui/typelocks';
 
 
 export interface InferenceContext {

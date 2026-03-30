@@ -1,6 +1,6 @@
 {
   "name": "@zimtsui/brainswitch",
-  "version": "0.0.59",
+  "version": "0.0.60",
   "exports": {
     ".": "./build/exports.js",
     "./assets": "./build/assets.js",
@@ -37,8 +37,8 @@
   "peerDependencies": {
     "@sinclair/typebox": "^0.34.40",
     "@types/node": "^22.17.2",
-    "@zimtsui/coroutine-locks": "^0.0.27",
-    "@zimtsui/typelog": "^0.0.30"
+    "@zimtsui/typelocks": "^0.0.28",
+    "@zimtsui/typelemetry": "^0.0.33"
   },
   "devDependencies": {
     "ava": "^7.0.0",

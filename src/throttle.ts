@@ -1,5 +1,5 @@
 import type { InferenceContext } from './inference-context.ts';
-import { Mutex } from '@zimtsui/coroutine-locks';
+import { Mutex } from '@zimtsui/typelocks';
 
 
 export class Throttle {

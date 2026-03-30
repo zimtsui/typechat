@@ -1,6 +1,7 @@
-import { Channel } from '@zimtsui/typelog';
-import * as Presets from '@zimtsui/typelog/presets';
-import { Exporter } from '@zimtsui/typelog/exporter';
+import { Channel, Exporter } from '@zimtsui/typelemetry/log';
+import * as Presets from '@zimtsui/typelemetry/log/presets';
+import { formatWithOptions } from 'node:util';
+import { stderr } from 'node:process';
 
 
 export const logger = {
@@ -9,7 +10,7 @@ export const logger = {
         (chunk: string, level) => Exporter.getGlobalExporter().stream({
             scope: '@zimtsui/brainswitch',
             channel: 'Inference',
-            level,
+            level: Presets.Level[level],
             payload: chunk,
         }),
     ),
@@ -18,8 +19,8 @@ export const logger = {
         (payload: unknown, level) => Exporter.getGlobalExporter().monolith({
             scope: '@zimtsui/brainswitch',
             channel: 'Message',
-            level,
-            payload,
+            level: Presets.Level[level],
+            payload: formatWithOptions({ depth: null, colors: !!stderr.isTTY }, payload)
         }),
     ),
 };
