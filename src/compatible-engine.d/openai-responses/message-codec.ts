@@ -60,9 +60,11 @@ export class MessageCodec<
     public encodeAiMessage(
         aiMessage: RoleMessage.Ai.From<fdm, vdm>,
     ): OpenAI.Responses.ResponseInput {
-        if (aiMessage instanceof MessageCodec.Message.Ai)
-            return aiMessage.getRaw();
-        else {
+        if (aiMessage instanceof MessageCodec.Message.Ai) {
+            const raw = aiMessage.getRaw();
+            if (raw.every(item => item.type !== 'computer_call_output')) throw new Error('Computer calls are not supported yet.');
+            return raw.filter(item => item.type !== 'computer_call_output');
+        } else {
             return aiMessage.getParts().map(part => {
                 if (part instanceof RoleMessage.Part.Text)
                     return {

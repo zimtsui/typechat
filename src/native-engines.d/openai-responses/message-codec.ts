@@ -71,7 +71,9 @@ export class MessageCodec<
     public encodeAiMessage(
         aiMessage: RoleMessage.Ai.From<fdm, vdm>,
     ): OpenAI.Responses.ResponseInput {
-        return aiMessage.getRaw();
+        const raw = aiMessage.getRaw();
+        if (raw.every(item => item.type !== 'computer_call_output')) throw new Error('Computer calls are not supported yet.');
+        return raw.filter(item => item.type !== 'computer_call_output');
     }
 
     public encodeDeveloperMessage(
