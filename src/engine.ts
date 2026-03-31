@@ -50,6 +50,7 @@ export namespace Engine {
         public vdm: vdm;
         protected throttle: Throttle;
         protected abstract parallelToolCall: boolean;
+        protected retry: number;
         protected abstract validator: Engine.Validator.From<fdm, vdm, aim>;
         protected abstract transport: Engine.Transport<userm, aim, devm, session>;
 
@@ -79,6 +80,7 @@ export namespace Engine {
             this.fdm = options.functionDeclarationMap;
             this.vdm = options.verbatimDeclarationMap;
             this.throttle = options.throttle;
+            this.retry = options.retry ?? 3;
         }
 
         protected async infer(
@@ -107,6 +109,7 @@ export namespace Engine {
         public async stateless(
             wfctx: InferenceContext,
             session: session,
+            validate: (response: aim) => boolean = () => true,
         ): Promise<aim> {
             for (let retry = 0;; retry++) {
                 const signalTimeout = this.inferenceParams.timeout ? AbortSignal.timeout(this.inferenceParams.timeout) : undefined;
@@ -115,14 +118,17 @@ export namespace Engine {
                     signalTimeout,
                 ]) : wfctx.signal || signalTimeout;
                 try {
-                    return await this.infer(wfctx, session, signal);
+                    const response = await this.infer(wfctx, session, signal);
+                    if (validate(response)) return response;
+                    else throw new CustomRetry(undefined, { cause: response });
                 } catch (e) {
                     if (wfctx.signal?.aborted) throw new UserAbortion();                                // 用户中止
                     else if (signalTimeout?.aborted) e = new InferenceTimeout(undefined, { cause: e }); // 推理超时
                     else if (e instanceof ResponseInvalid) {}			                                // 模型抽风
                     else if (e instanceof NetworkError) {}         		                                // 网络故障
+                    else if (e instanceof CustomRetry) {}         		                                // 自定义重试
                     else throw e;
-                    if (retry < 3) logger.message.warn(e); else throw e;
+                    if (retry < this.retry) logger.message.warn(e); else throw e;
                 }
             }
         }
@@ -133,8 +139,9 @@ export namespace Engine {
         public async stateful(
             wfctx: InferenceContext,
             session: session,
+            validate?: (response: aim) => boolean,
         ): Promise<aim> {
-            const response = await this.stateless(wfctx, session);
+            const response = await this.stateless(wfctx, session, validate);
             session.chatMessages.push(response);
             return response;
         }
@@ -161,6 +168,7 @@ export namespace Engine {
         functionDeclarationMap: fdm;
         verbatimDeclarationMap: vdm;
         parallelToolCall?: boolean;
+        retry?: number;
     }
 
 
@@ -173,6 +181,7 @@ export class ResponseInvalid extends Error {}
 export class UserAbortion extends Error {}
 export class InferenceTimeout extends Error {}
 export class NetworkError extends Error {}
+export class CustomRetry extends Error {}
 
 
 declare global {
