@@ -128,6 +128,7 @@ export namespace Engine {
                     else if (e instanceof NetworkError) {}         		                                // 网络故障
                     else if (e instanceof CustomRetry) {}         		                                // 自定义重试
                     else throw e;
+                    wfctx.cost?.(0);    //  心跳
                     if (retry < this.retry) logger.message.warn(e); else throw e;
                 }
             }
