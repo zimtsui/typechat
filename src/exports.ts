@@ -1,5 +1,4 @@
 export * from './adaptor.ts';
-export * from './throttle.ts';
 export * from './compatible-engine/session.ts';
 export * from './compatible-engine.ts';
 export * from './function.ts';
@@ -11,4 +10,3 @@ export * from './endpoint-spec.ts';
 export * from './compatible-engine.d/agentloop.ts';
 export * from './engine.ts';
 export * from './compatible-engine.ts';
-export * from './telemetry.ts';
