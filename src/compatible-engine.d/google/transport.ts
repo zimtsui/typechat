@@ -61,10 +61,10 @@ export class Transport<
         // Send request
         const res = await Undici.fetch(this.apiURL, {
             method: 'POST',
-            headers: new Headers({
+            headers: {
                 'Content-Type': 'application/json',
                 'x-goog-api-key': this.ctx.providerSpec.apiKey,
-            }),
+            },
             body: JSON.stringify(reqbody),
             dispatcher: this.ctx.providerSpec.proxyAgent,
             signal,

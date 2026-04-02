@@ -72,10 +72,10 @@ export class Transport<
             this.apiURL,
             {
                 method: 'POST',
-                headers: new Headers({
+                headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${this.ctx.providerSpec.apiKey}`,
-                }),
+                },
                 body: JSON.stringify(params),
                 dispatcher: this.ctx.providerSpec.proxyAgent,
                 signal,

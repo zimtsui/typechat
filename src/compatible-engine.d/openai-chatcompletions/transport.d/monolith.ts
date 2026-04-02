@@ -62,10 +62,10 @@ export abstract class MonolithTransport<
         // Send request
         const res = await Undici.fetch(this.ctx.apiURL, {
             method: 'POST',
-            headers: new Headers({
+            headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${this.ctx.apiKey}`,
-            }),
+            },
             body: JSON.stringify(params),
             dispatcher: this.ctx.proxyAgent,
             signal,
