@@ -105,11 +105,12 @@ export namespace Engine {
         * @throws {@link InferenceTimeout} 推理超时
         * @throws {@link ResponseInvalid} 模型抽风
         * @throws {@link NetworkError} 网络故障
+        * @throws {@link CustomRetry} 自定义重试
         */
         public async stateless(
             wfctx: InferenceContext,
             session: session,
-            validate: (response: aim) => boolean = () => true,
+            validate: (response: aim) => Promise<boolean> = () => Promise.resolve(true),
         ): Promise<aim> {
             for (let retry = 0;; retry++) {
                 const signalTimeout = this.inferenceParams.timeout ? AbortSignal.timeout(this.inferenceParams.timeout) : undefined;
@@ -119,7 +120,7 @@ export namespace Engine {
                 ]) : wfctx.signal || signalTimeout;
                 try {
                     const response = await this.infer(wfctx, session, signal);
-                    if (validate(response)) return response;
+                    if (await validate(response)) return response;
                     else throw new CustomRetry(undefined, { cause: response });
                 } catch (e) {
                     if (wfctx.signal?.aborted) throw new UserAbortion();                                // 用户中止
@@ -140,7 +141,7 @@ export namespace Engine {
         public async stateful(
             wfctx: InferenceContext,
             session: session,
-            validate?: (response: aim) => boolean,
+            validate?: (response: aim) => Promise<boolean>,
         ): Promise<aim> {
             const response = await this.stateless(wfctx, session, validate);
             session.chatMessages.push(response);
