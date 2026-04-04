@@ -8,7 +8,7 @@ XML Verbatim Channel is designed to avoid escaping in structured output of large
 
 ## Declaration
 
-The system or the user will declare all available XML Verbatim Channels in the form of
+The system or the user is expected to declare all available XML Verbatim Channels in the form of
 
 <verbatim:declaration name="CHANNEL_1_NAME">
     <verbatim:description>DESCRIPTION_OF_CHANNEL_1</verbatim:description>
