@@ -33,17 +33,3 @@ You can make a request through the channel CHANNEL_1_NAME in the form of
 
 -   All parameters are required
 -   All arguments must be wrapped in CDATA
-
-# Available XML Verbatim Channels
-
-<verbatim:declaration name="submit">
-    <verbatim:description>提交文章</verbatim:description>
-    <verbatim:parameter name="title">
-        <verbatim:description>文章标题</verbatim:description>
-        <verbatim:mime-type>text/plain</verbatim:mime-type>
-    </verbatim:parameter>
-    <verbatim:parameter name="body">
-        <verbatim:description>文章内容</verbatim:description>
-        <verbatim:mime-type>text/markdown;dialect=gfm+tex_math_dollars</verbatim:mime-type>
-    </verbatim:parameter>
-</verbatim:declaration>
