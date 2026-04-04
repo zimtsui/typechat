@@ -4,7 +4,7 @@ import OpenAI from 'openai';
 import { Transport } from '../transport.ts';
 import { type InferenceContext } from '../../../inference-context.ts';
 import { ResponseInvalid, type InferenceParams, type ProviderSpec, NetworkError } from '../../../engine.ts';
-import { logger } from '../../../telemetry.ts';
+import { loggers } from '../../../telemetry.ts';
 import type { OpenAIChatCompletionsBilling } from '../../../api-types/openai-chatcompletions/billing.ts';
 import type { OpenAIChatCompletionsToolCodec } from '../../../api-types/openai-chatcompletions/tool-codec.ts';
 import { Throttle } from '../../../throttle.ts';
@@ -102,15 +102,16 @@ export abstract class StreamTransport<
 
             // Prepare request
             const params = this.makeParams(session);
-            logger.message.trace(params);
+            loggers.message.trace(params);
 
             // Send request
             const stream = await this.client.chat.completions.create(params, { signal });
 
             // Get response
             let stock: OpenAI.ChatCompletionChunk | null = null;
+            let thoughts: string | null = null;
             try {
-                let thoughts: string | null = null, thinking = false;
+                let thinking = false;
                 for await (const chunk of stream) {
                     stock ??= {
                         id: chunk.id,
@@ -135,9 +136,7 @@ export abstract class StreamTransport<
                         if (deltaThoughts) {
                             if (!thinking) {
                                 thinking = true;
-                                logger.inference.trace('<think>\n');
                             }
-                            logger.inference.trace(deltaThoughts);
                             thoughts ??= '';
                             thoughts += deltaThoughts;
                         }
@@ -146,9 +145,7 @@ export abstract class StreamTransport<
                         if (deltaChoice.delta.content) {
                             if (thinking) {
                                 thinking = false;
-                                logger.inference.trace('\n</think>\n');
                             }
-                            logger.inference.debug(deltaChoice.delta.content);
                             stock.choices[0]!.delta.content ??= '';
                             stock.choices[0]!.delta.content! += deltaChoice.delta.content;
                         }
@@ -157,7 +154,6 @@ export abstract class StreamTransport<
                         if (deltaChoice.delta.tool_calls) {
                             if (thinking) {
                                 thinking = false;
-                                logger.inference.trace('\n</think>\n');
                             }
                             stock.choices[0]!.delta.tool_calls ??= [];
                             for (const deltaToolCall of deltaChoice.delta.tool_calls) {
@@ -194,15 +190,16 @@ export abstract class StreamTransport<
 
             const choice = completion.choices[0];
             if (choice) {} else throw new ResponseInvalid('Content missing', { cause: completion });
-            if (choice.message.content) logger.inference.debug('\n');
+            if (thoughts) loggers.inference.trace(thoughts);
+            if (choice.message.content) loggers.inference.debug(choice.message.content);
 
             this.handleFinishReason(completion, choice.finish_reason);
 
             if (completion.usage) {} else throw new Error();
             const cost = this.ctx.billing.charge(completion.usage);
 
-            if (choice.message.tool_calls) logger.message.debug(choice.message.tool_calls);
-            logger.message.debug(completion.usage);
+            if (choice.message.tool_calls) loggers.message.debug(choice.message.tool_calls);
+            loggers.message.debug(completion.usage);
             wfctx.cost?.(cost);
 
             return this.ctx.messageCodec.decodeAiMessage(choice.message);

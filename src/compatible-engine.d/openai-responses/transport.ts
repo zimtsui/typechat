@@ -5,7 +5,7 @@ import type OpenAI from 'openai';
 import * as Undici from 'undici';
 import { type InferenceContext } from '../../inference-context.ts';
 import { Throttle } from '../../throttle.ts';
-import { logger } from '../../telemetry.ts';
+import { loggers } from '../../telemetry.ts';
 import type { MessageCodec } from './message-codec.ts';
 import type { ToolCodec } from '../../api-types/openai-responses/tool-codec.ts';
 import type { Billing } from '../../api-types/openai-responses/billing.ts';
@@ -52,10 +52,11 @@ export class Transport<
     protected logAiMessage(output: OpenAI.Responses.ResponseOutputItem[]): void {
         for (const item of output)
             if (item.type === 'message') {
-                if (item.content.every(part => part.type === 'output_text')) {} else throw new Error();
-                logger.inference.debug(item.content.map(part => part.text).join(''));
+                if (item.content.every(part => part.type === 'output_text')) {} else
+                    throw new ResponseInvalid('Refusal', { cause: output });
+                loggers.inference.debug(item.content.map(part => part.text).join(''));
             } else if (item.type === 'function_call')
-                logger.message.debug(item);
+                loggers.message.debug(item);
     }
 
     public async fetch(
@@ -67,7 +68,7 @@ export class Transport<
 
         // Prepare request
         const params = this.makeParams(session);
-        logger.message.trace(params);
+        loggers.message.trace(params);
 
         // Send request
         const res = await Undici.fetch(
@@ -91,7 +92,7 @@ export class Transport<
         // Get response
         if (res.ok) {} else throw new Error(undefined, { cause: res });
         const response = await res.json() as OpenAI.Responses.Response;
-        logger.message.trace(response);
+        loggers.message.trace(response);
 
         // Validate response
         if (response.status === 'incomplete' && response.incomplete_details?.reason === 'max_output_tokens')
@@ -100,7 +101,7 @@ export class Transport<
         else throw new ResponseInvalid('Abnormal response status', { cause: response });
         if (response.usage) {} else throw new Error();
         this.logAiMessage(response.output);
-        logger.message.debug(response.usage);
+        loggers.message.debug(response.usage);
         wfctx.cost?.(this.ctx.billing.charge(response.usage));
 
         return this.ctx.messageCodec.decodeAiMessage(response.output);

@@ -1,13 +1,13 @@
 import * as Google from '@google/genai';
 import type { Pricing } from '../../engine.ts';
-import { logger } from '../../telemetry.ts';
+import { loggers } from '../../telemetry.ts';
 
 
 export class Billing {
     public constructor(protected ctx: Billing.Context) {}
 
     public charge(usageMetadata: Google.GenerateContentResponseUsageMetadata): number {
-        logger.message.debug(usageMetadata);
+        loggers.message.debug(usageMetadata);
 
         if (usageMetadata.promptTokenCount) {} else throw new Error('Prompt token count missing.', { cause: usageMetadata });
         const candidatesTokenCount = usageMetadata.candidatesTokenCount ?? 0;

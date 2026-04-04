@@ -4,7 +4,7 @@ import { Throttle } from './throttle.ts';
 import { ProxyAgent } from 'undici';
 import { env } from 'node:process';
 import { type InferenceContext } from './inference-context.ts';
-import { logger } from './telemetry.ts';
+import { loggers } from './telemetry.ts';
 import * as SessionModule from './engine/session.ts';
 import type { Verbatim } from './verbatim.ts';
 import * as VerbatimCodec from './verbatim/codec.ts';
@@ -130,7 +130,7 @@ export namespace Engine {
                     else if (e instanceof CustomRetry) {}         		                                // 自定义重试
                     else throw e;
                     wfctx.cost?.(0);    //  心跳
-                    if (retry < this.retry) logger.message.warn(e); else throw e;
+                    if (retry < this.retry) loggers.message.warn(e); else throw e;
                 }
             }
         }

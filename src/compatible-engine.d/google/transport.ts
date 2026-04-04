@@ -6,7 +6,7 @@ import * as Undici from 'undici';
 import { type InferenceContext } from '../../inference-context.ts';
 import type { RestfulRequest } from '../../api-types/google/restful-request.ts';
 import { Throttle } from '../../throttle.ts';
-import { logger } from '../../telemetry.ts';
+import { loggers } from '../../telemetry.ts';
 import type { MessageCodec } from './message-codec.ts';
 import type { ToolCodec } from '../../api-types/google/tool-codec.ts';
 import type { Billing } from '../../api-types/google/billing.ts';
@@ -56,7 +56,7 @@ export class Transport<
                 ...this.ctx.inferenceParams.additionalOptions,
             } : undefined,
         };
-        logger.message.trace(reqbody);
+        loggers.message.trace(reqbody);
 
         // Send request
         const res = await Undici.fetch(this.apiURL, {
@@ -77,7 +77,7 @@ export class Transport<
         // Get response
         if (res.ok) {} else throw new Error(undefined, { cause: res });
         const response = await res.json() as Google.GenerateContentResponse;
-        logger.message.trace(response);
+        loggers.message.trace(response);
 
         // Validate response
         if (response.candidates?.[0]?.content?.parts?.length) {} else throw new ResponseInvalid('Content missing', { cause: response });
@@ -87,8 +87,8 @@ export class Transport<
         else throw new ResponseInvalid('Abnormal finish reason', { cause: response });
         if (response.usageMetadata) {} else throw new ResponseInvalid('Usage metadata missing', { cause: response });
         for (const part of response.candidates[0].content.parts) {
-            if (part.text) logger.inference.debug(part.text);
-            if (part.functionCall) logger.message.debug(part.functionCall);
+            if (part.text) loggers.inference.debug(part.text);
+            if (part.functionCall) loggers.message.debug(part.functionCall);
         }
         wfctx.cost?.(this.ctx.billing.charge(response.usageMetadata));
 

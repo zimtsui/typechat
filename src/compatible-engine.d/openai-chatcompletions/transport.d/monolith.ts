@@ -5,7 +5,7 @@ import { Transport } from '../transport.ts';
 import { type InferenceContext } from '../../../inference-context.ts';
 import * as Undici from 'undici';
 import { ResponseInvalid, NetworkError } from '../../../engine.ts';
-import { logger } from '../../../telemetry.ts';
+import { loggers } from '../../../telemetry.ts';
 import type { OpenAIChatCompletionsBilling } from '../../../api-types/openai-chatcompletions/billing.ts';
 import type { OpenAIChatCompletionsToolCodec } from '../../../api-types/openai-chatcompletions/tool-codec.ts';
 import type { MessageCodec } from '../message-codec.ts';
@@ -57,7 +57,7 @@ export abstract class MonolithTransport<
 
         // Prepare request
         const params = this.makeParams(session);
-        logger.message.trace(params);
+        loggers.message.trace(params);
 
         // Send request
         const res = await Undici.fetch(this.ctx.apiURL, {
@@ -78,7 +78,7 @@ export abstract class MonolithTransport<
         // Get response
         if (res.ok) {} else throw new Error(undefined, { cause: res });
         const completion = await res.json() as OpenAI.ChatCompletion;
-        logger.message.trace(completion);
+        loggers.message.trace(completion);
 
         // Validate response
         const choice = completion.choices[0];
@@ -89,9 +89,9 @@ export abstract class MonolithTransport<
         if (completion.usage) {} else throw new Error();
         const cost = this.ctx.billing.charge(completion.usage);
 
-        if (choice.message.content) logger.inference.debug(choice.message.content);
-        if (choice.message.tool_calls) logger.message.debug(choice.message.tool_calls);
-        logger.message.debug(completion.usage);
+        if (choice.message.content) loggers.inference.debug(choice.message.content);
+        if (choice.message.tool_calls) loggers.message.debug(choice.message.tool_calls);
+        loggers.message.debug(completion.usage);
         wfctx.cost?.(cost);
 
         return this.ctx.messageCodec.decodeAiMessage(choice.message);
