@@ -40,13 +40,13 @@ test('Verbatim declarations codec renders channel metadata', t => {
 test('Verbatim request codec decodes multiple requests with CDATA payloads', t => {
     const requests = VerbatimCodec.Request.decode(`
         <verbatim:request name="submit">
-            <verbatim:argument name="title"><![CDATA[Hello]]></verbatim:argument>
-            <verbatim:argument name="body"><![CDATA[# Heading
+            <verbatim:parameter name="title"><![CDATA[Hello]]></verbatim:parameter>
+            <verbatim:parameter name="body"><![CDATA[# Heading
 math: $x^2$
-]]></verbatim:argument>
+]]></verbatim:parameter>
         </verbatim:request>
         <verbatim:request name="attachment">
-            <verbatim:argument name="file"><![CDATA[binary-ish <content>]]></verbatim:argument>
+            <verbatim:parameter name="file"><![CDATA[binary-ish <content>]]></verbatim:parameter>
         </verbatim:request>
     `, verbatimDeclarationMap);
 
@@ -62,12 +62,12 @@ math: $x^2$
     });
 });
 
-test('Verbatim request codec accepts flexible whitespace around request and argument attributes', t => {
+test('Verbatim request codec accepts flexible whitespace around request and parameter attributes', t => {
     const requests = VerbatimCodec.Request.decode(`
         prefix text ignored
         <verbatim:request   name = "submit"   >
-            <verbatim:argument   name = "title"   ><![CDATA[Hello]]></verbatim:argument   >
-            <verbatim:argument   name = "body"   ><![CDATA[Body]]></verbatim:argument   >
+            <verbatim:parameter   name = "title"   ><![CDATA[Hello]]></verbatim:parameter   >
+            <verbatim:parameter   name = "body"   ><![CDATA[Body]]></verbatim:parameter   >
         </verbatim:request   >
         suffix text ignored
     `, verbatimDeclarationMap);
@@ -83,8 +83,8 @@ test('Verbatim request codec accepts flexible whitespace around request and argu
 test('Verbatim request codec accepts single-quoted attribute values', t => {
     const requests = VerbatimCodec.Request.decode(`
         <verbatim:request name='submit'>
-            <verbatim:argument name='title'><![CDATA[Hello]]></verbatim:argument>
-            <verbatim:argument name='body'><![CDATA[Body]]></verbatim:argument>
+            <verbatim:parameter name='title'><![CDATA[Hello]]></verbatim:parameter>
+            <verbatim:parameter name='body'><![CDATA[Body]]></verbatim:parameter>
         </verbatim:request>
     `, verbatimDeclarationMap);
 
@@ -98,14 +98,14 @@ test('Verbatim request codec accepts single-quoted attribute values', t => {
 test('Verbatim request codec accepts mixed quotes and blank lines around CDATA', t => {
     const requests = VerbatimCodec.Request.decode(`
         <verbatim:request name='submit'>
-            <verbatim:argument name="title">
+            <verbatim:parameter name="title">
 
                 <![CDATA[Hello]]>
 
-            </verbatim:argument>
-            <verbatim:argument name='body'>
+            </verbatim:parameter>
+            <verbatim:parameter name='body'>
                 <![CDATA[Body]]>
-            </verbatim:argument>
+            </verbatim:parameter>
         </verbatim:request>
     `, verbatimDeclarationMap);
 
@@ -119,11 +119,11 @@ test('Verbatim request codec accepts mixed quotes and blank lines around CDATA',
 test('Verbatim request codec accepts requests packed together without separators', t => {
     const requests = VerbatimCodec.Request.decode(
         '<verbatim:request name="submit">' +
-        '<verbatim:argument name="title"><![CDATA[A]]></verbatim:argument>' +
-        '<verbatim:argument name="body"><![CDATA[B]]></verbatim:argument>' +
+        '<verbatim:parameter name="title"><![CDATA[A]]></verbatim:parameter>' +
+        '<verbatim:parameter name="body"><![CDATA[B]]></verbatim:parameter>' +
         '</verbatim:request>' +
         '<verbatim:request name="attachment">' +
-        '<verbatim:argument name="file"><![CDATA[C]]></verbatim:argument>' +
+        '<verbatim:parameter name="file"><![CDATA[C]]></verbatim:parameter>' +
         '</verbatim:request>',
         verbatimDeclarationMap,
     );
@@ -141,12 +141,12 @@ test('Verbatim request codec accepts requests packed together without separators
 test('Verbatim request codec preserves whitespace inside CDATA payloads', t => {
     const requests = VerbatimCodec.Request.decode(`
         <verbatim:request name="submit">
-            <verbatim:argument name="title"><![CDATA[  Hello  ]]></verbatim:argument>
-            <verbatim:argument name="body"><![CDATA[
+            <verbatim:parameter name="title"><![CDATA[  Hello  ]]></verbatim:parameter>
+            <verbatim:parameter name="body"><![CDATA[
   line 1
 
     line 2
-]]></verbatim:argument>
+]]></verbatim:parameter>
         </verbatim:request>
     `, verbatimDeclarationMap);
 
@@ -159,31 +159,31 @@ test('Verbatim request codec preserves whitespace inside CDATA payloads', t => {
 test('Verbatim request codec rejects unknown channels', t => {
     const error = t.throws(() => VerbatimCodec.Request.decode(`
         <verbatim:request name="missing">
-            <verbatim:argument name="title"><![CDATA[Hello]]></verbatim:argument>
+            <verbatim:parameter name="title"><![CDATA[Hello]]></verbatim:parameter>
         </verbatim:request>
     `, verbatimDeclarationMap));
 
     t.regex(error.message, /Channel not found: missing/);
 });
 
-test('Verbatim request codec rejects missing arguments', t => {
+test('Verbatim request codec rejects missing parameters', t => {
     const error = t.throws(() => VerbatimCodec.Request.decode(`
         <verbatim:request name="submit">
-            <verbatim:argument name="title"><![CDATA[Hello]]></verbatim:argument>
+            <verbatim:parameter name="title"><![CDATA[Hello]]></verbatim:parameter>
         </verbatim:request>
     `, verbatimDeclarationMap));
 
-    t.regex(error.message, /Argument body of channel submit is missing\./);
+    t.regex(error.message, /Argument of parameter body of channel submit is missing\./);
 });
 
-test('Verbatim request codec rejects duplicate arguments', t => {
+test('Verbatim request codec rejects duplicate parameters', t => {
     const error = t.throws(() => VerbatimCodec.Request.decode(`
         <verbatim:request name="submit">
-            <verbatim:argument name="title"><![CDATA[A]]></verbatim:argument>
-            <verbatim:argument name="title"><![CDATA[B]]></verbatim:argument>
-            <verbatim:argument name="body"><![CDATA[Body]]></verbatim:argument>
+            <verbatim:parameter name="title"><![CDATA[A]]></verbatim:parameter>
+            <verbatim:parameter name="title"><![CDATA[B]]></verbatim:parameter>
+            <verbatim:parameter name="body"><![CDATA[Body]]></verbatim:parameter>
         </verbatim:request>
     `, verbatimDeclarationMap));
 
-    t.regex(error.message, /Duplicate argument: title/);
+    t.regex(error.message, /Duplicate argument of parameter title/);
 });

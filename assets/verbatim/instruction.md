@@ -10,13 +10,13 @@ XML Verbatim Channel is designed to avoid escaping in structured output of large
 
 The system or the user is expected to declare all available XML Verbatim Channels in the form of
 
-<verbatim:declaration name="CHANNEL_1_NAME">
+<verbatim:declaration name="NAME_OF_CHANNEL_1">
     <verbatim:description>DESCRIPTION_OF_CHANNEL_1</verbatim:description>
-    <verbatim:parameter name="PARAMETER_1_NAME">
+    <verbatim:parameter name="NAME_OF_PARAMETER_1">
         <verbatim:description>DESCRIPTION_OF_PARAMETER_1</verbatim:description>
         <verbatim:mime-type>VALUE_MIME_TYPE_OF_PARAMETER_1</verbatim:mime-type>
     </verbatim:parameter>
-    <verbatim:parameter name="PARAMETER_2_NAME">
+    <verbatim:parameter name="NAME_OF_PARAMETER_2">
         <verbatim:description>DESCRIPTION_OF_PARAMETER_2</verbatim:description>
         <verbatim:mime-type>VALUE_MIME_TYPE_OF_PARAMETER_2</verbatim:mime-type>
     </verbatim:parameter>
@@ -24,11 +24,11 @@ The system or the user is expected to declare all available XML Verbatim Channel
 
 ## Request
 
-You can make a request through the channel CHANNEL_1_NAME in the form of
+You can make a request through a channel in the form of
 
-<verbatim:request name="CHANNEL_1_NAME">
-    <verbatim:argument name="PARAMETER_1_NAME"><![CDATA[PARAMETER_1_VALUE]]></verbatim:argument>
-    <verbatim:argument name="PARAMETER_2_NAME"><![CDATA[PARAMETER_2_VALUE]]></verbatim:argument>
+<verbatim:request name="NAME_OF_CHANNEL_1">
+    <verbatim:parameter name="NAME_OF_PARAMETER_1"><![CDATA[ARGUMENT_OF_PARAMETER_1]]></verbatim:parameter>
+    <verbatim:parameter name="NAME_OF_PARAMETER_2"><![CDATA[ARGUMENT_OF_PARAMETER_2]]></verbatim:parameter>
 </verbatim:request>
 
 -   All parameters are required

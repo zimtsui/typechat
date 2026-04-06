@@ -17,10 +17,10 @@ export function decode<
         const argNames = Object.keys(args);
         for (const paramName of paramNames)
             if (argNames.includes(paramName)) {} else
-                throw new Invalid(`Argument ${paramName} of channel ${channelName} is missing.`);
+                throw new Invalid(`Argument of parameter ${paramName} of channel ${channelName} is missing.`);
         for (const argName of argNames)
             if (paramNames.includes(argName)) {} else
-                throw new Invalid(`Argument ${argName} is not defined in channel ${channelName}.`);
+                throw new Invalid(`Parameter ${argName} is not defined in channel ${channelName}.`);
         const options = { name: channelName, args } as Verbatim.Request.Options.Of<vdu>;
         parts.push(Verbatim.Request.create(options));
     }
@@ -37,16 +37,16 @@ const REQUEST = new RegExp(
     `</verbatim:request\\s*>`,
 );
 const ARG_CDATA = new RegExp(
-    `<verbatim:argument\\s+name\\s*=\\s*(?:${XML_ATTR_VAL.source})\\s*>` +
+    `<verbatim:parameter\\s+name\\s*=\\s*(?:${XML_ATTR_VAL.source})\\s*>` +
     `\\s*<!\\[CDATA\\[(?<arg_cdata_body>[\\s\\S]*?)\\]\\]>\\s*` +
-    `</verbatim:argument\\s*>`,
+    `</verbatim:parameter\\s*>`,
 );
 
 function extractArgs(str: string): Record<string, string> {
     const results: Record<string, string> = {};
     for (const match of str.matchAll(new RegExp(ARG_CDATA, 'g'))) {
         if (results[match.groups!.attr_val_body!] === undefined) {} else
-            throw new Invalid('Duplicate argument: ' + match.groups!.attr_val_body!);
+            throw new Invalid('Duplicate argument of parameter ' + match.groups!.attr_val_body!);
         results[match.groups!.attr_val_body!] = match.groups!.arg_cdata_body!;
     }
     return results;
