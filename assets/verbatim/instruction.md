@@ -33,12 +33,14 @@ All arguments must be wrapped in CDATA.
 
 ## Response
 
-Not all requests have a response. The optional response is expected in the form of
+The user message may contain the response of your request in the form of
 
 <verbatim:response name="NAME_OF_CHANNEL" mime-type="MIME_TYPE_OF_RESPONSE"><![CDATA[RESPONSE]]></verbatim:response>
 
+Not all requests have a response.
+
 ## System
 
-Text from the system is expected in the form of
+The user message may contain text from the system in the form of
 
 <verbatim:system name="NAME_OF_CHANNEL" mime-type="MIME_TYPE_OF_TEXT"><![CDATA[TEXT]]></verbatim:system>
