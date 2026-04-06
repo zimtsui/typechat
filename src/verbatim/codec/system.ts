@@ -1,16 +1,19 @@
 import Handlebars from 'handlebars';
 import Assets from '../../assets.ts';
+import { loggers } from '../../telemetry.ts';
 
 
 const template = Handlebars.compile<template.Input>(Assets.verbatim.system);
 namespace template {
     export interface Input {
         name: string;
+        mimeType: string;
         text: string;
     }
 }
 
-export function encode(name: string, text: string): string {
-    if (text.includes(']]>')) throw new Error('`]]>` is not allowed in CDATA sections.');
-    return template({ name, text });
+export function encode(name: string, mimeType: string, text: string): string {
+    if (text.includes(']]>'))
+        loggers.message.warn('The text contains "]]>", which is not allowed in XML CDATA sections. ');
+    return template({ name, mimeType, text });
 }

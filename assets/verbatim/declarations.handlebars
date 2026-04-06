@@ -2,9 +2,8 @@
 <verbatim:declaration name="{{this.name}}">
     <verbatim:description>{{this.description}}</verbatim:description>
     {{#each this.parameters}}
-    <verbatim:parameter name="{{this.name}}" required="{{#if this.required}}true{{else}}false{{/if}}">
+    <verbatim:parameter name="{{this.name}}" mime-type="{{this.mimeType}}" required="{{#if this.required}}true{{else}}false{{/if}}">
         <verbatim:description>{{this.description}}</verbatim:description>
-        <verbatim:mime-type>{{this.mimeType}}</verbatim:mime-type>
     </verbatim:parameter>
     {{/each}}
 </verbatim:declaration>

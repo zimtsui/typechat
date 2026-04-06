@@ -53,8 +53,8 @@ test('Verbatim declarations codec renders channel metadata', t => {
 
     t.regex(xml, /<verbatim:declaration name="submit">/);
     t.regex(xml, /<verbatim:description>Submit an article\.<\/verbatim:description>/);
-    t.regex(xml, /<verbatim:parameter name="title" required="false">/);
-    t.regex(xml, /<verbatim:mime-type>text\/markdown<\/verbatim:mime-type>/);
+    t.regex(xml, /<verbatim:parameter name="title" mime-type="text\/plain" required="false">/);
+    t.regex(xml, /<verbatim:parameter name="body" mime-type="text\/markdown" required="false">/);
     t.regex(xml, /<verbatim:declaration name="attachment">/);
 });
 
@@ -222,25 +222,25 @@ test('Verbatim request codec rejects duplicate parameters', t => {
 });
 
 test('Verbatim system codec encodes system text', t => {
-    const xml = VerbatimCodec.System.encode('bash', 'echo hello');
+    const xml = VerbatimCodec.System.encode('bash', 'text/plain', 'echo hello');
 
-    t.is(xml.trim(), '<verbatim:system name="bash"><![CDATA[echo hello]]></verbatim:system>');
+    t.is(xml.trim(), '<verbatim:system name="bash" mime-type="text/plain"><![CDATA[echo hello]]></verbatim:system>');
 });
 
-test('Verbatim system codec rejects CDATA terminator in text', t => {
-    const error = t.throws(() => VerbatimCodec.System.encode('bash', 'a ]]> b'));
+test('Verbatim system codec preserves CDATA terminator text', t => {
+    const xml = VerbatimCodec.System.encode('bash', 'text/plain', 'a ]]> b');
 
-    t.regex(error.message, /`]]>` is not allowed in CDATA sections\./);
+    t.is(xml.trim(), '<verbatim:system name="bash" mime-type="text/plain"><![CDATA[a ]]> b]]></verbatim:system>');
 });
 
 test('Verbatim response codec encodes response text', t => {
-    const xml = VerbatimCodec.Response.encode('bash', 'echo hello');
+    const xml = VerbatimCodec.Response.encode('bash', 'text/plain', 'echo hello');
 
-    t.is(xml.trim(), '<verbatim:response name="bash"><![CDATA[echo hello]]></verbatim:response>');
+    t.is(xml.trim(), '<verbatim:response name="bash" mime-type="text/plain"><![CDATA[echo hello]]></verbatim:response>');
 });
 
-test('Verbatim response codec rejects CDATA terminator in text', t => {
-    const error = t.throws(() => VerbatimCodec.Response.encode('bash', 'a ]]> b'));
+test('Verbatim response codec preserves CDATA terminator text', t => {
+    const xml = VerbatimCodec.Response.encode('bash', 'text/plain', 'a ]]> b');
 
-    t.regex(error.message, /`]]>` is not allowed in CDATA sections\./);
+    t.is(xml.trim(), '<verbatim:response name="bash" mime-type="text/plain"><![CDATA[a ]]> b]]></verbatim:response>');
 });

@@ -12,13 +12,11 @@ The system or the user is expected to declare all available XML Verbatim Channel
 
 <verbatim:declaration name="NAME_OF_CHANNEL">
     <verbatim:description>DESCRIPTION_OF_CHANNEL</verbatim:description>
-    <verbatim:parameter name="NAME_OF_PARAMETER_1" required="true">
+    <verbatim:parameter name="NAME_OF_PARAMETER_1" mime-type="MIME_TYPE_OF_PARAMETER" required="WHETHER_PARAMETER_IS_REQUIRED">
         <verbatim:description>DESCRIPTION_OF_PARAMETER</verbatim:description>
-        <verbatim:mime-type>MIME_TYPE_OF_PARAMETER</verbatim:mime-type>
     </verbatim:parameter>
-    <verbatim:parameter name="NAME_OF_PARAMETER_2" required="false">
+    <verbatim:parameter name="NAME_OF_PARAMETER_2" mime-type="MIME_TYPE_OF_PARAMETER" required="WHETHER_PARAMETER_IS_REQUIRED">
         <verbatim:description>DESCRIPTION_OF_PARAMETER</verbatim:description>
-        <verbatim:mime-type>MIME_TYPE_OF_PARAMETER</verbatim:mime-type>
     </verbatim:parameter>
 </verbatim:declaration>
 
@@ -37,10 +35,10 @@ All arguments must be wrapped in CDATA.
 
 Not all requests have a response. The optional response is expected in the form of
 
-<verbatim:response name="NAME_OF_CHANNEL"><![CDATA[RESPONSE_CONTENT]]></verbatim:response>
+<verbatim:response name="NAME_OF_CHANNEL" mime-type="MIME_TYPE_OF_RESPONSE"><![CDATA[RESPONSE]]></verbatim:response>
 
 ## System
 
-Verbatim content from the system is expected in the form of
+Text from the system is expected in the form of
 
-<verbatim:system name="NAME_OF_CHANNEL"><![CDATA[SYSTEM_CONTENT]]></verbatim:system>
+<verbatim:system name="NAME_OF_CHANNEL" mime-type="MIME_TYPE_OF_TEXT"><![CDATA[TEXT]]></verbatim:system>
