@@ -168,6 +168,7 @@ const vdm = {
             command: {
                 description: 'Bash 命令',
                 mimeType: 'text/plain',
+                required: true as const,
             },
         },
     },

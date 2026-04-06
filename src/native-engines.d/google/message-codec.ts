@@ -50,9 +50,13 @@ export class MessageCodec<
         if (content.parts) {} else throw new Error();
         const parts = content.parts.flatMap(part => {
             const parts: RoleMessage.Ai.Part.From<fdm, vdm>[] = [];
-            if (part.text) {
+            if (part.text) try {
                 const vrs = VerbatimCodec.Request.decode(part.text, this.ctx.vdm);
                 parts.push(new RoleMessage.Part.Text(part.text, vrs));
+            } catch (e) {
+                if (e instanceof SyntaxError)
+                    throw new ResponseInvalid('Invalid verbatim message', { cause: content });
+                else throw e;
             }
             if (part.functionCall) {
                 parts.push(this.ctx.toolCodec.decodeFunctionCall(part.functionCall));

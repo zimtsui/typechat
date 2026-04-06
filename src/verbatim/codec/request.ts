@@ -2,7 +2,7 @@ import { Verbatim } from '../../verbatim.ts';
 
 
 /**
- * @throws {@link Invalid}
+ * @throws {@link SyntaxError}
  */
 export function decode<
     vdm extends Verbatim.Decl.Map.Proto,
@@ -11,23 +11,24 @@ export function decode<
     const parts: Verbatim.Request.Of<vdu>[] = [];
     const requests = extractRequests(str);
     for (const [channelName, args] of requests) {
-        const vdbody = vdm[channelName];
-        if (vdbody) {} else throw new Invalid('Channel not found: ' + channelName);
-        const paramNames = Object.keys(vdbody.parameters);
+        const params = vdm[channelName]?.parameters;
+        if (params) {} else throw new SyntaxError('Channel not found: ' + channelName);
+        const paramNames = Object.keys(params);
         const argNames = Object.keys(args);
-        for (const paramName of paramNames)
+        for (const paramName of paramNames) {
+            if (params[paramName]!.required) {} else continue;
             if (argNames.includes(paramName)) {} else
-                throw new Invalid(`Argument of parameter ${paramName} of channel ${channelName} is missing.`);
+                throw new SyntaxError(`Argument of required parameter ${paramName} of channel ${channelName} is missing.`);
+        }
         for (const argName of argNames)
             if (paramNames.includes(argName)) {} else
-                throw new Invalid(`Parameter ${argName} is not defined in channel ${channelName}.`);
+                throw new SyntaxError(`Parameter ${argName} is not defined in channel ${channelName}.`);
         const options = { name: channelName, args } as Verbatim.Request.Options.Of<vdu>;
         parts.push(Verbatim.Request.create(options));
     }
     return parts;
 }
 
-export class Invalid extends Error{}
 
 
 const XML_ATTR_VAL = /(?<attr_val_quote>['"])(?<attr_val_body>[\s\S]+?)\k<attr_val_quote>/;
@@ -46,7 +47,7 @@ function extractArgs(str: string): Record<string, string> {
     const results: Record<string, string> = {};
     for (const match of str.matchAll(new RegExp(ARG_CDATA, 'g'))) {
         if (results[match.groups!.attr_val_body!] === undefined) {} else
-            throw new Invalid('Duplicate argument of parameter ' + match.groups!.attr_val_body!);
+            throw new SyntaxError('Duplicate argument of parameter ' + match.groups!.attr_val_body!);
         results[match.groups!.attr_val_body!] = match.groups!.arg_cdata_body!;
     }
     return results;

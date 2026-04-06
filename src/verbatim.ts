@@ -23,15 +23,16 @@ export namespace Verbatim {
         }
 
         export type Args<parameters extends Verbatim.Decl.Params.Proto> = {
-            [name in keyof parameters]: string;
+            [name in keyof parameters]: parameters[name]['required'] extends true ? string : string | void;
         }
         export namespace Params {
-            export type Proto = Record<string, Verbatim.Decl.Para.Body>;
+            export type Proto = Record<string, Verbatim.Decl.Param.Body>;
         }
-        export namespace Para {
+        export namespace Param {
             export interface Body {
                 description: string;
                 mimeType: string;
+                required: boolean;
             }
         }
 

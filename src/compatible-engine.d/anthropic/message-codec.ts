@@ -4,6 +4,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import type { ToolCodec } from '../../api-types/anthropic/tool-codec.ts';
 import type { Verbatim } from '../../verbatim.ts';
 import * as VerbatimCodec from '../../verbatim/codec.ts';
+import { ResponseInvalid } from '../../engine.ts';
 
 const NOMINAL = Symbol();
 
@@ -64,16 +65,17 @@ export class MessageCodec<
         else throw new Error();
     }
 
-    /**
-     * @throws {@link VerbatimCodec.Request.Invalid}
-     */
     public decodeAiMessage(
         raw: Anthropic.ContentBlock[],
     ): MessageCodec.Message.Ai.From<fdm, vdm> {
         const parts = raw.flatMap((item): RoleMessage.Ai.Part.From<fdm, vdm>[] => {
-            if (item.type === 'text') {
+            if (item.type === 'text') try {
                 const vrs = VerbatimCodec.Request.decode(item.text, this.ctx.vdm);
                 return [new RoleMessage.Part.Text(item.text, vrs)];
+            } catch (e) {
+                if (e instanceof SyntaxError)
+                    throw new ResponseInvalid('Invalid verbatim message', { cause: raw });
+                else throw e;
             } else if (item.type === 'tool_use') return [this.ctx.toolCodec.decodeFunctionCall(item)];
             else if (item.type === 'thinking') return [];
             else throw new Error();

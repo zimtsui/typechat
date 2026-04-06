@@ -88,16 +88,10 @@ export namespace Engine {
             session: session,
             signal?: AbortSignal,
         ): Promise<aim> {
-            try {
-                const aiMessage = await this.transport.fetch(wfctx, session, signal);
-                this.validator.validateParts(aiMessage);
-                this.validator.validateChoice(aiMessage);
-                return aiMessage;
-            } catch (e) {
-                if (e instanceof VerbatimCodec.Request.Invalid)
-                    throw new ResponseInvalid('Invalid verbatim message', { cause: e });
-                else throw e;
-            }
+            const aiMessage = await this.transport.fetch(wfctx, session, signal);
+            this.validator.validateParts(aiMessage);
+            this.validator.validateChoice(aiMessage);
+            return aiMessage;
         }
 
         /**

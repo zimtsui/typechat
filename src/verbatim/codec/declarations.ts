@@ -1,6 +1,7 @@
 import { Verbatim } from '../../verbatim.ts';
 import Handlebars from 'handlebars';
 import Assets from '../../assets.ts';
+import assert from 'node:assert';
 
 
 const template = Handlebars.compile<template.Input>(Assets.verbatim.declarations);
@@ -19,6 +20,7 @@ namespace template {
                 name: string;
                 description: string;
                 mimeType: string;
+                required: boolean;
             }
         }
     }
@@ -28,11 +30,14 @@ export function encode<vdm extends Verbatim.Decl.Map.Proto>(
     vdm: vdm,
 ): string {
     const vds = Object.entries(vdm).map(
-        ([name, body]) => ({
-            name,
-            description: body.description,
-            parameters: body.parameters,
-        }) as Verbatim.Decl.From<vdm>,
+        ([name, body]) => {
+            assert(/^[^<>&'"]+$/.test(name));
+            return ({
+                name,
+                description: body.description,
+                parameters: body.parameters,
+            }) as Verbatim.Decl.From<vdm>;
+        },
     );
 
     return template({
@@ -45,6 +50,7 @@ export function encode<vdm extends Verbatim.Decl.Map.Proto>(
                         name,
                         description: parameter.description,
                         mimeType: parameter.mimeType,
+                        required: parameter.required,
                     }),
                 ),
             }),

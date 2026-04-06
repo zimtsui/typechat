@@ -14,16 +14,17 @@ export class MessageCodec<
 > {
     public constructor(protected ctx: MessageCodec.Context<fdm, vdm>) {}
 
-    /**
-     * @throws {@link VerbatimCodec.Request.Invalid}
-     */
     public decodeAiMessage(
         message: OpenAI.ChatCompletionMessage,
     ): RoleMessage.Ai.From<fdm, vdm> {
         const parts: RoleMessage.Ai.Part.From<fdm, vdm>[] = [];
-        if (message.content) {
+        if (message.content) try {
             const vrs = VerbatimCodec.Request.decode(message.content, this.ctx.vdm);
             parts.push(new RoleMessage.Part.Text(message.content, vrs));
+        } catch (e) {
+            if (e instanceof SyntaxError)
+                throw new ResponseInvalid('Invalid verbatim message', { cause: message });
+            else throw e;
         }
         if (message.tool_calls)
             parts.push(...message.tool_calls.map(apifc => {
