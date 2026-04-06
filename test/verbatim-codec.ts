@@ -9,10 +9,12 @@ const verbatimDeclarationMap = {
             title: {
                 description: 'Article title.',
                 mimeType: 'text/plain',
+                required: false,
             },
             body: {
                 description: 'Article body.',
                 mimeType: 'text/markdown',
+                required: false,
             },
         },
     },
@@ -22,6 +24,25 @@ const verbatimDeclarationMap = {
             file: {
                 description: 'File content.',
                 mimeType: 'application/octet-stream',
+                required: false,
+            },
+        },
+    },
+};
+
+const requiredVerbatimDeclarationMap = {
+    submit: {
+        description: 'Submit an article.',
+        parameters: {
+            title: {
+                description: 'Article title.',
+                mimeType: 'text/plain',
+                required: true,
+            },
+            body: {
+                description: 'Article body.',
+                mimeType: 'text/markdown',
+                required: true,
             },
         },
     },
@@ -32,7 +53,7 @@ test('Verbatim declarations codec renders channel metadata', t => {
 
     t.regex(xml, /<verbatim:declaration name="submit">/);
     t.regex(xml, /<verbatim:description>Submit an article\.<\/verbatim:description>/);
-    t.regex(xml, /<verbatim:parameter name="title">/);
+    t.regex(xml, /<verbatim:parameter name="title" required="false">/);
     t.regex(xml, /<verbatim:mime-type>text\/markdown<\/verbatim:mime-type>/);
     t.regex(xml, /<verbatim:declaration name="attachment">/);
 });
@@ -166,14 +187,26 @@ test('Verbatim request codec rejects unknown channels', t => {
     t.regex(error.message, /Channel not found: missing/);
 });
 
-test('Verbatim request codec rejects missing parameters', t => {
+test('Verbatim request codec accepts missing optional parameters', t => {
+    const requests = VerbatimCodec.Request.decode(`
+        <verbatim:request name="submit">
+            <verbatim:parameter name="title"><![CDATA[Hello]]></verbatim:parameter>
+        </verbatim:request>
+    `, verbatimDeclarationMap);
+
+    t.deepEqual(requests[0]!.args, {
+        title: 'Hello',
+    });
+});
+
+test('Verbatim request codec rejects missing required parameters', t => {
     const error = t.throws(() => VerbatimCodec.Request.decode(`
         <verbatim:request name="submit">
             <verbatim:parameter name="title"><![CDATA[Hello]]></verbatim:parameter>
         </verbatim:request>
-    `, verbatimDeclarationMap));
+    `, requiredVerbatimDeclarationMap));
 
-    t.regex(error.message, /Argument of parameter body of channel submit is missing\./);
+    t.regex(error.message, /Argument of required parameter body of channel submit is missing\./);
 });
 
 test('Verbatim request codec rejects duplicate parameters', t => {
@@ -186,4 +219,28 @@ test('Verbatim request codec rejects duplicate parameters', t => {
     `, verbatimDeclarationMap));
 
     t.regex(error.message, /Duplicate argument of parameter title/);
+});
+
+test('Verbatim system codec encodes system text', t => {
+    const xml = VerbatimCodec.System.encode('bash', 'echo hello');
+
+    t.is(xml.trim(), '<verbatim:system name="bash"><![CDATA[echo hello]]></verbatim:system>');
+});
+
+test('Verbatim system codec rejects CDATA terminator in text', t => {
+    const error = t.throws(() => VerbatimCodec.System.encode('bash', 'a ]]> b'));
+
+    t.regex(error.message, /`]]>` is not allowed in CDATA sections\./);
+});
+
+test('Verbatim response codec encodes response text', t => {
+    const xml = VerbatimCodec.Response.encode('bash', 'echo hello');
+
+    t.is(xml.trim(), '<verbatim:response name="bash"><![CDATA[echo hello]]></verbatim:response>');
+});
+
+test('Verbatim response codec rejects CDATA terminator in text', t => {
+    const error = t.throws(() => VerbatimCodec.Response.encode('bash', 'a ]]> b'));
+
+    t.regex(error.message, /`]]>` is not allowed in CDATA sections\./);
 });
