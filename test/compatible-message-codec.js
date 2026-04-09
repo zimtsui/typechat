@@ -77,7 +77,7 @@ test('OpenAI responses codec encodes multimodal user message', t => {
                 },
                 {
                     type: 'input_file',
-                    file_data: 'cGRm',
+                    file_data: 'data:application/pdf;base64,cGRm',
                 },
             ],
         },
@@ -101,7 +101,7 @@ test('OpenAI responses codec encodes PDF file input as raw base64', t => {
         role: 'user',
         content: [{
             type: 'input_file',
-            file_data: 'cGRm',
+            file_data: 'data:application/pdf;base64,cGRm',
         }],
     }]);
 });

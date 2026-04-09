@@ -78,7 +78,7 @@ export class MessageCodec<
             else if (part instanceof Media.Pdf)
                 return [{
                     type: 'input_file',
-                    file_data: part.base64,
+                    file_data: `data:${part.mimeType};base64,${part.base64}`,
                 } satisfies OpenAI.Responses.ResponseInputFile];
             else throw new Error();
         });
