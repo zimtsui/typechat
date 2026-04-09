@@ -45,10 +45,7 @@ test('OpenAI responses codec encodes multimodal user message', t => {
             base64: 'aGVsbG8=',
             resolution: 2,
         }),
-        new Media.Pdf({
-            mimeType: 'application/pdf',
-            base64: 'cGRm',
-        }),
+        new Media.Pdf('cGRm'),
         Function.Response.Successful.of({
             id: 'call_1',
             name: 'noop',
@@ -116,10 +113,7 @@ test('Google compatible codec encodes PDF user message', t => {
         vdm: verbatimDeclarationMap,
     });
     const userMessage = new CompatibleRoleMessage.User([
-        new Media.Pdf({
-            mimeType: 'application/pdf',
-            base64: 'cGRm',
-        }),
+        new Media.Pdf('cGRm'),
     ]);
 
     const encoded = messageCodec.encodeUserMessage(userMessage);
@@ -143,10 +137,7 @@ test('Anthropic compatible codec rejects media user message', t => {
         vdm: verbatimDeclarationMap,
     });
     const userMessage = new CompatibleRoleMessage.User([
-        new Media.Pdf({
-            mimeType: 'application/pdf',
-            base64: 'cGRm',
-        }),
+        new Media.Pdf('cGRm'),
     ]);
 
     const error = t.throws(() => messageCodec.encodeUserMessage(userMessage));

@@ -9,8 +9,6 @@ export abstract class Media {
 }
 
 export namespace Media {
-    export type Options = Omit<Media, never>;
-
     export class Image extends Media {
         public override mimeType: `image/${string}`;
         public base64: string;
@@ -23,7 +21,11 @@ export namespace Media {
         }
     }
     export namespace Image {
-        export type Options = Omit<Media.Image, never>;
+        export interface Options {
+            mimeType: `image/${string}`;
+            base64: string;
+            resolution: Media.Image.Resolution;
+        }
         export const enum Resolution {
             AUTO,
             LOW,
@@ -34,14 +36,9 @@ export namespace Media {
 
     export class Pdf extends Media {
         public override mimeType = 'application/pdf';
-        public base64: string;
-        public constructor(options: Media.Pdf.Options) {
+        public constructor(public base64: string) {
             super();
-            this.base64 = options.base64;
         }
-    }
-    export namespace Pdf {
-        export type Options = Omit<Media.Pdf, 'mimeType'>;
     }
 
     export class Text extends Media {
@@ -58,6 +55,9 @@ export namespace Media {
         }
     }
     export namespace Text {
-        export type Options = Omit<Media.Text, never>;
+        export interface Options {
+            mimeType: `text/${string}`;
+            text: string;
+        }
     }
 }
