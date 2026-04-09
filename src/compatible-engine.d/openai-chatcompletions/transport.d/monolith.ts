@@ -14,6 +14,7 @@ import type { Verbatim } from '../../../verbatim.ts';
 import { Validator } from '../../../compatible-engine/validation.ts';
 import * as ChoiceCodec from '../choice-codec.ts';
 import type { Structuring } from '../../../compatible-engine/structuring.ts';
+import { MIMEType } from 'whatwg-mimetype';
 
 
 
@@ -77,9 +78,12 @@ export abstract class MonolithTransport<
 
         // Get response
         if (res.ok) {} else {
-            if (res.headers.get('Content-Type') === 'application/json')
+            const contentType = res.headers.get('Content-Type');
+            if (contentType) {} else throw new Error(res.statusText, { cause: res });
+            const mimeType = new MIMEType(contentType);
+            if (mimeType.essence === 'application/json')
                 throw new Error(res.statusText, { cause: await res.json() });
-            else if (res.headers.get('Content-Type')?.startsWith('text/'))
+            else if (mimeType.type === 'text')
                 throw new Error(res.statusText, { cause: await res.text() });
             else throw new Error(res.statusText, { cause: res });
         }

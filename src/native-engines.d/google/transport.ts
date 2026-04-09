@@ -15,6 +15,7 @@ import type { Verbatim } from '../../verbatim.ts';
 import * as ChoiceCodec from '../../compatible-engine.d/google/choice-codec.ts';
 import type { Structuring } from '../../compatible-engine/structuring.ts';
 import type { Engine } from '../../engine.ts';
+import { MIMEType } from 'whatwg-mimetype';
 
 
 
@@ -79,7 +80,16 @@ export class GoogleNativeTransport<
             else throw e;
         });
         loggers.message.trace(res);
-        if (res.ok) {} else throw new Error(undefined, { cause: res });
+        if (res.ok) {} else {
+            const contentType = res.headers.get('Content-Type');
+            if (contentType) {} else throw new Error(res.statusText, { cause: res });
+            const mimeType = new MIMEType(contentType);
+            if (mimeType.essence === 'application/json')
+                throw new Error(res.statusText, { cause: await res.json() });
+            else if (mimeType.type === 'text')
+                throw new Error(res.statusText, { cause: await res.text() });
+            else throw new Error(res.statusText, { cause: res });
+        }
         const response = await res.json() as Google.GenerateContentResponse;
 
         if (response.candidates?.[0]?.content?.parts?.length) {} else throw new ResponseInvalid('Content missing', { cause: response });
