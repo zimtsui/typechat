@@ -77,11 +77,33 @@ test('OpenAI responses codec encodes multimodal user message', t => {
                 },
                 {
                     type: 'input_file',
-                    file_data: 'data:application/pdf;base64,cGRm',
+                    file_data: 'cGRm',
                 },
             ],
         },
     ]);
+});
+
+test('OpenAI responses codec encodes PDF file input as raw base64', t => {
+    const toolCodec = new OpenAIResponsesToolCodec({ fdm: functionDeclarationMap });
+    const messageCodec = new OpenAIResponsesMessageCodec({
+        toolCodec,
+        vdm: verbatimDeclarationMap,
+    });
+    const userMessage = new CompatibleRoleMessage.User([
+        new Media.Pdf('cGRm'),
+    ]);
+
+    const encoded = messageCodec.encodeUserMessage(userMessage);
+
+    t.deepEqual(encoded, [{
+        type: 'message',
+        role: 'user',
+        content: [{
+            type: 'input_file',
+            file_data: 'cGRm',
+        }],
+    }]);
 });
 
 test('OpenAI responses codec omits empty user message for pure tool responses', t => {

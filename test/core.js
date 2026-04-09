@@ -40,7 +40,7 @@ test('Throttle bypasses locking when rpm is unlimited', async t => {
             releaseRead: () => {
                 releaseReadCalls++;
             },
-        } as never,
+        },
     });
 
     t.is(acquireReadCalls, 0);
@@ -60,7 +60,7 @@ test('Throttle acquires and releases busy lock when rpm is finite', async t => {
             releaseRead: () => {
                 releaseReadCalls++;
             },
-        } as never,
+        },
     });
 
     t.is(acquireReadCalls, 1);

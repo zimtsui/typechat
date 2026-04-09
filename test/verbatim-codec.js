@@ -90,13 +90,13 @@ math: $x^2$
     `, verbatimDeclarationMap);
 
     t.is(requests.length, 2);
-    t.is(requests[0]!.name, 'submit');
-    t.deepEqual(requests[0]!.args, {
+    t.is(requests[0].name, 'submit');
+    t.deepEqual(requests[0].args, {
         title: 'Hello',
         body: '# Heading\nmath: $x^2$\n',
     });
-    t.is(requests[1]!.name, 'attachment');
-    t.deepEqual(requests[1]!.args, {
+    t.is(requests[1].name, 'attachment');
+    t.deepEqual(requests[1].args, {
         file: 'binary-ish <content>',
     });
 });
@@ -112,8 +112,8 @@ test('Verbatim request codec accepts flexible whitespace around request and para
     `, verbatimDeclarationMap);
 
     t.is(requests.length, 1);
-    t.is(requests[0]!.name, 'submit');
-    t.deepEqual(requests[0]!.args, {
+    t.is(requests[0].name, 'submit');
+    t.deepEqual(requests[0].args, {
         title: 'Hello',
         body: 'Body',
     });
@@ -128,7 +128,7 @@ test('Verbatim request codec accepts single-quoted attribute values', t => {
     `, verbatimDeclarationMap);
 
     t.is(requests.length, 1);
-    t.deepEqual(requests[0]!.args, {
+    t.deepEqual(requests[0].args, {
         title: 'Hello',
         body: 'Body',
     });
@@ -149,7 +149,7 @@ test('Verbatim request codec accepts mixed quotes and blank lines around CDATA',
     `, verbatimDeclarationMap);
 
     t.is(requests.length, 1);
-    t.deepEqual(requests[0]!.args, {
+    t.deepEqual(requests[0].args, {
         title: 'Hello',
         body: 'Body',
     });
@@ -168,11 +168,11 @@ test('Verbatim request codec accepts requests packed together without separators
     );
 
     t.is(requests.length, 2);
-    t.deepEqual(requests[0]!.args, {
+    t.deepEqual(requests[0].args, {
         title: 'A',
         body: 'B',
     });
-    t.deepEqual(requests[1]!.args, {
+    t.deepEqual(requests[1].args, {
         file: 'C',
     });
 });
@@ -189,7 +189,7 @@ test('Verbatim request codec preserves whitespace inside CDATA payloads', t => {
         </verbatim:request>
     `, verbatimDeclarationMap);
 
-    t.deepEqual(requests[0]!.args, {
+    t.deepEqual(requests[0].args, {
         title: '  Hello  ',
         body: '\n  line 1\n\n    line 2\n',
     });
@@ -212,7 +212,7 @@ test('Verbatim request codec accepts missing optional parameters', t => {
         </verbatim:request>
     `, verbatimDeclarationMap);
 
-    t.deepEqual(requests[0]!.args, {
+    t.deepEqual(requests[0].args, {
         title: 'Hello',
     });
 });
