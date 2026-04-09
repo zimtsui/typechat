@@ -1,5 +1,6 @@
 import test from 'ava';
 import { Type } from '@sinclair/typebox';
+import { MIMEType } from 'whatwg-mimetype';
 import { Function } from '../build/function.js';
 import { Media } from '../build/media.js';
 import { RoleMessage as CompatibleRoleMessage } from '../build/compatible-engine/session.js';
@@ -26,7 +27,7 @@ const verbatimDeclarationMap = {
         parameters: {
             body: {
                 description: 'Body text.',
-                mimeType: 'text/plain',
+                mimeType: new MIMEType('text/plain'),
             },
         },
     },
@@ -41,7 +42,7 @@ test('OpenAI responses codec encodes multimodal user message', t => {
     const userMessage = new CompatibleRoleMessage.User([
         new CompatibleRoleMessage.Part.Text('Hello.\n', []),
         new Media.Image({
-            mimeType: 'image/png',
+            mimeType: new MIMEType('image/png'),
             base64: 'aGVsbG8=',
             resolution: 2,
         }),
@@ -156,7 +157,7 @@ test('OpenAI chat completions codec rejects media user message', t => {
     });
     const userMessage = new CompatibleRoleMessage.User([
         new Media.Image({
-            mimeType: 'image/png',
+            mimeType: new MIMEType('image/png'),
             base64: 'aGVsbG8=',
             resolution: 0,
         }),
@@ -165,4 +166,23 @@ test('OpenAI chat completions codec rejects media user message', t => {
     const error = t.throws(() => messageCodec.encodeUserMessage(userMessage));
 
     t.is(error?.message, 'Unsupported user message type.');
+});
+
+test('Media image rejects non-image MIME type', t => {
+    const error = t.throws(() => new Media.Image({
+        mimeType: new MIMEType('text/plain'),
+        base64: 'aGVsbG8=',
+        resolution: 0,
+    }));
+
+    t.is(error?.message, 'Major MIME type of image must be `image`.');
+});
+
+test('Media text rejects non-text MIME type', t => {
+    const error = t.throws(() => new Media.Text({
+        mimeType: new MIMEType('application/json'),
+        text: '{}',
+    }));
+
+    t.is(error?.message, 'Major MIME type of text must be `text`.');
 });

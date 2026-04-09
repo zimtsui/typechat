@@ -2,7 +2,7 @@
 <verbatim:declaration name="{{this.name}}">
     <verbatim:description>{{this.description}}</verbatim:description>
     {{#each this.parameters}}
-    <verbatim:parameter name="{{this.name}}" mime-type="{{{this.mimeType}}}" required="{{#if this.required}}true{{else}}false{{/if}}">
+    <verbatim:parameter name="{{this.name}}" mime-type="{{XmlAttr this.mimeType}}" required="{{#if this.required}}true{{else}}false{{/if}}">
         <verbatim:description>{{this.description}}</verbatim:description>
     </verbatim:parameter>
     {{/each}}

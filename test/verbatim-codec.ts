@@ -1,4 +1,5 @@
 import test from 'ava';
+import { MIMEType } from 'whatwg-mimetype';
 import * as VerbatimCodec from '../build/verbatim/codec.js';
 
 
@@ -8,12 +9,12 @@ const verbatimDeclarationMap = {
         parameters: {
             title: {
                 description: 'Article title.',
-                mimeType: 'text/plain',
+                mimeType: new MIMEType('text/plain'),
                 required: false,
             },
             body: {
                 description: 'Article body.',
-                mimeType: 'text/markdown',
+                mimeType: new MIMEType('text/markdown'),
                 required: false,
             },
         },
@@ -23,7 +24,7 @@ const verbatimDeclarationMap = {
         parameters: {
             file: {
                 description: 'File content.',
-                mimeType: 'application/octet-stream',
+                mimeType: new MIMEType('application/octet-stream'),
                 required: false,
             },
         },
@@ -36,12 +37,12 @@ const requiredVerbatimDeclarationMap = {
         parameters: {
             title: {
                 description: 'Article title.',
-                mimeType: 'text/plain',
+                mimeType: new MIMEType('text/plain'),
                 required: true,
             },
             body: {
                 description: 'Article body.',
-                mimeType: 'text/markdown',
+                mimeType: new MIMEType('text/markdown'),
                 required: true,
             },
         },
@@ -56,6 +57,23 @@ test('Verbatim declarations codec renders channel metadata', t => {
     t.regex(xml, /<verbatim:parameter name="title" mime-type="text\/plain" required="false">/);
     t.regex(xml, /<verbatim:parameter name="body" mime-type="text\/markdown" required="false">/);
     t.regex(xml, /<verbatim:declaration name="attachment">/);
+});
+
+test('Verbatim declarations codec escapes quoted MIME parameters in XML attributes', t => {
+    const xml = VerbatimCodec.Declarations.encode({
+        submit: {
+            description: 'Submit an article.',
+            parameters: {
+                body: {
+                    description: 'Article body.',
+                    mimeType: new MIMEType('text/plain;charset="foo bar"'),
+                    required: false,
+                },
+            },
+        },
+    });
+
+    t.regex(xml, /mime-type="text\/plain;charset=&quot;foo bar&quot;"/);
 });
 
 test('Verbatim request codec decodes multiple requests with CDATA payloads', t => {
@@ -222,25 +240,37 @@ test('Verbatim request codec rejects duplicate parameters', t => {
 });
 
 test('Verbatim quotation codec encodes quotation text', t => {
-    const xml = VerbatimCodec.Quotation.encode('text/plain', 'echo hello');
+    const xml = VerbatimCodec.Quotation.encode(new MIMEType('text/plain'), 'echo hello');
 
     t.is(xml.trim(), '<verbatim:quotation mime-type="text/plain"><![CDATA[echo hello]]></verbatim:quotation>');
 });
 
 test('Verbatim quotation codec preserves CDATA terminator text', t => {
-    const xml = VerbatimCodec.Quotation.encode('text/plain', 'a ]]> b');
+    const xml = VerbatimCodec.Quotation.encode(new MIMEType('text/plain'), 'a ]]> b');
 
     t.is(xml.trim(), '<verbatim:quotation mime-type="text/plain"><![CDATA[a ]]> b]]></verbatim:quotation>');
 });
 
+test('Verbatim quotation codec escapes quoted MIME parameters in XML attributes', t => {
+    const xml = VerbatimCodec.Quotation.encode(new MIMEType('text/plain;charset="foo bar"'), 'echo hello');
+
+    t.is(xml.trim(), '<verbatim:quotation mime-type="text/plain;charset=&quot;foo bar&quot;"><![CDATA[echo hello]]></verbatim:quotation>');
+});
+
 test('Verbatim response codec encodes response text', t => {
-    const xml = VerbatimCodec.Response.encode('bash', 'text/plain', 'echo hello');
+    const xml = VerbatimCodec.Response.encode('bash', new MIMEType('text/plain'), 'echo hello');
 
     t.is(xml.trim(), '<verbatim:response name="bash" mime-type="text/plain"><![CDATA[echo hello]]></verbatim:response>');
 });
 
 test('Verbatim response codec preserves CDATA terminator text', t => {
-    const xml = VerbatimCodec.Response.encode('bash', 'text/plain', 'a ]]> b');
+    const xml = VerbatimCodec.Response.encode('bash', new MIMEType('text/plain'), 'a ]]> b');
 
     t.is(xml.trim(), '<verbatim:response name="bash" mime-type="text/plain"><![CDATA[a ]]> b]]></verbatim:response>');
+});
+
+test('Verbatim response codec escapes quoted MIME parameters in XML attributes', t => {
+    const xml = VerbatimCodec.Response.encode('bash', new MIMEType('text/plain;charset="foo bar"'), 'echo hello');
+
+    t.is(xml.trim(), '<verbatim:response name="bash" mime-type="text/plain;charset=&quot;foo bar&quot;"><![CDATA[echo hello]]></verbatim:response>');
 });
