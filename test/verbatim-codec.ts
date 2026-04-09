@@ -221,16 +221,16 @@ test('Verbatim request codec rejects duplicate parameters', t => {
     t.regex(error.message, /Duplicate argument of parameter title/);
 });
 
-test('Verbatim system codec encodes system text', t => {
-    const xml = VerbatimCodec.Quotation.encode('bash', 'text/plain', 'echo hello');
+test('Verbatim quotation codec encodes quotation text', t => {
+    const xml = VerbatimCodec.Quotation.encode('text/plain', 'echo hello');
 
-    t.is(xml.trim(), '<verbatim:system name="bash" mime-type="text/plain"><![CDATA[echo hello]]></verbatim:system>');
+    t.is(xml.trim(), '<verbatim:quotation mime-type="text/plain"><![CDATA[echo hello]]></verbatim:quotation>');
 });
 
-test('Verbatim system codec preserves CDATA terminator text', t => {
-    const xml = VerbatimCodec.Quotation.encode('bash', 'text/plain', 'a ]]> b');
+test('Verbatim quotation codec preserves CDATA terminator text', t => {
+    const xml = VerbatimCodec.Quotation.encode('text/plain', 'a ]]> b');
 
-    t.is(xml.trim(), '<verbatim:system name="bash" mime-type="text/plain"><![CDATA[a ]]> b]]></verbatim:system>');
+    t.is(xml.trim(), '<verbatim:quotation mime-type="text/plain"><![CDATA[a ]]> b]]></verbatim:quotation>');
 });
 
 test('Verbatim response codec encodes response text', t => {
