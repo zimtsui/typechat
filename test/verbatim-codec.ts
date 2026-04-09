@@ -222,13 +222,13 @@ test('Verbatim request codec rejects duplicate parameters', t => {
 });
 
 test('Verbatim system codec encodes system text', t => {
-    const xml = VerbatimCodec.System.encode('bash', 'text/plain', 'echo hello');
+    const xml = VerbatimCodec.Quotation.encode('bash', 'text/plain', 'echo hello');
 
     t.is(xml.trim(), '<verbatim:system name="bash" mime-type="text/plain"><![CDATA[echo hello]]></verbatim:system>');
 });
 
 test('Verbatim system codec preserves CDATA terminator text', t => {
-    const xml = VerbatimCodec.System.encode('bash', 'text/plain', 'a ]]> b');
+    const xml = VerbatimCodec.Quotation.encode('bash', 'text/plain', 'a ]]> b');
 
     t.is(xml.trim(), '<verbatim:system name="bash" mime-type="text/plain"><![CDATA[a ]]> b]]></verbatim:system>');
 });

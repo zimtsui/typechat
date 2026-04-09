@@ -1,3 +1,5 @@
+import * as VerbatimCodec from './verbatim/codec.ts';
+
 const NOMINAL = Symbol();
 
 
@@ -31,16 +33,15 @@ export namespace Media {
     }
 
     export class Pdf extends Media {
-        public override mimeType: `application/pdf`;
+        public override mimeType = 'application/pdf';
         public base64: string;
         public constructor(options: Media.Pdf.Options) {
             super();
-            this.mimeType = options.mimeType;
             this.base64 = options.base64;
         }
     }
     export namespace Pdf {
-        export type Options = Omit<Media.Pdf, never>;
+        export type Options = Omit<Media.Pdf, 'mimeType'>;
     }
 
     export class Text extends Media {
@@ -50,6 +51,10 @@ export namespace Media {
             super();
             this.mimeType = options.mimeType;
             this.text = options.text;
+        }
+
+        public quote(): string {
+            return VerbatimCodec.Quotation.encode(this.mimeType, this.text);
         }
     }
     export namespace Text {
