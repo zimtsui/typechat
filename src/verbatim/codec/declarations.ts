@@ -49,7 +49,7 @@ export function encode<vdm extends Verbatim.Decl.Map.Proto>(
                     ([name, parameter]) => ({
                         name,
                         description: parameter.description,
-                        mimeType: parameter.mimeType,
+                        mimeType: `${parameter.mimeType}`,
                         required: parameter.required,
                     }),
                 ),

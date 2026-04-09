@@ -53,7 +53,7 @@ export class MessageCodec<
                 return this.ctx.toolCodec.encodeFunctionResponse(part);
             else if (part instanceof Media.Pdf)
                 return Google.createPartFromBase64(
-                    part.base64, part.mimeType,
+                    part.base64, `${part.mimeType}`,
                     Google.PartMediaResolutionLevel.MEDIA_RESOLUTION_MEDIUM,
                 );
             else throw new Error();

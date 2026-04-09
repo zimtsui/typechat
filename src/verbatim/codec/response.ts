@@ -1,6 +1,7 @@
 import Handlebars from 'handlebars';
 import Assets from '../../assets.ts';
 import { loggers } from '../../telemetry.ts';
+import { MIMEType } from 'whatwg-mimetype';
 
 
 const template = Handlebars.compile<template.Input>(Assets.verbatim.response);
@@ -12,8 +13,8 @@ namespace template {
     }
 }
 
-export function encode(name: string, mimeType: string, text: string): string {
+export function encode(name: string, mimeType: MIMEType, text: string): string {
     if (text.includes(']]>'))
         loggers.message.warn('The text contains "]]>", which is not allowed in XML CDATA sections. ');
-    return template({ name, mimeType, text });
+    return template({ name, mimeType: `${mimeType}`, text });
 }

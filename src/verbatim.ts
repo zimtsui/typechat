@@ -1,3 +1,4 @@
+import { MIMEType } from 'whatwg-mimetype';
 
 const NOMINAL = Symbol();
 
@@ -31,7 +32,7 @@ export namespace Verbatim {
         export namespace Param {
             export interface Body {
                 description: string;
-                mimeType: string;
+                mimeType: MIMEType;
                 required: boolean;
             }
         }

@@ -36,8 +36,10 @@
   "peerDependencies": {
     "@sinclair/typebox": "^0.34.40",
     "@types/node": "^22.17.2",
+    "@types/whatwg-mimetype": "^5.0.0",
     "@zimtsui/typelemetry": "^0.0.47",
-    "@zimtsui/typelocks": "^0.0.28"
+    "@zimtsui/typelocks": "^0.0.28",
+    "whatwg-mimetype": "^5.0.0"
   },
   "devDependencies": {
     "ava": "^7.0.0",
