@@ -29,7 +29,8 @@ You can make a request through a channel in the form of
     <verbatim:parameter name="NAME_OF_PARAMETER_2"><![CDATA[ARGUMENT_OF_PARAMETER]]></verbatim:parameter>
 </verbatim:request>
 
-All arguments must be wrapped in CDATA.
+-   All arguments must be wrapped in CDATA.
+-   Additional XML attributes are not allowed.
 
 ## Response
 
