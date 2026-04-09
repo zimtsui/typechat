@@ -90,7 +90,13 @@ export class Transport<
         });
 
         // Get response
-        if (res.ok) {} else throw new Error(undefined, { cause: res });
+        if (res.ok) {} else {
+            if (res.headers.get('Content-Type') === 'application/json')
+                throw new Error(res.statusText, { cause: await res.json() });
+            else if (res.headers.get('Content-Type')?.startsWith('text/'))
+                throw new Error(res.statusText, { cause: await res.text() });
+            else throw new Error(res.statusText, { cause: res });
+        }
         const response = await res.json() as OpenAI.Responses.Response;
         loggers.message.trace(response);
 
