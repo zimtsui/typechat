@@ -1,6 +1,7 @@
 import { Function } from '../function.ts';
 import { Engine } from '../engine.ts';
 import { Verbatim } from '../verbatim.ts';
+import { Media } from '../media.ts';
 
 const NOMINAL = Symbol();
 
@@ -145,6 +146,7 @@ export namespace RoleMessage {
         export type Part<fdu extends Function.Decl.Proto> =
             |   RoleMessage.Part.Text<never>
             |   Function.Response.Of<fdu>
+            |   Media
         ;
     }
 

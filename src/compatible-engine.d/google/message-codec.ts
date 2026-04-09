@@ -5,6 +5,7 @@ import * as Google from '@google/genai';
 import { type ToolCodec } from '../../api-types/google/tool-codec.ts';
 import type { Verbatim } from '../../verbatim.ts';
 import * as VerbatimCodec from '../../verbatim/codec.ts';
+import { Media } from '../../media.ts';
 
 const NOMINAL = Symbol();
 
@@ -50,6 +51,11 @@ export class MessageCodec<
                 return Google.createPartFromText(part.text);
             else if (part instanceof Function.Response)
                 return this.ctx.toolCodec.encodeFunctionResponse(part);
+            else if (part instanceof Media.Pdf)
+                return Google.createPartFromBase64(
+                    part.base64, part.mimeType,
+                    Google.PartMediaResolutionLevel.MEDIA_RESOLUTION_MEDIUM,
+                );
             else throw new Error();
         });
         return Google.createUserContent(parts);

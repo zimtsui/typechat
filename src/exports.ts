@@ -10,3 +10,4 @@ export * from './endpoint-spec.ts';
 export * from './compatible-engine.d/agentloop.ts';
 export * from './engine.ts';
 export * from './compatible-engine.ts';
+export * from './media.ts';

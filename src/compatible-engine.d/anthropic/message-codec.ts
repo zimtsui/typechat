@@ -62,7 +62,7 @@ export class MessageCodec<
             return { role: 'user', content: this.encodeUserMessage(chatMessage) };
         else if (chatMessage instanceof RoleMessage.Ai)
             return { role: 'assistant', content: this.encodeAiMessage(chatMessage) };
-        else throw new Error();
+        else throw new Error('Unsupported chat message type.');
     }
 
     public decodeAiMessage(

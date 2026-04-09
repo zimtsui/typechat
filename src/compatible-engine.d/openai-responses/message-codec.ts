@@ -5,6 +5,7 @@ import type { ToolCodec } from '../../api-types/openai-responses/tool-codec.ts';
 import type { Verbatim } from '../../verbatim.ts';
 import * as VerbatimCodec from '../../verbatim/codec.ts';
 import { ResponseInvalid } from '../../engine.ts';
+import { Media } from '../../media.ts';
 
 const NOMINAL = Symbol();
 
@@ -45,20 +46,48 @@ export class MessageCodec<
         return new MessageCodec.Message.Ai(parts, output);
     }
 
+    protected encodeImageResolution(
+        resolution: Media.Image.Resolution
+    ): OpenAI.Responses.ResponseInputImage['detail'] {
+        if (resolution === Media.Image.Resolution.LOW) return 'low';
+        else if (resolution === Media.Image.Resolution.HIGH) return 'high';
+        else if (resolution === Media.Image.Resolution.HIGHEST) return 'original';
+        else if (resolution === Media.Image.Resolution.AUTO) return 'auto';
+        else throw new Error();
+    }
+
     public encodeUserMessage(
         userMessage: RoleMessage.User.From<fdm>,
     ): OpenAI.Responses.ResponseInput {
-        return userMessage.getParts().map(part => {
+        const responseInput: OpenAI.Responses.ResponseInput = [];
+        const frs = userMessage.getFunctionResponses();
+        responseInput.push(...frs.map(fr => this.ctx.toolCodec.encodeFunctionResponse(fr)));
+        const content = userMessage.getParts().flatMap<OpenAI.Responses.ResponseInputContent>(part => {
             if (part instanceof RoleMessage.Part.Text)
-                return {
-                    type: 'message',
-                    role: 'user',
-                    content: part.text,
-                } satisfies OpenAI.Responses.EasyInputMessage;
-            else if (part instanceof Function.Response)
-                return this.ctx.toolCodec.encodeFunctionResponse(part);
+                return [{
+                    type: 'input_text',
+                    text: part.text,
+                } satisfies OpenAI.Responses.ResponseInputText];
+            else if (part instanceof Function.Response) return [];
+            else if (part instanceof Media.Image)
+                return [{
+                    type: 'input_image',
+                    image_url: `data:${part.mimeType};base64,${part.base64}`,
+                    detail: this.encodeImageResolution(part.resolution),
+                } satisfies OpenAI.Responses.ResponseInputImage];
+            else if (part instanceof Media.Pdf)
+                return [{
+                    type: 'input_file',
+                    file_data: `data:${part.mimeType};base64,${part.base64}`,
+                } satisfies OpenAI.Responses.ResponseInputFile];
             else throw new Error();
         });
+        if (content.length) responseInput.push({
+            type: 'message',
+            role: 'user',
+            content,
+        });
+        return responseInput;
     }
 
     public encodeAiMessage(

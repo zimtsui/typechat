@@ -51,7 +51,7 @@ export class MessageCodec<
             return [{ role: 'user', content: textParts.map(part => ({ type: 'text', text: part.text })) }];
         else if (!textParts.length && frs.length)
             return frs.map(fr => this.ctx.toolCodec.encodeFunctionResponse(fr));
-        else throw new Error();
+        else throw new Error('Unsupported user message type.');
     }
 
     public encodeAiMessage(
