@@ -51,11 +51,11 @@ export class Transport<
             if (item.type === 'message') {
                 if (item.content.every(part => part.type === 'output_text')) {} else
                     throw new ResponseInvalid('Refusal', { cause: output });
-                loggers.inference.debug(item.content.map(part => part.text).join(''));
+                loggers.inference.info(item.content.map(part => part.text).join(''));
             } else if (item.type === 'function_call')
-                loggers.message.debug(item);
+                loggers.message.info(item);
             else if (item.type === 'apply_patch_call')
-                loggers.message.debug(item);
+                loggers.message.info(item);
     }
 
     public async fetch(
@@ -111,7 +111,7 @@ export class Transport<
 
         this.logAiMessage(response.output);
         wfctx.cost?.(this.ctx.billing.charge(response.usage));
-        loggers.message.debug(response.usage);
+        loggers.message.info(response.usage);
 
         return this.ctx.messageCodec.decodeAiMessage(response.output);
     }

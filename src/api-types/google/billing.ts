@@ -7,7 +7,7 @@ export class Billing {
     public constructor(protected ctx: Billing.Context) {}
 
     public charge(usageMetadata: Google.GenerateContentResponseUsageMetadata): number {
-        loggers.message.debug(usageMetadata);
+        loggers.message.info(usageMetadata);
 
         if (usageMetadata.promptTokenCount) {} else throw new Error('Prompt token count missing.', { cause: usageMetadata });
         const candidatesTokenCount = usageMetadata.candidatesTokenCount ?? 0;

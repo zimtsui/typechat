@@ -99,8 +99,8 @@ export class GoogleNativeTransport<
         else throw new ResponseInvalid('Abnormal finish reason', { cause: response });
 
         for (const part of response.candidates[0].content.parts) {
-            if (part.text) loggers.inference.debug(part.text + '\n');
-            if (part.functionCall) loggers.message.debug(part.functionCall);
+            if (part.text) loggers.inference.info(part.text);
+            if (part.functionCall) loggers.message.info(part.functionCall);
         }
 
         if (response.usageMetadata) {} else throw new ResponseInvalid('Usage metadata missing', { cause: response });

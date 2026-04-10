@@ -99,9 +99,9 @@ export abstract class MonolithTransport<
         if (completion.usage) {} else throw new Error();
         const cost = this.ctx.billing.charge(completion.usage);
 
-        if (choice.message.content) loggers.inference.debug(choice.message.content);
-        if (choice.message.tool_calls) loggers.message.debug(choice.message.tool_calls);
-        loggers.message.debug(completion.usage);
+        if (choice.message.content) loggers.inference.info(choice.message.content);
+        if (choice.message.tool_calls) loggers.message.info(choice.message.tool_calls);
+        loggers.message.info(completion.usage);
         wfctx.cost?.(cost);
 
         return this.ctx.messageCodec.decodeAiMessage(choice.message);

@@ -97,8 +97,8 @@ export class Transport<
         else throw new ResponseInvalid('Abnormal finish reason', { cause: response });
         if (response.usageMetadata) {} else throw new ResponseInvalid('Usage metadata missing', { cause: response });
         for (const part of response.candidates[0].content.parts) {
-            if (part.text) loggers.inference.debug(part.text);
-            if (part.functionCall) loggers.message.debug(part.functionCall);
+            if (part.text) loggers.inference.info(part.text);
+            if (part.functionCall) loggers.message.info(part.functionCall);
         }
         wfctx.cost?.(this.ctx.billing.charge(response.usageMetadata));
 

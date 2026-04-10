@@ -191,15 +191,15 @@ export abstract class StreamTransport<
             const choice = completion.choices[0];
             if (choice) {} else throw new ResponseInvalid('Content missing', { cause: completion });
             if (thoughts) loggers.inference.trace(thoughts);
-            if (choice.message.content) loggers.inference.debug(choice.message.content);
+            if (choice.message.content) loggers.inference.info(choice.message.content);
 
             this.handleFinishReason(completion, choice.finish_reason);
 
             if (completion.usage) {} else throw new Error();
             const cost = this.ctx.billing.charge(completion.usage);
 
-            if (choice.message.tool_calls) loggers.message.debug(choice.message.tool_calls);
-            loggers.message.debug(completion.usage);
+            if (choice.message.tool_calls) loggers.message.info(choice.message.tool_calls);
+            loggers.message.info(completion.usage);
             wfctx.cost?.(cost);
 
             return this.ctx.messageCodec.decodeAiMessage(choice.message);

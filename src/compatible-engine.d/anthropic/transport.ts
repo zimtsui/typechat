@@ -107,7 +107,7 @@ export class Transport<
                         } else throw new Error('Unknown type of content block delta', { cause: event.delta });
                     } else if (event.type === 'content_block_stop') {
                         const contentBlock = response.content[event.index];
-                        if (contentBlock?.type === 'text') loggers.inference.debug(contentBlock.text);
+                        if (contentBlock?.type === 'text') loggers.inference.info(contentBlock.text);
                         else if (contentBlock?.type === 'thinking') loggers.inference.trace(contentBlock.thinking);
                         loggers.message.trace(event);
                         if (contentBlock?.type === 'tool_use') {
@@ -117,7 +117,7 @@ export class Transport<
                             } catch (e) {
                                 throw new ResponseInvalid('Invalid JSON of tool use input', { cause: contentBlock.input });
                             }
-                            loggers.message.debug(contentBlock);
+                            loggers.message.info(contentBlock);
                         }
                     } else throw new Error('Unknown stream event', { cause: event });
                 }
@@ -134,7 +134,7 @@ export class Transport<
             throw new ResponseInvalid('Token limit exceeded.', { cause: response });
         if (response.stop_reason === 'end_turn' || response.stop_reason === 'tool_use') {}
         else throw new ResponseInvalid('Abnormal stop reason', { cause: response });
-        loggers.message.debug(response.usage);
+        loggers.message.info(response.usage);
         wfctx.cost?.(this.ctx.billing.charge(response.usage));
 
         return this.ctx.messageCodec.decodeAiMessage(response.content);
