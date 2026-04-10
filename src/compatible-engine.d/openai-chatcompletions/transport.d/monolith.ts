@@ -58,7 +58,7 @@ export abstract class MonolithTransport<
 
         // Prepare request
         const params = this.makeParams(session);
-        loggers.message.trace(params);
+        loggers.message.debug(params);
 
         // Send request
         const res = await Undici.fetch(this.ctx.apiURL, {
@@ -88,7 +88,7 @@ export abstract class MonolithTransport<
             else throw new Error(res.statusText, { cause: res });
         }
         const completion = await res.json() as OpenAI.ChatCompletion;
-        loggers.message.trace(completion);
+        loggers.message.debug(completion);
 
         // Validate response
         const choice = completion.choices[0];

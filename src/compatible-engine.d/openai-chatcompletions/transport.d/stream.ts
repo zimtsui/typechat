@@ -102,7 +102,7 @@ export abstract class StreamTransport<
 
             // Prepare request
             const params = this.makeParams(session);
-            loggers.message.trace(params);
+            loggers.message.debug(params);
 
             // Send request
             const stream = await this.client.chat.completions.create(params, { signal });
@@ -190,7 +190,7 @@ export abstract class StreamTransport<
 
             const choice = completion.choices[0];
             if (choice) {} else throw new ResponseInvalid('Content missing', { cause: completion });
-            if (thoughts) loggers.inference.trace(thoughts);
+            if (thoughts) loggers.inference.debug(thoughts);
             if (choice.message.content) loggers.inference.info(choice.message.content);
 
             this.handleFinishReason(completion, choice.finish_reason);

@@ -57,7 +57,7 @@ export class Transport<
                 ...this.ctx.inferenceParams.additionalOptions,
             } : undefined,
         };
-        loggers.message.trace(reqbody);
+        loggers.message.debug(reqbody);
 
         // Send request
         const res = await Undici.fetch(this.apiURL, {
@@ -87,7 +87,7 @@ export class Transport<
             else throw new Error(res.statusText, { cause: res });
         }
         const response = await res.json() as Google.GenerateContentResponse;
-        loggers.message.trace(response);
+        loggers.message.debug(response);
 
         // Validate response
         if (response.candidates?.[0]?.content?.parts?.length) {} else throw new ResponseInvalid('Content missing', { cause: response });

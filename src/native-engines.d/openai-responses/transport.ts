@@ -67,7 +67,7 @@ export class Transport<
 
         // Prepare request
         const params = this.makeParams(session);
-        loggers.message.trace(params);
+        loggers.message.debug(params);
 
         // Send request
         const res = await Undici.fetch(
@@ -100,7 +100,7 @@ export class Transport<
             else throw new Error(res.statusText, { cause: res });
         }
         const response = await res.json() as OpenAI.Responses.Response;
-        loggers.message.trace(response);
+        loggers.message.debug(response);
 
         // Validate response
         if (response.status === 'incomplete' && response.incomplete_details?.reason === 'max_output_tokens')

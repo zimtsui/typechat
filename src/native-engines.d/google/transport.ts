@@ -63,7 +63,7 @@ export class GoogleNativeTransport<
             } : undefined,
         };
 
-        loggers.message.trace(reqbody);
+        loggers.message.debug(reqbody);
 
         const res = await Undici.fetch(this.apiURL, {
             method: 'POST',
@@ -79,7 +79,7 @@ export class GoogleNativeTransport<
                 throw new NetworkError(undefined, { cause: e });
             else throw e;
         });
-        loggers.message.trace(res);
+        loggers.message.debug(res);
         if (res.ok) {} else {
             const contentType = res.headers.get('Content-Type');
             if (contentType) {} else throw new Error(res.statusText, { cause: res });

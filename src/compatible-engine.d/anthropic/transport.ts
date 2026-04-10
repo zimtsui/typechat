@@ -59,7 +59,7 @@ export class Transport<
 
         // Prepare request
         const params = this.makeParams(session);
-        loggers.message.trace(params);
+        loggers.message.debug(params);
 
         // Send request
         const stream = this.client.messages.stream(params, { signal });
@@ -69,12 +69,12 @@ export class Transport<
         try {
             for await (const event of stream) {
                 if (event.type === 'message_start') {
-                    loggers.message.trace(event);
+                    loggers.message.debug(event);
                     response = structuredClone(event.message);
                 } else {
                     if (response) {} else throw new Error();
                     if (event.type === 'message_delta') {
-                        loggers.message.trace(event);
+                        loggers.message.debug(event);
                         response.stop_sequence = event.delta.stop_sequence ?? response.stop_sequence;
                         response.stop_reason = event.delta.stop_reason ?? response.stop_reason;
                         response.usage.input_tokens = event.usage.input_tokens ?? response.usage.input_tokens;
@@ -83,9 +83,9 @@ export class Transport<
                         response.usage.cache_creation_input_tokens = event.usage.cache_creation_input_tokens ?? response.usage.cache_creation_input_tokens;
                         response.usage.server_tool_use = event.usage.server_tool_use ?? response.usage.server_tool_use;
                     } else if (event.type === 'message_stop') {
-                        loggers.message.trace(event);
+                        loggers.message.debug(event);
                     } else if (event.type === 'content_block_start') {
-                        loggers.message.trace(event);
+                        loggers.message.debug(event);
                         const contentBlock = structuredClone(event.content_block);
                         response.content.push(contentBlock);
                         if (contentBlock.type === 'tool_use') contentBlock.input = '';
@@ -108,8 +108,8 @@ export class Transport<
                     } else if (event.type === 'content_block_stop') {
                         const contentBlock = response.content[event.index];
                         if (contentBlock?.type === 'text') loggers.inference.info(contentBlock.text);
-                        else if (contentBlock?.type === 'thinking') loggers.inference.trace(contentBlock.thinking);
-                        loggers.message.trace(event);
+                        else if (contentBlock?.type === 'thinking') loggers.inference.debug(contentBlock.thinking);
+                        loggers.message.debug(event);
                         if (contentBlock?.type === 'tool_use') {
                             if (typeof contentBlock.input === 'string') {} else throw new Error();
                             try {
