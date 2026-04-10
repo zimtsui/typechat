@@ -9,7 +9,6 @@ import { loggers } from '../../telemetry.ts';
 import type { MessageCodec } from './message-codec.ts';
 import type { ToolCodec } from '../../api-types/openai-responses/tool-codec.ts';
 import type { Billing } from '../../api-types/openai-responses/billing.ts';
-import type { Validator } from './validation.ts';
 import type { Verbatim } from '../../verbatim.ts';
 import * as ChoiceCodec from './choice-codec.ts';
 import { Structuring } from './structuring.ts';
@@ -132,6 +131,5 @@ export namespace Transport {
         messageCodec: MessageCodec<fdm, vdm>;
         toolCodec: ToolCodec<fdm>;
         billing: Billing;
-        validator: Validator.From<fdm, vdm>;
     }
 }

@@ -10,7 +10,6 @@ import type { OpenAIChatCompletionsToolCodec } from '../../../api-types/openai-c
 import { Throttle } from '../../../throttle.ts';
 import { type MessageCodec } from '../message-codec.ts';
 import type { Verbatim } from '../../../verbatim.ts';
-import { Validator } from '../../../compatible-engine/validation.ts';
 import type { Structuring } from '../../../compatible-engine/structuring.ts';
 import * as ChoiceCodec from '../choice-codec.ts';
 
@@ -231,6 +230,5 @@ export namespace StreamTransport {
         messageCodec: MessageCodec<fdm, vdm>;
         toolCodec: OpenAIChatCompletionsToolCodec<fdm>;
         billing: OpenAIChatCompletionsBilling;
-        validator: Validator.From<fdm, vdm>;
     }
 }

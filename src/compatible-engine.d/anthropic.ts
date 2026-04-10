@@ -2,7 +2,6 @@ import { CompatibleEngine } from '../compatible-engine.ts';
 import { Function } from '../function.ts';
 import { ToolCodec } from '../api-types/anthropic/tool-codec.ts';
 import { Billing } from '../api-types/anthropic/billing.ts';
-import { Validator } from '../compatible-engine/validation.ts';
 import * as MessageCodecModule from './anthropic/message-codec.ts';
 import * as TransportModule from './anthropic/transport.ts';
 import * as ChoiceCodecModule from './anthropic/choice-codec.ts';
@@ -22,7 +21,6 @@ export namespace AnthropicCompatibleEngine {
         protected toolCodec: ToolCodec<fdm>;
         protected messageCodec: AnthropicCompatibleEngine.MessageCodec<fdm, vdm>;
         protected billing: Billing;
-        protected validator: Validator.From<fdm, vdm>;
         protected transport: AnthropicCompatibleEngine.Transport<fdm, vdm>;
 
         public constructor(options: AnthropicCompatibleEngine.Options<fdm, vdm>) {
@@ -33,7 +31,6 @@ export namespace AnthropicCompatibleEngine {
                 vdm: this.vdm,
             });
             this.billing = new Billing({ pricing: this.pricing });
-            this.validator = new Validator({ choice: this.choice });
             this.transport = new AnthropicCompatibleEngine.Transport({
                 providerSpec: this.providerSpec,
                 inferenceSpec: this.inferenceParams,
@@ -43,7 +40,6 @@ export namespace AnthropicCompatibleEngine {
                 messageCodec: this.messageCodec,
                 toolCodec: this.toolCodec,
                 billing: this.billing,
-                validator: this.validator,
             });
         }
     }

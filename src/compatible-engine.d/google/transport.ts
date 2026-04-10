@@ -11,7 +11,6 @@ import type { MessageCodec } from './message-codec.ts';
 import type { ToolCodec } from '../../api-types/google/tool-codec.ts';
 import type { Billing } from '../../api-types/google/billing.ts';
 import type { Verbatim } from '../../verbatim.ts';
-import type { Validator } from '../../compatible-engine/validation.ts';
 import type { Structuring } from '../../compatible-engine/structuring.ts';
 import * as ChoiceCodec from './choice-codec.ts';
 import { MIMEType } from 'whatwg-mimetype';
@@ -121,6 +120,5 @@ export namespace Transport {
         messageCodec: MessageCodec<fdm, vdm>;
         toolCodec: ToolCodec<fdm>;
         billing: Billing;
-        validator: Validator.From<fdm, vdm>;
     }
 }

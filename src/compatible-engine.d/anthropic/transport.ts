@@ -9,7 +9,6 @@ import type { MessageCodec } from './message-codec.ts';
 import type { Billing } from '../../api-types/anthropic/billing.ts';
 import type { ToolCodec } from '../../api-types/anthropic/tool-codec.ts';
 import type { Verbatim } from '../../verbatim.ts';
-import { Validator } from '../../compatible-engine/validation.ts';
 import * as ChoiceCodec from './choice-codec.ts';
 import type { Structuring } from '../../compatible-engine/structuring.ts';
 import type { Engine } from '../../engine.ts';
@@ -161,6 +160,5 @@ export namespace Transport {
         messageCodec: MessageCodec<fdm, vdm>;
         toolCodec: ToolCodec<fdm>;
         billing: Billing;
-        validator: Validator.From<fdm, vdm>;
     }
 }

@@ -37,7 +37,8 @@ export namespace GoogleNativeEngine {
         protected compatibleMessageCodec: CompatibleMessageCodec<fdm, vdm>;
         protected messageCodec: GoogleNativeEngine.MessageCodec<fdm, vdm>;
         protected billing: Billing;
-        protected override validator: GoogleNativeEngine.Validator.From<fdm, vdm>;
+        protected override structuringValidator: GoogleNativeEngine.StructuringValidator.From<fdm, vdm>;
+        protected override partsValidator: GoogleNativeEngine.PartsValidator.From<fdm, vdm>;
         protected override transport: GoogleNativeTransport<fdm, vdm>;
 
         public constructor(options: GoogleNativeEngine.Options<fdm, vdm>) {
@@ -62,7 +63,8 @@ export namespace GoogleNativeEngine {
                 vdm: this.vdm,
             });
             this.billing = new Billing({ pricing: this.pricing });
-            this.validator = new GoogleNativeEngine.Validator({ choice: this.choice });
+            this.structuringValidator = new GoogleNativeEngine.StructuringValidator({ choice: this.choice });
+            this.partsValidator = new GoogleNativeEngine.PartsValidator();
             this.transport = new GoogleNativeTransport({
                 inferenceParams: this.inferenceParams,
                 providerSpec: this.providerSpec,
@@ -75,7 +77,6 @@ export namespace GoogleNativeEngine {
                 messageCodec: this.messageCodec,
                 toolCodec: this.toolCodec,
                 billing: this.billing,
-                validator: this.validator,
             });
         }
 
@@ -118,6 +119,7 @@ export namespace GoogleNativeEngine {
 
     export import Session = SessionModule.Session;
     export import RoleMessage = SessionModule.RoleMessage;
-    export import Validator = ValidationModule.Validator;
+    export import StructuringValidator = ValidationModule.StructuringValidator;
+    export import PartsValidator = ValidationModule.PartsValidator;
     export import MessageCodec = MessageCodecModule.MessageCodec;
 }

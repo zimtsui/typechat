@@ -5,15 +5,16 @@ import { RoleMessage } from './session.ts';
 import { ResponseInvalid } from '../../engine.ts';
 import type { Engine } from '../../engine.ts';
 import * as VerbatimCodec from '../../verbatim/codec.ts';
+import { PartsValidator as CompatiblePartsValidator } from '../../compatible-engine/validation.ts';
 
 
-export class Validator<
+export class StructuringValidator<
     in out fdu extends Function.Decl.Proto,
     in out vdu extends Verbatim.Decl.Proto,
-> implements Engine.Validator<RoleMessage.User<fdu>, RoleMessage.Ai<fdu, vdu>> {
-    public constructor(protected ctx: Validator.Context<fdu, vdu>) {}
+> implements Engine.StructuringValidator<RoleMessage.User<fdu>, RoleMessage.Ai<fdu, vdu>> {
+    public constructor(protected ctx: StructuringValidator.Context<fdu, vdu>) {}
 
-    public validateMessageStructuring(message: RoleMessage.Ai<fdu, vdu>) {
+    public validate(message: RoleMessage.Ai<fdu, vdu>) {
         const tcs = message.getToolCalls();
         const vrs = message.getVerbatimRequests();
 
@@ -104,20 +105,13 @@ export class Validator<
 
         }
     }
-
-    public validateMessageParts(
-        message: RoleMessage.Ai<fdu, vdu>,
-    ): void {
-        const parts = message.getParts();
-        if (parts.length) {} else throw new ResponseInvalid('Empty message.');
-    }
 }
 
-export namespace Validator {
+export namespace StructuringValidator {
     export type From<
         fdm extends Function.Decl.Map.Proto,
         vdm extends Verbatim.Decl.Map.Proto,
-    > = Validator<Function.Decl.From<fdm>, Verbatim.Decl.From<vdm>>;
+    > = StructuringValidator<Function.Decl.From<fdm>, Verbatim.Decl.From<vdm>>;
 
     export interface Context<
         in out fdu extends Function.Decl.Proto,
@@ -131,4 +125,28 @@ export namespace Validator {
             vdm extends Verbatim.Decl.Map.Proto,
         > = Context<Function.Decl.From<fdm>, Verbatim.Decl.From<vdm>>;
     }
+}
+
+export class PartsValidator<
+    in out fdu extends Function.Decl.Proto,
+    in out vdu extends Verbatim.Decl.Proto,
+> implements Engine.PartsValidator<RoleMessage.User<fdu>, RoleMessage.Ai<fdu, vdu>> {
+    protected compatiblePartsValidator: CompatiblePartsValidator<fdu, vdu>;
+    public constructor() {
+        this.compatiblePartsValidator = new CompatiblePartsValidator();
+    }
+
+    public validate(
+        message: RoleMessage.Ai<fdu, vdu>,
+    ): void {
+        if (message.getParts().length) {} else throw new ResponseInvalid('Empty message.');
+        this.compatiblePartsValidator.validateMessageTextParts(message.getTextParts());
+    }
+}
+
+export namespace PartsValidator {
+    export type From<
+        fdm extends Function.Decl.Map.Proto,
+        vdm extends Verbatim.Decl.Map.Proto,
+    > = PartsValidator<Function.Decl.From<fdm>, Verbatim.Decl.From<vdm>>;
 }

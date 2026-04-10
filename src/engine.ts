@@ -49,7 +49,8 @@ export namespace Engine {
         public fdm: fdm;
         public vdm: vdm;
         protected throttle: Throttle;
-        protected abstract validator: Engine.Validator.From<userm, aim>;
+        protected abstract structuringValidator: Engine.StructuringValidator.From<userm, aim>;
+        protected abstract partsValidator: Engine.PartsValidator.From<userm, aim>;
         protected abstract transport: Engine.Transport<userm, aim, devm, session>;
 
         public constructor(options: Engine.Options<fdm, vdm>) {
@@ -96,7 +97,7 @@ export namespace Engine {
             signal?: AbortSignal,
         ): Promise<aim> {
             const aiMessage = await this.transport.fetch(wfctx, session, signal);
-            this.validator.validateMessageParts(aiMessage);
+            this.partsValidator.validate(aiMessage);
             return aiMessage;
         }
 
@@ -119,7 +120,7 @@ export namespace Engine {
                 const signal = AbortSignal.any(signals);
                 try {
                     const response = await this.infer(wfctx, session, signal);
-                    const rejection = this.validator.validateMessageStructuring(response);
+                    const rejection = this.structuringValidator.validate(response);
                     if (rejection) throw new ResponseInvalid.Recoverable();
                     if (await validate(response)) {} else throw new CustomRetry(undefined, { cause: response });
                     return response;
@@ -150,7 +151,7 @@ export namespace Engine {
                 const signal = AbortSignal.any(signals);
                 try {
                     const response = await this.infer(wfctx, session, signal);
-                    const rejection = this.validator.validateMessageStructuring(response);
+                    const rejection = this.structuringValidator.validate(response);
                     if (rejection) {
                         session.chatMessages.push(response, rejection);
                         throw new ResponseInvalid.Recoverable();
@@ -197,7 +198,8 @@ export namespace Engine {
 
 
     export import Session = SessionModule.Session;
-    export import Validator = ValidationModule.Validator;
+    export import StructuringValidator = ValidationModule.StructuringValidator;
+    export import PartsValidator = ValidationModule.PartsValidator;
     export import Transport = TransportModule.Transport;
 }
 

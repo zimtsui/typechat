@@ -11,7 +11,6 @@ import type { OpenAIChatCompletionsToolCodec } from '../../../api-types/openai-c
 import type { MessageCodec } from '../message-codec.ts';
 import type { Throttle } from '../../../throttle.ts';
 import type { Verbatim } from '../../../verbatim.ts';
-import { Validator } from '../../../compatible-engine/validation.ts';
 import * as ChoiceCodec from '../choice-codec.ts';
 import type { Structuring } from '../../../compatible-engine/structuring.ts';
 import { MIMEType } from 'whatwg-mimetype';
@@ -125,6 +124,5 @@ export namespace MonolithTransport {
         messageCodec: MessageCodec<fdm, vdm>;
         toolCodec: OpenAIChatCompletionsToolCodec<fdm>;
         billing: OpenAIChatCompletionsBilling;
-        validator: Validator.From<fdm, vdm>;
     }
 }

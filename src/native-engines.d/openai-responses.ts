@@ -37,7 +37,8 @@ export namespace OpenAIResponsesNativeEngine {
         protected compatibleMessageCodec: CompatibleMessageCodec<fdm, vdm>;
         protected messageCodec: OpenAIResponsesNativeEngine.MessageCodec<fdm, vdm>;
         protected billing: Billing;
-        protected override validator: OpenAIResponsesNativeEngine.Validator.From<fdm, vdm>;
+        protected override structuringValidator: OpenAIResponsesNativeEngine.StructuringValidator.From<fdm, vdm>;
+        protected override partsValidator: OpenAIResponsesNativeEngine.PartsValidator.From<fdm, vdm>;
         protected transport: OpenAIResponsesNativeEngine.Transport<fdm, vdm>;
 
         public constructor(options: OpenAIResponsesNativeEngine.Options<fdm, vdm>) {
@@ -56,7 +57,8 @@ export namespace OpenAIResponsesNativeEngine {
                 vdm: this.vdm,
             });
             this.billing = new Billing({ pricing: this.pricing });
-            this.validator = new OpenAIResponsesNativeEngine.Validator({ choice: this.choice });
+            this.structuringValidator = new OpenAIResponsesNativeEngine.StructuringValidator({ choice: this.choice });
+            this.partsValidator = new OpenAIResponsesNativeEngine.PartsValidator();
             this.transport = new OpenAIResponsesNativeEngine.Transport({
                 inferenceParams: this.inferenceParams,
                 providerSpec: this.providerSpec,
@@ -67,7 +69,6 @@ export namespace OpenAIResponsesNativeEngine {
                 messageCodec: this.messageCodec,
                 toolCodec: this.toolCodec,
                 billing: this.billing,
-                validator: this.validator,
             });
         }
 
@@ -113,5 +114,6 @@ export namespace OpenAIResponsesNativeEngine {
     export import MessageCodec = MessageCodecModule.MessageCodec;
     export import Structuring = StructuringModule.Structuring;
     export import Transport = TransportModule.Transport;
-    export import Validator = ValidationModule.Validator;
+    export import StructuringValidator = ValidationModule.StructuringValidator;
+    export import PartsValidator = ValidationModule.PartsValidator;
 }

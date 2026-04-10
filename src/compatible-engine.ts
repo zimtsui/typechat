@@ -23,10 +23,14 @@ export namespace CompatibleEngine {
         CompatibleEngine.Session.From<fdm, vdm>
     > {
         protected choice: CompatibleEngine.Structuring.Choice.From<fdm, vdm>;
+        protected override structuringValidator: CompatibleEngine.StructuringValidator.From<fdm, vdm>;
+        protected override partsValidator: CompatibleEngine.PartsValidator.From<fdm, vdm>;
 
         public constructor(options: CompatibleEngine.Options<fdm, vdm>) {
             super(options);
             this.choice = options.structuringChoice ?? CompatibleEngine.Structuring.Choice.AUTO;
+            this.structuringValidator = new CompatibleEngine.StructuringValidator({ choice: this.choice });
+            this.partsValidator = new CompatibleEngine.PartsValidator();
         }
 
         public override appendUserMessage(
@@ -57,6 +61,7 @@ export namespace CompatibleEngine {
 
     export import Session = SessionModule.Session;
     export import RoleMessage = SessionModule.RoleMessage;
-    export import Validator = ValidationModule.Validator;
+    export import StructuringValidator = ValidationModule.StructuringValidator;
+    export import PartsValidator = ValidationModule.PartsValidator;
     export import Structuring = StructuringModule.Structuring;
 }

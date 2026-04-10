@@ -1,14 +1,23 @@
 
 
-export interface Validator<
+export interface StructuringValidator<
     out userm, in aim,
 > {
-    validateMessageStructuring(aiMessage: aim): userm | void;
-    validateMessageParts(aiMessage: aim): void;
+    validate(aiMessage: aim): userm | void;
 }
-
-export namespace Validator {
+export namespace StructuringValidator {
     export type From<
         userm, aim,
-    > = Validator<userm, aim>;
+    > = StructuringValidator<userm, aim>;
+}
+
+export interface PartsValidator<
+    out userm, in aim,
+> {
+    validate(aiMessage: aim): void;
+}
+export namespace PartsValidator {
+    export type From<
+        userm, aim,
+    > = PartsValidator<userm, aim>;
 }

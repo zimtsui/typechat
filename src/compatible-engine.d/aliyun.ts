@@ -3,7 +3,6 @@ import { CompatibleEngine } from '../compatible-engine.ts';
 import { OpenAIChatCompletionsToolCodec } from '../api-types/openai-chatcompletions/tool-codec.ts';
 import { MessageCodec } from './openai-chatcompletions/message-codec.ts';
 import { OpenAIChatCompletionsBilling } from '../api-types/openai-chatcompletions/billing.ts';
-import { Validator } from '../compatible-engine/validation.ts';
 import * as TransportModule from './aliyun/transport.ts';
 import type { Verbatim } from '../verbatim.ts';
 import { OpenAIChatCompletionsCompatibleEngine } from './openai-chatcompletions.ts';
@@ -22,7 +21,6 @@ export namespace AliyunCompatibleEngine {
         protected toolCodec: OpenAIChatCompletionsToolCodec<fdm>;
         protected messageCodec: MessageCodec<fdm, vdm>;
         protected billing: OpenAIChatCompletionsBilling;
-        protected override validator: Validator.From<fdm, vdm>;
         protected override transport: AliyunCompatibleEngine.Transport<fdm, vdm>;
 
         public constructor(options: AliyunCompatibleEngine.Options<fdm, vdm>) {
@@ -35,7 +33,6 @@ export namespace AliyunCompatibleEngine {
                 vdm: this.vdm,
             });
             this.billing = new OpenAIChatCompletionsBilling({ pricing: this.pricing });
-            this.validator = new Validator({ choice: this.choice });
             this.transport = new AliyunCompatibleEngine.Transport({
                 inferenceParams: this.inferenceParams,
                 providerSpec: this.providerSpec,
@@ -45,7 +42,6 @@ export namespace AliyunCompatibleEngine {
                 messageCodec: this.messageCodec,
                 toolCodec: this.toolCodec,
                 billing: this.billing,
-                validator: this.validator,
             });
         }
 

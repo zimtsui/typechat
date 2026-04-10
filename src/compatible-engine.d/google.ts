@@ -3,7 +3,6 @@ import { Function } from '../function.ts';
 import * as MessageCodecModule from './google/message-codec.ts';
 import { ToolCodec } from '../api-types/google/tool-codec.ts';
 import { Billing } from '../api-types/google/billing.ts';
-import { Validator } from '../compatible-engine/validation.ts';
 import * as TransportModule from './google/transport.ts';
 import type { Verbatim } from '../verbatim.ts';
 import * as ChoiceCodecModule from './google/choice-codec.ts';
@@ -22,7 +21,6 @@ export namespace GoogleCompatibleEngine {
         protected toolCodec: ToolCodec<fdm>;
         protected messageCodec: GoogleCompatibleEngine.MessageCodec<fdm, vdm>;
         protected billing: Billing;
-        protected override validator: Validator.From<fdm, vdm>;
         protected override transport: GoogleCompatibleEngine.Transport<fdm, vdm>;
 
         public constructor(options: GoogleCompatibleEngine.Options<fdm, vdm>) {
@@ -36,7 +34,6 @@ export namespace GoogleCompatibleEngine {
                 vdm: this.vdm,
             });
             this.billing = new Billing({ pricing: this.pricing });
-            this.validator = new Validator({ choice: this.choice });
             this.transport = new GoogleCompatibleEngine.Transport({
                 inferenceParams: this.inferenceParams,
                 providerSpec: this.providerSpec,
@@ -46,7 +43,6 @@ export namespace GoogleCompatibleEngine {
                 messageCodec: this.messageCodec,
                 toolCodec: this.toolCodec,
                 billing: this.billing,
-                validator: this.validator,
             });
         }
 

@@ -10,7 +10,6 @@ import { loggers } from '../../telemetry.ts';
 import type { MessageCodec } from './message-codec.ts';
 import type { ToolCodec } from '../../api-types/google/tool-codec.ts';
 import type { Billing } from '../../api-types/google/billing.ts';
-import type { Validator } from './validation.ts';
 import type { Verbatim } from '../../verbatim.ts';
 import * as ChoiceCodec from '../../compatible-engine.d/google/choice-codec.ts';
 import type { Structuring } from '../../compatible-engine/structuring.ts';
@@ -128,6 +127,5 @@ export namespace GoogleNativeTransport {
         messageCodec: MessageCodec<fdm, vdm>;
         toolCodec: ToolCodec<fdm>;
         billing: Billing;
-        validator: Validator.From<fdm, vdm>;
     }
 }
