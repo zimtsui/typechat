@@ -10,23 +10,32 @@ import { ResponseInvalid, Engine } from '../../engine.ts';
 export class Validator<
     in out fdu extends Function.Decl.Proto,
     in out vdu extends Verbatim.Decl.Proto,
-> implements Engine.Validator<fdu, vdu, RoleMessage.Ai<fdu, vdu>> {
+> implements Engine.Validator<RoleMessage.User<fdu>, RoleMessage.Ai<fdu, vdu>> {
     protected compatibleValidator: CompatibleValidator<fdu, vdu>;
     public constructor(protected ctx: Validator.Context<fdu, vdu>) {
         this.compatibleValidator = new CompatibleValidator({ choice: ctx.choice });
     }
 
-    public validateParts(
+    public validateMessageParts(
         message: RoleMessage.Ai<fdu, vdu>,
     ): void {
         const parts = message.getParts();
         if (parts.length) {} else throw new ResponseInvalid('Empty message.');
     }
 
-    public validateChoice(
+    public validateStructuring(
+        fcs: Function.Call.Of<fdu>[],
+        vrs: Verbatim.Request.Of<vdu>[],
+    ) {
+        return this.compatibleValidator.validateStructuring(fcs, vrs);
+    }
+
+    public validateMessageStructuring(
         message: RoleMessage.Ai<fdu, vdu>,
-    ): void {
-        this.compatibleValidator.validateStructuring(message.getFunctionCalls(), message.getVerbatimRequests());
+    ) {
+        const fcs = message.getFunctionCalls();
+        const vrs = message.getVerbatimRequests();
+        return this.validateStructuring(fcs, vrs);
     }
 }
 

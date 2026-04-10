@@ -1,21 +1,14 @@
-import type { Function } from '../function.ts';
-import type { Verbatim } from '../verbatim.ts';
-
 
 
 export interface Validator<
-    fdu extends Function.Decl.Proto,
-    vdu extends Verbatim.Decl.Proto,
-    aim,
+    out userm, in aim,
 > {
-    validateChoice(message: aim): void;
-    validateParts(message: aim): void;
+    validateMessageStructuring(aiMessage: aim): userm | void;
+    validateMessageParts(aiMessage: aim): void;
 }
 
 export namespace Validator {
     export type From<
-        fdm extends Function.Decl.Map.Proto,
-        vdm extends Verbatim.Decl.Map.Proto,
-        aim,
-    > = Validator<Function.Decl.From<fdm>, Verbatim.Decl.From<vdm>, aim>;
+        userm, aim,
+    > = Validator<userm, aim>;
 }

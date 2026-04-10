@@ -6,10 +6,10 @@ import { env } from 'node:process';
 import { type InferenceContext } from './inference-context.ts';
 import { loggers } from './telemetry.ts';
 import * as SessionModule from './engine/session.ts';
-import type { Verbatim } from './verbatim.ts';
-import * as VerbatimCodec from './verbatim/codec.ts';
+import { Verbatim } from "./verbatim.js";
 import * as ValidationModule from './engine/validation.ts';
 import * as TransportModule from './engine/transport.ts';
+import * as VerbatimCodec from './verbatim/codec.ts';
 
 
 export interface Pricing {
@@ -51,7 +51,7 @@ export namespace Engine {
         protected throttle: Throttle;
         protected abstract parallelToolCall: boolean;
         protected retry: number;
-        protected abstract validator: Engine.Validator.From<fdm, vdm, aim>;
+        protected abstract validator: Engine.Validator.From<userm, aim>;
         protected abstract transport: Engine.Transport<userm, aim, devm, session>;
 
         public constructor(options: Engine.Options<fdm, vdm>) {
@@ -89,8 +89,7 @@ export namespace Engine {
             signal?: AbortSignal,
         ): Promise<aim> {
             const aiMessage = await this.transport.fetch(wfctx, session, signal);
-            this.validator.validateParts(aiMessage);
-            this.validator.validateChoice(aiMessage);
+            this.validator.validateMessageParts(aiMessage);
             return aiMessage;
         }
 
@@ -113,15 +112,16 @@ export namespace Engine {
                 ]) : wfctx.signal || signalTimeout;
                 try {
                     const response = await this.infer(wfctx, session, signal);
-                    if (await validate(response)) return response;
-                    else throw new CustomRetry(undefined, { cause: response });
+                    const rejection = this.validator.validateMessageStructuring(response);
+                    if (rejection) throw new ResponseInvalid.Recoverable();
+                    if (await validate(response)) {} else throw new CustomRetry(undefined, { cause: response });
+                    return response;
                 } catch (e) {
                     if (signalTimeout?.aborted) e = new InferenceTimeout(undefined, { cause: e });      // 推理超时
                     else if (e instanceof ResponseInvalid) {}			                                // 模型抽风
                     else if (e instanceof NetworkError) {}         		                                // 网络故障
                     else if (e instanceof CustomRetry) {}         		                                // 自定义重试
                     else throw e;
-                    wfctx.cost?.(0);    //  心跳
                     if (retry < this.retry) loggers.message.warn(e); else throw e;
                 }
             }
@@ -133,11 +133,34 @@ export namespace Engine {
         public async stateful(
             wfctx: InferenceContext,
             session: session,
-            validate?: (response: aim) => Promise<boolean>,
+            validate: (response: aim) => Promise<boolean> = () => Promise.resolve(true),
         ): Promise<aim> {
-            const response = await this.stateless(wfctx, session, validate);
-            session.chatMessages.push(response);
-            return response;
+            for (let retry = 0;; retry++) {
+                const signalTimeout = this.inferenceParams.timeout ? AbortSignal.timeout(this.inferenceParams.timeout) : undefined;
+                const signal = wfctx.signal && signalTimeout ? AbortSignal.any([
+                    wfctx.signal,
+                    signalTimeout,
+                ]) : wfctx.signal || signalTimeout;
+                try {
+                    const response = await this.infer(wfctx, session, signal);
+                    const rejection = this.validator.validateMessageStructuring(response);
+                    if (rejection) {
+                        session.chatMessages.push(response, rejection);
+                        throw new ResponseInvalid.Recoverable();
+                    }
+                    if (await validate(response)) {} else throw new CustomRetry(undefined, { cause: response });
+                    session.chatMessages.push(response);
+                    return response;
+                } catch (e) {
+                    if (signalTimeout?.aborted) e = new InferenceTimeout(undefined, { cause: e });      // 推理超时
+                    else if (e instanceof ResponseInvalid) {}			                                // 模型抽风
+                    else if (e instanceof NetworkError) {}         		                                // 网络故障
+                    else if (e instanceof CustomRetry) {}         		                                // 自定义重试
+                    else throw e;
+                    if (retry < this.retry) {} else throw e;
+                    loggers.message.warn(e);
+                }
+            }
         }
 
         public abstract appendUserMessage(
@@ -171,10 +194,13 @@ export namespace Engine {
     export import Transport = TransportModule.Transport;
 }
 
-export class ResponseInvalid extends Error {}
 export class InferenceTimeout extends Error {}
 export class NetworkError extends Error {}
 export class CustomRetry extends Error {}
+export class ResponseInvalid extends Error {}
+export namespace ResponseInvalid {
+    export class Recoverable extends ResponseInvalid {}
+}
 
 
 declare global {
