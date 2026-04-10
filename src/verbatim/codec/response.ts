@@ -2,7 +2,7 @@ import Handlebars from 'handlebars';
 import Assets from '../../assets.ts';
 import { loggers } from '../../telemetry.ts';
 import { MIMEType } from 'whatwg-mimetype';
-import './attr-escape.ts';
+import './escape.ts';
 
 
 const template = Handlebars.compile<template.Input>(Assets.verbatim.response);

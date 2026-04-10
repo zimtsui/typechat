@@ -8,15 +8,19 @@ XML Verbatim Channel is designed to avoid escaping in structured output of large
 
 ## Declaration
 
-The system or the user is expected to declare all available XML Verbatim Channels in the form of
+The LLM system/user message is expected to declare all available XML Verbatim Channels in the form of
 
 <verbatim:declaration name="NAME_OF_CHANNEL">
     <verbatim:description>DESCRIPTION_OF_CHANNEL</verbatim:description>
-    <verbatim:parameter name="NAME_OF_PARAMETER_1" mime-type="MIME_TYPE_OF_PARAMETER" required="WHETHER_PARAMETER_IS_REQUIRED">
+    <verbatim:parameter name="NAME_OF_PARAMETER_1">
         <verbatim:description>DESCRIPTION_OF_PARAMETER</verbatim:description>
+        <verbatim:mime-type>MIME_TYPE_OF_PARAMETER</verbatim:mime-type>
+        <verbatim:required>WHETHER_PARAMETER_IS_REQUIRED</verbatim:required>
     </verbatim:parameter>
-    <verbatim:parameter name="NAME_OF_PARAMETER_2" mime-type="MIME_TYPE_OF_PARAMETER" required="WHETHER_PARAMETER_IS_REQUIRED">
+    <verbatim:parameter name="NAME_OF_PARAMETER_2">
         <verbatim:description>DESCRIPTION_OF_PARAMETER</verbatim:description>
+        <verbatim:mime-type>MIME_TYPE_OF_PARAMETER</verbatim:mime-type>
+        <verbatim:required>WHETHER_PARAMETER_IS_REQUIRED</verbatim:required>
     </verbatim:parameter>
 </verbatim:declaration>
 
@@ -29,19 +33,26 @@ You can make a request through a channel in the form of
     <verbatim:parameter name="NAME_OF_PARAMETER_2"><![CDATA[ARGUMENT_OF_PARAMETER]]></verbatim:parameter>
 </verbatim:request>
 
+-   The only attribute of <verbatim:request> is `name`. Additional attributes will be ignored.
+-   The only attribute of <verbatim:parameter> is `name`. Additional attributes will be ignored.
 -   All arguments must be wrapped in CDATA.
--   Additional XML attributes are not allowed.
 
 ## Response
 
-The user message may contain the response of your request in the form of
+The LLM system/user message may contain the responses of your request in the form of
 
-<verbatim:response name="NAME_OF_CHANNEL" mime-type="MIME_TYPE_OF_RESPONSE"><![CDATA[RESPONSE]]></verbatim:response>
+<verbatim:response name="NAME_OF_CHANNEL"><![CDATA[RESPONSE]]></verbatim:response>
 
 Not all requests have a response.
 
 ## Quotation
 
-The user message may contain verbatim quotation in the form of
+The LLM system/user message may contain verbatim quotations in the form of
 
-<verbatim:quotation mime-type="MIME_TYPE_OF_TEXT"><![CDATA[QUOTATION]]></verbatim:quotation>
+<verbatim:quotation><![CDATA[QUOTATION]]></verbatim:quotation>
+
+## Meta Message
+
+The LLM system/user message may contain meta messages from the agent loop infrastructure in the form of
+
+<verbatim:meta></verbatim:meta>

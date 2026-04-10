@@ -2,7 +2,7 @@ import { Verbatim } from '../../verbatim.ts';
 import Handlebars from 'handlebars';
 import Assets from '../../assets.ts';
 import assert from 'node:assert';
-import './attr-escape.ts';
+import './escape.ts';
 
 
 const template = Handlebars.compile<template.Input>(Assets.verbatim.declarations);

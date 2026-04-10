@@ -1,9 +1,11 @@
 {{#each declarations}}
-<verbatim:declaration name="{{this.name}}">
-    <verbatim:description>{{this.description}}</verbatim:description>
+<verbatim:declaration name="{{AssertXmlAttr this.name}}">
+    <verbatim:description mime-type="text/markdown"><![CDATA[{{{this.description}}}]]></verbatim:description>
     {{#each this.parameters}}
-    <verbatim:parameter name="{{this.name}}" mime-type="{{XmlAttr this.mimeType}}" required="{{#if this.required}}true{{else}}false{{/if}}">
-        <verbatim:description>{{this.description}}</verbatim:description>
+    <verbatim:parameter name="{{AssertXmlAttr this.name}}">
+        <verbatim:description mime-type="text/markdown"><![CDATA[{{{this.description}}}]]></verbatim:description>
+        <verbatim:mime-type>{{XmlBody this.mimeType}}</verbatim:mime-type>
+        <verbatim:required>{{#if this.required}}true{{else}}false{{/if}}</verbatim:required>
     </verbatim:parameter>
     {{/each}}
 </verbatim:declaration>

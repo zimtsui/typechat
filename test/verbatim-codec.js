@@ -53,13 +53,13 @@ test('Verbatim declarations codec renders channel metadata', t => {
     const xml = VerbatimCodec.Declarations.encode(verbatimDeclarationMap);
 
     t.regex(xml, /<verbatim:declaration name="submit">/);
-    t.regex(xml, /<verbatim:description>Submit an article\.<\/verbatim:description>/);
-    t.regex(xml, /<verbatim:parameter name="title" mime-type="text\/plain" required="false">/);
-    t.regex(xml, /<verbatim:parameter name="body" mime-type="text\/markdown" required="false">/);
+    t.regex(xml, /<verbatim:description mime-type="text\/markdown"><!\[CDATA\[Submit an article\.\]\]><\/verbatim:description>/);
+    t.regex(xml, /<verbatim:parameter name="title">\s*<verbatim:description mime-type="text\/markdown"><!\[CDATA\[Article title\.\]\]><\/verbatim:description>\s*<verbatim:mime-type>text\/plain<\/verbatim:mime-type>\s*<verbatim:required>false<\/verbatim:required>/);
+    t.regex(xml, /<verbatim:parameter name="body">\s*<verbatim:description mime-type="text\/markdown"><!\[CDATA\[Article body\.\]\]><\/verbatim:description>\s*<verbatim:mime-type>text\/markdown<\/verbatim:mime-type>\s*<verbatim:required>false<\/verbatim:required>/);
     t.regex(xml, /<verbatim:declaration name="attachment">/);
 });
 
-test('Verbatim declarations codec escapes quoted MIME parameters in XML attributes', t => {
+test('Verbatim declarations codec escapes MIME text in element body', t => {
     const xml = VerbatimCodec.Declarations.encode({
         submit: {
             description: 'Submit an article.',
@@ -73,7 +73,24 @@ test('Verbatim declarations codec escapes quoted MIME parameters in XML attribut
         },
     });
 
-    t.regex(xml, /mime-type="text\/plain;charset=&quot;foo bar&quot;"/);
+    t.regex(xml, /<verbatim:mime-type>text\/plain;charset="foo bar"<\/verbatim:mime-type>/);
+});
+
+test('Verbatim declarations codec escapes XML meta characters in mime-type element body', t => {
+    const xml = VerbatimCodec.Declarations.encode({
+        submit: {
+            description: 'Submit an article.',
+            parameters: {
+                body: {
+                    description: 'Article body.',
+                    mimeType: new MIMEType('text/plain;charset="a&b<c>d"'),
+                    required: false,
+                },
+            },
+        },
+    });
+
+    t.regex(xml, /<verbatim:mime-type>text\/plain;charset="a&amp;b&lt;c&gt;d"<\/verbatim:mime-type>/);
 });
 
 test('Verbatim request codec decodes multiple requests with CDATA payloads', t => {
@@ -149,6 +166,22 @@ test('Verbatim request codec accepts mixed quotes and blank lines around CDATA',
     `, verbatimDeclarationMap);
 
     t.is(requests.length, 1);
+    t.deepEqual(requests[0].args, {
+        title: 'Hello',
+        body: 'Body',
+    });
+});
+
+test('Verbatim request codec ignores additional request and parameter attributes', t => {
+    const requests = VerbatimCodec.Request.decode(`
+        <verbatim:request trace-id="123" name="submit" debug='true'>
+            <verbatim:parameter role="headline" name="title" ignored="yes"><![CDATA[Hello]]></verbatim:parameter>
+            <verbatim:parameter name="body" mime-type="text/markdown"><![CDATA[Body]]></verbatim:parameter>
+        </verbatim:request>
+    `, verbatimDeclarationMap);
+
+    t.is(requests.length, 1);
+    t.is(requests[0].name, 'submit');
     t.deepEqual(requests[0].args, {
         title: 'Hello',
         body: 'Body',
