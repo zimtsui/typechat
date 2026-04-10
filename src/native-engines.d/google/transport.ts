@@ -16,6 +16,7 @@ import * as ChoiceCodec from '../../compatible-engine.d/google/choice-codec.ts';
 import type { Structuring } from '../../compatible-engine/structuring.ts';
 import type { Engine } from '../../engine.ts';
 import { MIMEType } from 'whatwg-mimetype';
+import { HeaderRecord } from 'undici/types/header';
 
 
 
@@ -44,37 +45,37 @@ export class GoogleNativeTransport<
 
         await this.ctx.throttle.requests(wfctx);
 
-        const functionDeclarations = this.ctx.toolCodec.encodeFunctionDeclarationMap(this.ctx.fdm);
-        const tools: Google.Tool[] = [];
-        if (functionDeclarations.length) tools.push({ functionDeclarations });
-        if (this.ctx.urlContext) tools.push({ urlContext: {} });
-        if (this.ctx.googleSearch) tools.push({ googleSearch: {} });
-        if (this.ctx.codeExecution) tools.push({ codeExecution: {} });
+        const apifds = this.ctx.toolCodec.encodeFunctionDeclarationMap(this.ctx.fdm);
+        const apiTools: Google.Tool[] = [];
+        if (apifds.length) apiTools.push({ functionDeclarations: apifds });
+        if (this.ctx.urlContext) apiTools.push({ urlContext: {} });
+        if (this.ctx.googleSearch) apiTools.push({ googleSearch: {} });
+        if (this.ctx.codeExecution) apiTools.push({ codeExecution: {} });
+        const apiToolConfig: Google.ToolConfig = {};
+        if (apifds.length) apiToolConfig.functionCallingConfig = ChoiceCodec.encode(this.ctx.choice);
         const reqbody: RestfulRequest = {
             contents,
-            tools: tools.length ? tools : undefined,
-            toolConfig: functionDeclarations.length ? {
-                functionCallingConfig: ChoiceCodec.encode(this.ctx.choice),
-            } : undefined,
+            tools: apiTools.length ? apiTools : undefined,
+            toolConfig: apiToolConfig,
             systemInstruction,
-            generationConfig: this.ctx.inferenceParams.maxTokens || this.ctx.inferenceParams.additionalOptions ? {
-                maxOutputTokens: this.ctx.inferenceParams.maxTokens ?? undefined,
-                ...this.ctx.inferenceParams.additionalOptions,
-            } : undefined,
+            generationConfig: this.ctx.inferenceParams.additionalOptions,
         };
 
         loggers.message.debug(reqbody);
 
-        const res = await Undici.fetch(this.apiURL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-goog-api-key': this.ctx.providerSpec.apiKey,
+        const res = await Undici.fetch(
+            this.apiURL,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-goog-api-key': this.ctx.providerSpec.apiKey,
+                } satisfies HeaderRecord,
+                body: JSON.stringify(reqbody),
+                dispatcher: this.ctx.providerSpec.dispatcher,
+                signal,
             },
-            body: JSON.stringify(reqbody),
-            dispatcher: this.ctx.providerSpec.proxyAgent,
-            signal,
-        }).catch(e => {
+        ).catch(e => {
             if (e instanceof TypeError)
                 throw new NetworkError(undefined, { cause: e });
             else throw e;

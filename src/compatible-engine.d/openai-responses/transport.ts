@@ -15,6 +15,7 @@ import * as ChoiceCodec from './choice-codec.ts';
 import type { Structuring } from '../../compatible-engine/structuring.ts';
 import type { Engine } from '../../engine.ts';
 import { MIMEType } from 'whatwg-mimetype';
+import { HeaderRecord } from 'undici/types/header';
 
 
 export class Transport<
@@ -44,8 +45,7 @@ export class Transport<
             instructions: session.developerMessage && this.ctx.messageCodec.encodeDeveloperMessage(session.developerMessage),
             tools: tools.length ? tools : undefined,
             tool_choice: tools.length ? ChoiceCodec.encode(this.ctx.choice) : undefined,
-            parallel_tool_calls: tools.length ? this.ctx.parallelToolCall : undefined,
-            max_output_tokens: this.ctx.inferenceSpec.maxTokens,
+            parallel_tool_calls: tools.length ? this.ctx.inferenceSpec.parallelToolCall : undefined,
             ...this.ctx.inferenceSpec.additionalOptions,
         };
     }
@@ -79,9 +79,9 @@ export class Transport<
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${this.ctx.providerSpec.apiKey}`,
-                },
+                } satisfies HeaderRecord,
                 body: JSON.stringify(params),
-                dispatcher: this.ctx.providerSpec.proxyAgent,
+                dispatcher: this.ctx.providerSpec.dispatcher,
                 signal,
             },
         ).catch(e => {
@@ -128,7 +128,6 @@ export namespace Transport {
         fdm: fdm;
         throttle: Throttle;
         choice: Structuring.Choice.From<fdm, vdm>;
-        parallelToolCall: boolean;
 
         messageCodec: MessageCodec<fdm, vdm>;
         toolCodec: ToolCodec<fdm>;

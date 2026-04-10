@@ -26,9 +26,7 @@ export abstract class StreamTransport<
         this.client = new OpenAI({
             baseURL: this.ctx.providerSpec.baseUrl,
             apiKey: this.ctx.providerSpec.apiKey,
-            fetchOptions: {
-                dispatcher: this.ctx.providerSpec.proxyAgent,
-            },
+            fetchOptions: { dispatcher: this.ctx.providerSpec.dispatcher },
         })
     }
 
@@ -44,12 +42,11 @@ export abstract class StreamTransport<
             ],
             tools: tools.length ? tools : undefined,
             tool_choice: tools.length ? ChoiceCodec.encode(this.ctx.choice) : undefined,
-            parallel_tool_calls: tools.length ? this.ctx.parallelToolCall : undefined,
+            parallel_tool_calls: tools.length ? this.ctx.inferenceParams.parallelToolCall : undefined,
             stream: true,
             stream_options: {
-                include_usage: true
+                include_usage: true,
             },
-            max_completion_tokens: this.ctx.inferenceParams.maxTokens ?? undefined,
             ...this.ctx.inferenceParams.additionalOptions,
         };
     }
@@ -105,7 +102,15 @@ export abstract class StreamTransport<
             loggers.message.debug(params);
 
             // Send request
-            const stream = await this.client.chat.completions.create(params, { signal });
+            const stream = await this.client.chat.completions.create(
+                params,
+                {
+                    signal,
+                    fetchOptions: {
+                        dispatcher: this.ctx.providerSpec.dispatcher,
+                    }
+                },
+            );
 
             // Get response
             let stock: OpenAI.ChatCompletionChunk | null = null;
@@ -223,8 +228,6 @@ export namespace StreamTransport {
         fdm: fdm;
         throttle: Throttle;
         choice: Structuring.Choice.From<fdm, vdm>;
-        parallelToolCall: boolean;
-
         messageCodec: MessageCodec<fdm, vdm>;
         toolCodec: OpenAIChatCompletionsToolCodec<fdm>;
         billing: OpenAIChatCompletionsBilling;

@@ -9,9 +9,15 @@ import { ToolCodec as GoogleToolCodec } from '../build/api-types/google/tool-cod
 import { OpenAIChatCompletionsToolCodec } from '../build/api-types/openai-chatcompletions/tool-codec.js';
 import { ToolCodec as OpenAIResponsesToolCodec } from '../build/api-types/openai-responses/tool-codec.js';
 import { MessageCodec as AnthropicMessageCodec } from '../build/compatible-engine.d/anthropic/message-codec.js';
+import * as AnthropicChoiceCodec from '../build/compatible-engine.d/anthropic/choice-codec.js';
 import { MessageCodec as GoogleMessageCodec } from '../build/compatible-engine.d/google/message-codec.js';
 import { MessageCodec as OpenAIChatCompletionsMessageCodec } from '../build/compatible-engine.d/openai-chatcompletions/message-codec.js';
 import { MessageCodec as OpenAIResponsesMessageCodec } from '../build/compatible-engine.d/openai-responses/message-codec.js';
+import { Structuring as CompatibleStructuring } from '../build/compatible-engine/structuring.js';
+import { MonolithTransport as OpenAIChatCompletionsMonolithTransport } from '../build/compatible-engine.d/openai-chatcompletions/transport.d/monolith.js';
+import { StreamTransport as OpenAIChatCompletionsStreamTransport } from '../build/compatible-engine.d/openai-chatcompletions/transport.d/stream.js';
+import { Transport as OpenAIResponsesTransport } from '../build/compatible-engine.d/openai-responses/transport.js';
+import { Transport as OpenAIResponsesNativeTransport } from '../build/native-engines.d/openai-responses/transport.js';
 
 
 const functionDeclarationMap = {
@@ -188,6 +194,169 @@ test('OpenAI chat completions codec rejects media user message', t => {
     const error = t.throws(() => messageCodec.encodeUserMessage(userMessage));
 
     t.is(error?.message, 'Unsupported user message type.');
+});
+
+test('Anthropic choice codec leaves disable_parallel_tool_use undefined when option is unspecified', t => {
+    const encoded = AnthropicChoiceCodec.encode(CompatibleStructuring.Choice.AUTO);
+
+    t.is(encoded.disable_parallel_tool_use, undefined);
+});
+
+test('OpenAI Chat Completions monolith transport reads parallelToolCall from inferenceParams', t => {
+    class FakeMonolithTransport extends OpenAIChatCompletionsMonolithTransport {
+        getDeltaThoughts() {
+            return '';
+        }
+    }
+
+    const toolCodec = new OpenAIChatCompletionsToolCodec({ fdm: functionDeclarationMap });
+    const messageCodec = new OpenAIChatCompletionsMessageCodec({
+        toolCodec,
+        vdm: verbatimDeclarationMap,
+    });
+    const transport = new FakeMonolithTransport({
+        fdm: functionDeclarationMap,
+        throttle: { requests: async () => {} },
+        choice: CompatibleStructuring.Choice.AUTO,
+        providerSpec: {
+            baseUrl: 'https://example.invalid/openai',
+            apiKey: 'test-key',
+            dispatcher: undefined,
+        },
+        inferenceParams: {
+            model: 'test-model',
+            parallelToolCall: true,
+            retry: 3,
+        },
+        messageCodec,
+        toolCodec,
+        billing: { charge: () => 0 },
+        validator: {},
+    });
+    const session = {
+        chatMessages: [new CompatibleRoleMessage.User([
+            new CompatibleRoleMessage.Part.Text('Hello.\n', []),
+        ])],
+    };
+
+    const params = transport.makeParams(session);
+
+    t.is(params.parallel_tool_calls, true);
+});
+
+test('OpenAI Chat Completions stream transport reads parallelToolCall from inferenceParams', t => {
+    class FakeStreamTransport extends OpenAIChatCompletionsStreamTransport {
+        getDeltaThoughts() {
+            return '';
+        }
+    }
+
+    const toolCodec = new OpenAIChatCompletionsToolCodec({ fdm: functionDeclarationMap });
+    const messageCodec = new OpenAIChatCompletionsMessageCodec({
+        toolCodec,
+        vdm: verbatimDeclarationMap,
+    });
+    const transport = new FakeStreamTransport({
+        fdm: functionDeclarationMap,
+        throttle: { requests: async () => {} },
+        choice: CompatibleStructuring.Choice.AUTO,
+        providerSpec: {
+            baseUrl: 'https://example.invalid/openai',
+            apiKey: 'test-key',
+            dispatcher: undefined,
+        },
+        inferenceParams: {
+            model: 'test-model',
+            parallelToolCall: false,
+            retry: 3,
+        },
+        messageCodec,
+        toolCodec,
+        billing: { charge: () => 0 },
+        validator: {},
+    });
+    const session = {
+        chatMessages: [new CompatibleRoleMessage.User([
+            new CompatibleRoleMessage.Part.Text('Hello.\n', []),
+        ])],
+    };
+
+    const params = transport.makeParams(session);
+
+    t.is(params.parallel_tool_calls, false);
+});
+
+test('OpenAI Responses compatible transport reads parallelToolCall from inference params', t => {
+    const toolCodec = new OpenAIResponsesToolCodec({ fdm: functionDeclarationMap });
+    const messageCodec = new OpenAIResponsesMessageCodec({
+        toolCodec,
+        vdm: verbatimDeclarationMap,
+    });
+    const transport = new OpenAIResponsesTransport({
+        inferenceSpec: {
+            model: 'test-model',
+            parallelToolCall: true,
+            retry: 3,
+        },
+        providerSpec: {
+            baseUrl: 'https://example.invalid/openai',
+            apiKey: 'test-key',
+            dispatcher: undefined,
+        },
+        fdm: functionDeclarationMap,
+        throttle: { requests: async () => {} },
+        choice: CompatibleStructuring.Choice.AUTO,
+        messageCodec,
+        toolCodec,
+        billing: { charge: () => 0 },
+        validator: {},
+    });
+    const session = {
+        chatMessages: [new CompatibleRoleMessage.User([
+            new CompatibleRoleMessage.Part.Text('Hello.\n', []),
+        ])],
+    };
+
+    const params = transport.makeParams(session);
+
+    t.is(params.parallel_tool_calls, true);
+});
+
+test('OpenAI Responses native transport reads parallelToolCall from inferenceParams', t => {
+    const toolCodec = new OpenAIResponsesToolCodec({ fdm: functionDeclarationMap });
+    const messageCodec = new OpenAIResponsesMessageCodec({
+        toolCodec,
+        vdm: verbatimDeclarationMap,
+    });
+    const transport = new OpenAIResponsesNativeTransport({
+        inferenceParams: {
+            model: 'test-model',
+            parallelToolCall: false,
+            retry: 3,
+        },
+        providerSpec: {
+            baseUrl: 'https://example.invalid/openai',
+            apiKey: 'test-key',
+            dispatcher: undefined,
+        },
+        fdm: functionDeclarationMap,
+        throttle: { requests: async () => {} },
+        choice: CompatibleStructuring.Choice.AUTO,
+        applyPatch: false,
+        messageCodec,
+        toolCodec,
+        billing: { charge: () => 0 },
+        validator: {},
+    });
+    const session = {
+        chatMessages: [new CompatibleRoleMessage.User([
+            new CompatibleRoleMessage.Part.Text('Hello.\n', []),
+        ])],
+    };
+
+    const params = transport.makeParams(session);
+
+    t.is(params.parallel_tool_calls, false);
 });
 
 test('Media image rejects non-image MIME type', t => {

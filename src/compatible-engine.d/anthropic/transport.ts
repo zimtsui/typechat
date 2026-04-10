@@ -30,7 +30,7 @@ export class Transport<
         this.client = new Anthropic({
             baseURL: this.ctx.providerSpec.baseUrl,
             apiKey: this.ctx.providerSpec.apiKey,
-            fetchOptions: { dispatcher: this.ctx.providerSpec.proxyAgent },
+            fetchOptions: { dispatcher: this.ctx.providerSpec.dispatcher },
         });
     }
 
@@ -44,8 +44,8 @@ export class Transport<
             messages: session.chatMessages.map(chatMessage => this.ctx.messageCodec.encodeChatMessage(chatMessage)),
             system: session.developerMessage && this.ctx.messageCodec.encodeDeveloperMessage(session.developerMessage),
             tools: tools.length ? tools : undefined,
-            tool_choice: tools.length ? ChoiceCodec.encode(this.ctx.choice, this.ctx.parallelToolCall) : undefined,
-            max_tokens: this.ctx.inferenceSpec.maxTokens ?? 64 * 1024,
+            tool_choice: tools.length ? ChoiceCodec.encode(this.ctx.choice, this.ctx.inferenceSpec.parallelToolCall) : undefined,
+            max_tokens: 64 * 1024,
             ...this.ctx.inferenceSpec.additionalOptions,
         };
     }
@@ -62,7 +62,13 @@ export class Transport<
         loggers.message.debug(params);
 
         // Send request
-        const stream = this.client.messages.stream(params, { signal });
+        const stream = this.client.messages.stream(
+            params,
+            {
+                signal,
+                fetchOptions: { dispatcher: this.ctx.providerSpec.dispatcher },
+            },
+        );
 
         // Get response
         let response: Anthropic.Message | null = null;
@@ -151,7 +157,6 @@ export namespace Transport {
         fdm: fdm;
         throttle: Throttle;
         choice: Structuring.Choice.From<fdm, vdm>;
-        parallelToolCall: boolean;
 
         messageCodec: MessageCodec<fdm, vdm>;
         toolCodec: ToolCodec<fdm>;

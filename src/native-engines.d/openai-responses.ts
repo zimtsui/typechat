@@ -39,11 +39,9 @@ export namespace OpenAIResponsesNativeEngine {
         protected billing: Billing;
         protected override validator: OpenAIResponsesNativeEngine.Validator.From<fdm, vdm>;
         protected transport: OpenAIResponsesNativeEngine.Transport<fdm, vdm>;
-        protected override parallelToolCall: boolean;
 
         public constructor(options: OpenAIResponsesNativeEngine.Options<fdm, vdm>) {
             super(options);
-            this.parallelToolCall = options.parallelToolCall ?? false;
             this.applyPatch = options.applyPatch ?? false;
             this.choice = options.structuringChoice ?? OpenAIResponsesNativeEngine.Structuring.Choice.AUTO;
 
@@ -65,7 +63,6 @@ export namespace OpenAIResponsesNativeEngine {
                 fdm: this.fdm,
                 throttle: this.throttle,
                 choice: this.choice,
-                parallelToolCall: this.parallelToolCall,
                 applyPatch: this.applyPatch,
                 messageCodec: this.messageCodec,
                 toolCodec: this.toolCodec,

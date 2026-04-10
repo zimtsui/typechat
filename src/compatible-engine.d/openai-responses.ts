@@ -24,11 +24,9 @@ export namespace OpenAIResponsesCompatibleEngine {
         protected billing: Billing;
         protected override validator: Validator.From<fdm, vdm>;
         protected override transport: OpenAIResponsesCompatibleEngine.Transport<fdm, vdm>;
-        protected override parallelToolCall: boolean;
 
         public constructor(options: OpenAIResponsesCompatibleEngine.Options<fdm, vdm>) {
             super(options);
-            this.parallelToolCall = options.parallelToolCall ?? false;
             this.toolCodec = new ToolCodec({ fdm: this.fdm });
             this.messageCodec = new OpenAIResponsesCompatibleEngine.MessageCodec({
                 toolCodec: this.toolCodec,
@@ -42,7 +40,6 @@ export namespace OpenAIResponsesCompatibleEngine {
                 fdm: this.fdm,
                 throttle: this.throttle,
                 choice: this.choice,
-                parallelToolCall: this.parallelToolCall,
                 messageCodec: this.messageCodec,
                 toolCodec: this.toolCodec,
                 billing: this.billing,

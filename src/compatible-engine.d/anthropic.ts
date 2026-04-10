@@ -24,11 +24,9 @@ export namespace AnthropicCompatibleEngine {
         protected billing: Billing;
         protected validator: Validator.From<fdm, vdm>;
         protected transport: AnthropicCompatibleEngine.Transport<fdm, vdm>;
-        protected override parallelToolCall: boolean;
 
         public constructor(options: AnthropicCompatibleEngine.Options<fdm, vdm>) {
             super(options);
-            this.parallelToolCall = options.parallelToolCall ?? false;
             this.toolCodec = new ToolCodec({ fdm: this.fdm });
             this.messageCodec = new AnthropicCompatibleEngine.MessageCodec({
                 toolCodec: this.toolCodec,
@@ -42,7 +40,6 @@ export namespace AnthropicCompatibleEngine {
                 fdm: this.fdm,
                 throttle: this.throttle,
                 choice: this.choice,
-                parallelToolCall: this.parallelToolCall,
                 messageCodec: this.messageCodec,
                 toolCodec: this.toolCodec,
                 billing: this.billing,

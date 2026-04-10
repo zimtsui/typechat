@@ -181,3 +181,51 @@ test('Google native engine rejects disabling parallel tool calls', t => {
 
     t.regex(error.message, /Parallel tool calling is required by Google engine\./);
 });
+
+test('Google compatible engine allows omitted parallel tool call option', t => {
+    const adaptor = Adaptor.create({
+        typechat: {
+            endpoints: {
+                google: {
+                    apiType: 'google',
+                    baseUrl: 'https://example.invalid/google',
+                    apiKey: 'test-key',
+                    model: 'test-model',
+                    name: 'Google Compatible',
+                },
+            },
+        },
+    });
+
+    const engine = adaptor.makeCompatibleEngine({
+        endpoint: 'google',
+        functionDeclarationMap,
+        verbatimDeclarationMap,
+    });
+
+    t.true(engine instanceof GoogleCompatibleEngine.Instance);
+});
+
+test('Google native engine allows omitted parallel tool call option', t => {
+    const adaptor = Adaptor.create({
+        typechat: {
+            endpoints: {
+                google: {
+                    apiType: 'google',
+                    baseUrl: 'https://example.invalid/google',
+                    apiKey: 'test-key',
+                    model: 'test-model',
+                    name: 'Google Native',
+                },
+            },
+        },
+    });
+
+    const engine = adaptor.makeGoogleNativeEngine({
+        endpoint: 'google',
+        functionDeclarationMap,
+        verbatimDeclarationMap,
+    });
+
+    t.true(engine instanceof GoogleNativeEngine.Instance);
+});

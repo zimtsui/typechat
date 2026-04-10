@@ -1,7 +1,7 @@
 import { Function } from './function.ts';
 import { EndpointSpec } from './endpoint-spec.ts';
 import { Throttle } from './throttle.ts';
-import { ProxyAgent } from 'undici';
+import { Agent, ProxyAgent, Dispatcher } from 'undici';
 import { env } from 'node:process';
 import { type InferenceContext } from './inference-context.ts';
 import { loggers } from './telemetry.ts';
@@ -9,7 +9,6 @@ import * as SessionModule from './engine/session.ts';
 import { Verbatim } from "./verbatim.js";
 import * as ValidationModule from './engine/validation.ts';
 import * as TransportModule from './engine/transport.ts';
-import * as VerbatimCodec from './verbatim/codec.ts';
 
 
 export interface Pricing {
@@ -20,13 +19,14 @@ export interface Pricing {
 export interface ProviderSpec {
     baseUrl: string;
     apiKey: string;
-    proxyAgent?: ProxyAgent;
+    dispatcher: Dispatcher;
 }
 export interface InferenceParams {
     model: string;
     additionalOptions?: Record<string, unknown>;
-    maxTokens?: number;
+    parallelToolCall?: boolean;
     timeout?: number;
+    retry: number;
 }
 
 export type Engine<
@@ -49,18 +49,26 @@ export namespace Engine {
         public fdm: fdm;
         public vdm: vdm;
         protected throttle: Throttle;
-        protected abstract parallelToolCall: boolean;
-        protected retry: number;
         protected abstract validator: Engine.Validator.From<userm, aim>;
         protected abstract transport: Engine.Transport<userm, aim, devm, session>;
 
         public constructor(options: Engine.Options<fdm, vdm>) {
             const proxyUrl = options.proxy || env.https_proxy || env.HTTPS_PROXY;
 
+            const dispatcher = proxyUrl
+                ? new ProxyAgent({
+                    uri: proxyUrl,
+                    headersTimeout: 0,
+                    bodyTimeout: 0,
+                })
+                : new Agent({
+                    headersTimeout: 0,
+                    bodyTimeout: 0,
+                });
             this.providerSpec = {
                 baseUrl: options.baseUrl,
                 apiKey: options.apiKey,
-                proxyAgent: proxyUrl ? new ProxyAgent(proxyUrl) : undefined,
+                dispatcher,
             };
 
             this.name = options.name;
@@ -68,19 +76,18 @@ export namespace Engine {
                 model: options.model,
                 additionalOptions: options.additionalOptions,
                 timeout: options.timeout,
-                maxTokens: options.maxTokens,
+                parallelToolCall: options.parallelToolCall,
+                retry: options.retry ?? 3,
             };
 
-            const inputPrice = options.inputPrice ?? 0;
             this.pricing = {
-                inputPrice,
+                inputPrice: options.inputPrice ?? 0,
                 outputPrice: options.outputPrice ?? 0,
-                cachePrice: options.cachePrice ?? inputPrice,
+                cachePrice: options.cachePrice ?? options.inputPrice ?? 0,
             };
             this.fdm = options.functionDeclarationMap;
             this.vdm = options.verbatimDeclarationMap;
             this.throttle = options.throttle;
-            this.retry = options.retry ?? 3;
         }
 
         protected async infer(
@@ -106,10 +113,10 @@ export namespace Engine {
         ): Promise<aim> {
             for (let retry = 0;; retry++) {
                 const signalTimeout = this.inferenceParams.timeout ? AbortSignal.timeout(this.inferenceParams.timeout) : undefined;
-                const signal = wfctx.signal && signalTimeout ? AbortSignal.any([
-                    wfctx.signal,
-                    signalTimeout,
-                ]) : wfctx.signal || signalTimeout;
+                const signals: AbortSignal[] = [];
+                if (signalTimeout) signals.push(signalTimeout);
+                if (wfctx.signal) signals.push(wfctx.signal);
+                const signal = AbortSignal.any(signals);
                 try {
                     const response = await this.infer(wfctx, session, signal);
                     const rejection = this.validator.validateMessageStructuring(response);
@@ -122,7 +129,7 @@ export namespace Engine {
                     else if (e instanceof NetworkError) {}         		                                // 网络故障
                     else if (e instanceof CustomRetry) {}         		                                // 自定义重试
                     else throw e;
-                    if (retry < this.retry) loggers.message.warn(e); else throw e;
+                    if (retry < this.inferenceParams.retry) loggers.message.warn(e); else throw e;
                 }
             }
         }
@@ -137,10 +144,10 @@ export namespace Engine {
         ): Promise<aim> {
             for (let retry = 0;; retry++) {
                 const signalTimeout = this.inferenceParams.timeout ? AbortSignal.timeout(this.inferenceParams.timeout) : undefined;
-                const signal = wfctx.signal && signalTimeout ? AbortSignal.any([
-                    wfctx.signal,
-                    signalTimeout,
-                ]) : wfctx.signal || signalTimeout;
+                const signals: AbortSignal[] = [];
+                if (signalTimeout) signals.push(signalTimeout);
+                if (wfctx.signal) signals.push(wfctx.signal);
+                const signal = AbortSignal.any(signals);
                 try {
                     const response = await this.infer(wfctx, session, signal);
                     const rejection = this.validator.validateMessageStructuring(response);
@@ -157,7 +164,7 @@ export namespace Engine {
                     else if (e instanceof NetworkError) {}         		                                // 网络故障
                     else if (e instanceof CustomRetry) {}         		                                // 自定义重试
                     else throw e;
-                    if (retry < this.retry) {} else throw e;
+                    if (retry < this.inferenceParams.retry) {} else throw e;
                     loggers.message.warn(e);
                 }
             }

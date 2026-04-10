@@ -24,14 +24,11 @@ export namespace AliyunCompatibleEngine {
         protected billing: OpenAIChatCompletionsBilling;
         protected override validator: Validator.From<fdm, vdm>;
         protected override transport: AliyunCompatibleEngine.Transport<fdm, vdm>;
-        protected override parallelToolCall: boolean;
 
         public constructor(options: AliyunCompatibleEngine.Options<fdm, vdm>) {
             super(options);
-            this.parallelToolCall = options.parallelToolCall ?? false;
             this.toolCodec = new OpenAIChatCompletionsToolCodec({
                 fdm: this.fdm,
-                parallelToolCall: this.parallelToolCall,
             });
             this.messageCodec = new MessageCodec({
                 toolCodec: this.toolCodec,
@@ -49,7 +46,6 @@ export namespace AliyunCompatibleEngine {
                 toolCodec: this.toolCodec,
                 billing: this.billing,
                 validator: this.validator,
-                parallelToolCall: this.parallelToolCall,
             });
         }
 

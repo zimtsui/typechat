@@ -22,6 +22,5 @@ export namespace EndpointSpec {
         additionalOptions: Type.Optional(Type.Record(Type.String(), Type.Any())),
         rpm: Type.Optional(Type.Number({ minimum: 1 })),
         timeout: Type.Optional(Type.Number({ minimum: 0 })),
-        maxTokens: Type.Optional(Type.Number({ minimum: 0 })),
     });
 }

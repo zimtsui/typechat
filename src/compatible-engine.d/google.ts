@@ -24,12 +24,10 @@ export namespace GoogleCompatibleEngine {
         protected billing: Billing;
         protected override validator: Validator.From<fdm, vdm>;
         protected override transport: GoogleCompatibleEngine.Transport<fdm, vdm>;
-        protected override parallelToolCall: boolean;
 
         public constructor(options: GoogleCompatibleEngine.Options<fdm, vdm>) {
             super(options);
-            this.parallelToolCall = options.parallelToolCall ?? true;
-            if (this.parallelToolCall) {} else throw new Error('Parallel tool calling is required by Google engine.');
+            if (options.parallelToolCall === false) throw new Error('Parallel tool calling is required by Google engine.');
             this.toolCodec = new ToolCodec({
                 fdm: this.fdm,
             });

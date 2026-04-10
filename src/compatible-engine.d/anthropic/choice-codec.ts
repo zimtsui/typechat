@@ -9,18 +9,19 @@ export function encode<
     vdu extends Verbatim.Decl.Proto,
 >(
     choice: Structuring.Choice<fdu, vdu>,
-    parallelToolCall: boolean,
+    parallelToolCall?: boolean,
 ): Anthropic.ToolChoice {
+    const disable_parallel_tool_use: boolean | undefined = typeof parallelToolCall === 'boolean' ? !parallelToolCall : undefined;
 
     if (choice === Structuring.Choice.NONE) return { type: 'none' };
-    else if (choice === Structuring.Choice.REQUIRED) return { type: 'auto', disable_parallel_tool_use: !parallelToolCall };
-    else if (choice === Structuring.Choice.ANYONE) return { type: 'auto', disable_parallel_tool_use: !parallelToolCall };
-    else if (choice === Structuring.Choice.AUTO) return { type: 'auto', disable_parallel_tool_use: !parallelToolCall };
+    else if (choice === Structuring.Choice.REQUIRED) return { type: 'auto', disable_parallel_tool_use };
+    else if (choice === Structuring.Choice.ANYONE) return { type: 'auto', disable_parallel_tool_use };
+    else if (choice === Structuring.Choice.AUTO) return { type: 'auto', disable_parallel_tool_use };
 
-    else if (choice === Structuring.Choice.FCall.REQUIRED) return { type: 'any', disable_parallel_tool_use: !parallelToolCall };
-    else if (choice === Structuring.Choice.FCall.ANYONE) return { type: 'any', disable_parallel_tool_use: !parallelToolCall };
+    else if (choice === Structuring.Choice.FCall.REQUIRED) return { type: 'any', disable_parallel_tool_use };
+    else if (choice === Structuring.Choice.FCall.ANYONE) return { type: 'any', disable_parallel_tool_use };
     else if (choice instanceof Structuring.Choice.FCall)
-        return { type: 'tool', name: choice.name, disable_parallel_tool_use: !parallelToolCall };
+        return { type: 'tool', name: choice.name, disable_parallel_tool_use };
 
     else if (choice === Structuring.Choice.VRequest.REQUIRED) return { type: 'none' };
     else if (choice === Structuring.Choice.VRequest.ANYONE) return { type: 'none' };

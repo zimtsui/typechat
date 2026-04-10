@@ -39,12 +39,10 @@ export namespace GoogleNativeEngine {
         protected billing: Billing;
         protected override validator: GoogleNativeEngine.Validator.From<fdm, vdm>;
         protected override transport: GoogleNativeTransport<fdm, vdm>;
-        protected override parallelToolCall: boolean;
 
         public constructor(options: GoogleNativeEngine.Options<fdm, vdm>) {
             super(options);
-            this.parallelToolCall = options.parallelToolCall ?? true;
-            if (this.parallelToolCall) {} else throw new Error('Parallel tool calling is required by Google engine.');
+            if (options.parallelToolCall === false) throw new Error('Parallel tool calling is required by Google engine.');
             this.choice = options.structuringChoice ?? Structuring.Choice.AUTO;
             this.codeExecution = options.codeExecution ?? false;
             this.urlContext = options.urlContext ?? false;

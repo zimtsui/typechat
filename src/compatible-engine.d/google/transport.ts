@@ -42,34 +42,34 @@ export class Transport<
         // Prepare request body
         const systemInstruction = session.developerMessage && this.ctx.messageCodec.encodeDeveloperMessage(session.developerMessage);
         const contents = this.ctx.messageCodec.encodeChatMessages(session.chatMessages);
-        const tools = this.ctx.toolCodec.encodeFunctionDeclarationMap(this.ctx.fdm);
+        const apiFds = this.ctx.toolCodec.encodeFunctionDeclarationMap(this.ctx.fdm);
+        const apiTools: Google.Tool[] = [];
+        if (apiFds.length) apiTools.push({ functionDeclarations: apiFds });
+        const apiToolConfig: Google.ToolConfig = {};
+        if (apiFds.length) apiToolConfig.functionCallingConfig = ChoiceCodec.encode(this.ctx.choice);
         const reqbody: RestfulRequest = {
             contents,
-            tools: tools.length ? [{
-                functionDeclarations: tools,
-            }] : undefined,
-            toolConfig: tools.length ? {
-                functionCallingConfig: ChoiceCodec.encode(this.ctx.choice),
-            } : undefined,
+            tools: apiTools,
+            toolConfig: apiToolConfig,
             systemInstruction,
-            generationConfig: this.ctx.inferenceParams.maxTokens || this.ctx.inferenceParams.additionalOptions ? {
-                maxOutputTokens: this.ctx.inferenceParams.maxTokens ?? undefined,
-                ...this.ctx.inferenceParams.additionalOptions,
-            } : undefined,
+            generationConfig: this.ctx.inferenceParams.additionalOptions,
         };
         loggers.message.debug(reqbody);
 
         // Send request
-        const res = await Undici.fetch(this.apiURL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-goog-api-key': this.ctx.providerSpec.apiKey,
+        const res = await Undici.fetch(
+            this.apiURL,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-goog-api-key': this.ctx.providerSpec.apiKey,
+                },
+                body: JSON.stringify(reqbody),
+                dispatcher: this.ctx.providerSpec.dispatcher,
+                signal,
             },
-            body: JSON.stringify(reqbody),
-            dispatcher: this.ctx.providerSpec.proxyAgent,
-            signal,
-        }).catch(e => {
+        ).catch(e => {
             if (e instanceof TypeError)
                 throw new NetworkError(undefined, { cause: e });
             else throw e;

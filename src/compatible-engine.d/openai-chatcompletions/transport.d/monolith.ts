@@ -4,7 +4,7 @@ import type OpenAI from 'openai';
 import { Transport } from '../transport.ts';
 import { type InferenceContext } from '../../../inference-context.ts';
 import * as Undici from 'undici';
-import { ResponseInvalid, NetworkError } from '../../../engine.ts';
+import { ResponseInvalid, NetworkError, ProviderSpec, InferenceParams } from '../../../engine.ts';
 import { loggers } from '../../../telemetry.ts';
 import type { OpenAIChatCompletionsBilling } from '../../../api-types/openai-chatcompletions/billing.ts';
 import type { OpenAIChatCompletionsToolCodec } from '../../../api-types/openai-chatcompletions/tool-codec.ts';
@@ -15,6 +15,7 @@ import { Validator } from '../../../compatible-engine/validation.ts';
 import * as ChoiceCodec from '../choice-codec.ts';
 import type { Structuring } from '../../../compatible-engine/structuring.ts';
 import { MIMEType } from 'whatwg-mimetype';
+import { HeaderRecord } from 'undici/types/header';
 
 
 
@@ -35,7 +36,7 @@ export abstract class MonolithTransport<
     ): OpenAI.ChatCompletionCreateParamsNonStreaming {
         const tools = this.ctx.toolCodec.encodeFunctionDeclarationMap(this.ctx.fdm);
         return {
-            model: this.ctx.model,
+            model: this.ctx.inferenceParams.model,
             stream: false,
             messages: [
                 ...(session.developerMessage ? this.ctx.messageCodec.encodeRoleMessage(session.developerMessage) : []),
@@ -43,9 +44,8 @@ export abstract class MonolithTransport<
             ],
             tools: tools.length ? tools : undefined,
             tool_choice: tools.length ? ChoiceCodec.encode(this.ctx.choice) : undefined,
-            parallel_tool_calls: tools.length ? this.ctx.parallelToolCall : undefined,
-            max_completion_tokens: this.ctx.maxTokens ?? undefined,
-            ...this.ctx.additionalOptions,
+            parallel_tool_calls: tools.length ? this.ctx.inferenceParams.parallelToolCall : undefined,
+            ...this.ctx.inferenceParams.additionalOptions,
         };
     }
 
@@ -61,16 +61,19 @@ export abstract class MonolithTransport<
         loggers.message.debug(params);
 
         // Send request
-        const res = await Undici.fetch(this.ctx.apiURL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${this.ctx.apiKey}`,
+        const res = await Undici.fetch(
+            new URL(`${this.ctx.providerSpec.baseUrl}/chat/completions`),
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.ctx.providerSpec.apiKey}`,
+                } satisfies HeaderRecord,
+                body: JSON.stringify(params),
+                dispatcher: this.ctx.providerSpec.dispatcher,
+                signal,
             },
-            body: JSON.stringify(params),
-            dispatcher: this.ctx.proxyAgent,
-            signal,
-        }).catch(e => {
+        ).catch(e => {
             if (e instanceof TypeError)
                 throw new NetworkError(undefined, { cause: e });
             else throw e;
@@ -113,17 +116,12 @@ export namespace MonolithTransport {
         in out fdm extends Function.Decl.Map.Proto,
         in out vdm extends Verbatim.Decl.Map.Proto,
     > {
-        proxyAgent?: Undici.ProxyAgent;
-        apiURL: URL;
-        apiKey: string;
-        model: string;
         fdm: fdm;
-        maxTokens?: number;
         throttle: Throttle;
-        additionalOptions?: Record<string, unknown>;
         choice: Structuring.Choice.From<fdm, vdm>;
-        parallelToolCall: boolean;
 
+        providerSpec: ProviderSpec;
+        inferenceParams: InferenceParams;
         messageCodec: MessageCodec<fdm, vdm>;
         toolCodec: OpenAIChatCompletionsToolCodec<fdm>;
         billing: OpenAIChatCompletionsBilling;

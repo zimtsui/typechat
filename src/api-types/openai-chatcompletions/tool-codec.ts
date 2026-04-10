@@ -89,7 +89,6 @@ export class OpenAIChatCompletionsToolCodec<in out fdm extends Function.Decl.Map
 
 export namespace OpenAIChatCompletionsToolCodec {
     export interface Context<in out fdm extends Function.Decl.Map.Proto> {
-        parallelToolCall: boolean;
         fdm: fdm;
     }
 }
