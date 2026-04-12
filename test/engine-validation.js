@@ -59,7 +59,7 @@ test('Compatible validator returns verbatim meta feedback when request is missin
     const rejection = validator.validate(aiMessage);
 
     t.truthy(rejection);
-    t.regex(getOnlyText(rejection), /<verbatim:meta>No valid verbatim request found\.<\/verbatim:meta>\n\n$/);
+    t.regex(getOnlyText(rejection), /<verbatim:meta>Error: No valid verbatim request found\. Check your output format\.<\/verbatim:meta>\n\n$/);
 });
 
 test('OpenAI Responses validator returns verbatim meta feedback when request is missing', t => {
@@ -73,7 +73,7 @@ test('OpenAI Responses validator returns verbatim meta feedback when request is 
     const rejection = validator.validate(aiMessage);
 
     t.truthy(rejection);
-    t.regex(getOnlyText(rejection), /<verbatim:meta>No valid verbatim request found\.<\/verbatim:meta>\n\n$/);
+    t.regex(getOnlyText(rejection), /<verbatim:meta>Error: No valid verbatim request found\. Check your output format\.<\/verbatim:meta>\n\n$/);
 });
 
 test('Compatible parts validator checks each text part independently', t => {
@@ -136,7 +136,7 @@ test('Engine stateful appends validator rejection message before retrying', asyn
     ];
     const rejection = new CompatibleRoleMessage.User([
         CompatibleRoleMessage.Part.Text.paragraph(
-            VerbatimCodec.Meta.encode('No valid verbatim request found.'),
+            VerbatimCodec.Meta.encode('Error: No valid verbatim request found. Check your output format.'),
         ),
     ]);
     const engine = new FakeEngine(responses, {

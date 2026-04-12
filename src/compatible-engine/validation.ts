@@ -43,7 +43,7 @@ export class StructuringValidator<
             if (!vrs.length)
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
-                        VerbatimCodec.Meta.encode(`No valid verbatim request found.`),
+                        VerbatimCodec.Meta.encode(`Error: No valid verbatim request found. Check your output format.`),
                     ),
                 ]);
 
@@ -51,13 +51,13 @@ export class StructuringValidator<
             if (!vrs.length)
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
-                        VerbatimCodec.Meta.encode(`No valid verbatim request found.`),
+                        VerbatimCodec.Meta.encode(`Error: No valid verbatim request found. Check your output format.`),
                     ),
                 ]);
             if (vrs.length > 1)
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
-                        VerbatimCodec.Meta.encode(`Only 1 verbatim request allowed, but multiple found.`),
+                        VerbatimCodec.Meta.encode(`Error: Only 1 verbatim request allowed, but multiple found.`),
                     ),
                 ]);
 
@@ -65,19 +65,19 @@ export class StructuringValidator<
             if (!vrs.length)
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
-                        VerbatimCodec.Meta.encode(`No valid verbatim request through channel \`${this.ctx.choice.name}\` found.`),
+                        VerbatimCodec.Meta.encode(`Error: No valid verbatim request through channel \`${this.ctx.choice.name}\` found. Check your output format.`),
                     ),
                 ]);
             if (vrs.length > 1)
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
-                        VerbatimCodec.Meta.encode(`Only 1 verbatim request through channel \`${this.ctx.choice.name}\` allowed.`),
+                        VerbatimCodec.Meta.encode(`Error: Only 1 verbatim request through channel \`${this.ctx.choice.name}\` allowed.`),
                     ),
                 ]);
             if (vrs[0]!.name !== this.ctx.choice.name)
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
-                        VerbatimCodec.Meta.encode(`Only verbatim request through channel \`${this.ctx.choice.name}\` allowed.`),
+                        VerbatimCodec.Meta.encode(`Error: Only verbatim request through channel \`${this.ctx.choice.name}\` allowed.`),
                     ),
                 ]);
 
@@ -85,7 +85,7 @@ export class StructuringValidator<
             if (fcs.length + vrs.length) {} else
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
-                        VerbatimCodec.Meta.encode(`No function call or valid verbatim request found.`),
+                        VerbatimCodec.Meta.encode(`Error: No function call or valid verbatim request found. Check your output format.`),
                     ),
                 ]);
 
@@ -93,13 +93,13 @@ export class StructuringValidator<
             if (fcs.length + vrs.length) {} else
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
-                        VerbatimCodec.Meta.encode(`No function call or valid verbatim request found.`),
+                        VerbatimCodec.Meta.encode(`Error: No function call or valid verbatim request found. Check your output format.`),
                     ),
                 ]);
             if (fcs.length + vrs.length > 1)
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
-                        VerbatimCodec.Meta.encode(`Only 1 function call or verbatim request allowed, but multiple found.`),
+                        VerbatimCodec.Meta.encode(`Error: Only 1 function call or verbatim request allowed, but multiple found.`),
                     ),
                 ]);
 
@@ -107,7 +107,7 @@ export class StructuringValidator<
             if (fcs.length + vrs.length)
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
-                        VerbatimCodec.Meta.encode(`Neither function call nor verbatim request allowed.`),
+                        VerbatimCodec.Meta.encode(`Error: Neither function call nor verbatim request allowed.`),
                     ),
                 ]);
         }
