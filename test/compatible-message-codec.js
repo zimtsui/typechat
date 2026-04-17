@@ -64,11 +64,6 @@ test('OpenAI responses codec encodes multimodal user message', t => {
 
     t.deepEqual(encoded, [
         {
-            type: 'function_call_output',
-            call_id: 'call_1',
-            output: 'done',
-        },
-        {
             type: 'message',
             role: 'user',
             content: [
@@ -86,6 +81,11 @@ test('OpenAI responses codec encodes multimodal user message', t => {
                     file_data: 'data:application/pdf;base64,cGRm',
                 },
             ],
+        },
+        {
+            type: 'function_call_output',
+            call_id: 'call_1',
+            output: 'done',
         },
     ]);
 });
@@ -232,6 +232,7 @@ test('OpenAI Chat Completions transport reads parallelToolCall from inferencePar
     const params = transport.makeParams(session);
 
     t.is(params.parallel_tool_calls, true);
+    t.true(params.stream);
 });
 
 test('OpenAI Chat Completions transport streams usage by default', t => {
@@ -342,6 +343,7 @@ test('Volcengine transport omits encrypted reasoning include from params', t => 
 
     t.is(params.parallel_tool_calls, true);
     t.is(params.include, undefined);
+    t.true(params.stream);
 });
 
 test('OpenAI Responses native transport reads parallelToolCall from inferenceParams', t => {
@@ -378,6 +380,7 @@ test('OpenAI Responses native transport reads parallelToolCall from inferencePar
     const params = transport.makeParams(session);
 
     t.is(params.parallel_tool_calls, false);
+    t.true(params.stream);
 });
 
 test('Media image rejects non-image MIME type', t => {
