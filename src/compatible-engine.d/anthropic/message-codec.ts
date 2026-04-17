@@ -4,7 +4,6 @@ import Anthropic from '@anthropic-ai/sdk';
 import type { ToolCodec } from '../../api-types/anthropic/tool-codec.ts';
 import type { Verbatim } from '../../verbatim.ts';
 import * as VerbatimCodec from '../../verbatim/codec.ts';
-import { ResponseInvalid } from '../../engine.ts';
 
 const NOMINAL = Symbol();
 
@@ -13,7 +12,7 @@ export class MessageCodec<
     in out fdm extends Function.Decl.Map.Proto,
     in out vdm extends Verbatim.Decl.Map.Proto,
 > {
-    public constructor(protected ctx: MessageCodec.Context<fdm, vdm>) {}
+    public constructor(protected comps: MessageCodec.Components<fdm, vdm>) {}
 
     public encodeUserMessage(
         userMessage: RoleMessage.User.From<fdm>,
@@ -25,7 +24,7 @@ export class MessageCodec<
                     text: part.text,
                 } satisfies Anthropic.TextBlockParam;
             else if (part instanceof Function.Response)
-                return this.ctx.toolCodec.encodeFunctionResponse(part);
+                return this.comps.toolCodec.encodeFunctionResponse(part);
             else throw new Error();
         });
     }
@@ -43,7 +42,7 @@ export class MessageCodec<
                         text: part.text,
                     } satisfies Anthropic.TextBlockParam;
                 else if (part instanceof Function.Call)
-                    return this.ctx.toolCodec.encodeFunctionCall(part);
+                    return this.comps.toolCodec.encodeFunctionCall(part);
                 else throw new Error();
             });
         }
@@ -68,24 +67,22 @@ export class MessageCodec<
     public decodeAiMessage(
         raw: Anthropic.ContentBlock[],
     ): MessageCodec.Message.Ai.From<fdm, vdm> {
-        const parts = raw.flatMap((item): RoleMessage.Ai.Part.From<fdm, vdm>[] => {
-            if (item.type === 'text') try {
-                const vrs = VerbatimCodec.Request.decode(item.text, this.ctx.vdm);
-                return [new RoleMessage.Part.Text(item.text, vrs)];
-            } catch (e) {
-                if (e instanceof SyntaxError)
-                    throw new ResponseInvalid('Invalid verbatim message', { cause: raw });
-                else throw e;
-            } else if (item.type === 'tool_use') return [this.ctx.toolCodec.decodeFunctionCall(item)];
-            else if (item.type === 'thinking') return [];
+        const parts: RoleMessage.Ai.Part.From<fdm, vdm>[] = [];
+        for (const item of raw) {
+            if (item.type === 'text') {
+                const vrs = VerbatimCodec.Request.decode(item.text, this.comps.vdm);
+                parts.push(new RoleMessage.Part.Text(item.text, vrs));
+            } else if (item.type === 'tool_use')
+                parts.push(this.comps.toolCodec.decodeFunctionCall(item));
+            else if (item.type === 'thinking') {}
             else throw new Error();
-        });
+        }
         return new MessageCodec.Message.Ai(parts, raw);
     }
 }
 
 export namespace MessageCodec {
-    export interface Context<
+    export interface Components<
         in out fdm extends Function.Decl.Map.Proto,
         in out vdm extends Verbatim.Decl.Map.Proto,
     > {

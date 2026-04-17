@@ -1,6 +1,5 @@
 import { Function } from '../../function.ts';
 import OpenAI from 'openai';
-import { ResponseInvalid } from '../../engine.ts';
 import Ajv from 'ajv';
 
 const ajv = new Ajv();
@@ -28,16 +27,16 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
         apifc: OpenAI.ChatCompletionMessageFunctionToolCall,
     ): Function.Call.From<fdm> {
         const fditem = this.comps.fdm[apifc.function.name];
-        if (fditem) {} else throw new ResponseInvalid('Unknown function call', { cause: apifc });
+        if (fditem) {} else throw new SyntaxError('Unknown function call', { cause: apifc });
         const args = (() => {
             try {
                 return JSON.parse(apifc.function.arguments);
             } catch (e) {
-                throw new ResponseInvalid('Invalid JSON of function call', { cause: apifc });
+                throw new SyntaxError('Invalid JSON of function call', { cause: apifc });
             }
         })();
         if (ajv.validate(fditem.parameters, args)) {}
-        else throw new ResponseInvalid('Invalid function arguments', { cause: apifc });
+        else throw new SyntaxError('Invalid function arguments', { cause: apifc });
         return Function.Call.of({
             id: apifc.id,
             name: apifc.function.name,

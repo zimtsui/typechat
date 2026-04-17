@@ -4,7 +4,6 @@ import OpenAI from 'openai';
 import type { ToolCodec } from '../../api-types/openai-responses/tool-codec.ts';
 import type { Verbatim } from '../../verbatim.ts';
 import * as VerbatimCodec from '../../verbatim/codec.ts';
-import { ResponseInvalid } from '../../engine.ts';
 import { Media } from '../../media.ts';
 
 const NOMINAL = Symbol();
@@ -14,35 +13,25 @@ export class MessageCodec<
     in out fdm extends Function.Decl.Map.Proto,
     in out vdm extends Verbatim.Decl.Map.Proto,
 > {
-    public constructor(protected ctx: MessageCodec.Context<fdm, vdm>) {}
+    public constructor(protected comps: MessageCodec.Components<fdm, vdm>) {}
 
-    /**
-     * @throws {@link VerbatimCodec.Request.Invalid}
-     */
     public decodeAiMessage(
         output: OpenAI.Responses.ResponseOutputItem[],
     ): MessageCodec.Message.Ai.From<fdm, vdm> {
-        const parts = output.flatMap(
-            (item): RoleMessage.Ai.Part.From<fdm, vdm>[] => {
-                if (item.type === 'message') {
-                    if (item.content.every(part => part.type === 'output_text')) {} else
-                        throw new ResponseInvalid('Refusal', { cause: output });
-                    const text = item.content.map(part => part.text).join('');
-                    if (text) try {
-                        const vrs = VerbatimCodec.Request.decode(text, this.ctx.vdm);
-                        return [new RoleMessage.Part.Text(text, vrs)];
-                    } catch (e) {
-                        if (e instanceof SyntaxError)
-                            throw new ResponseInvalid('Invalid verbatim message', { cause: output });
-                        else throw e;
-                    } else return [];
-                } else if (item.type === 'function_call')
-                    return [this.ctx.toolCodec.decodeFunctionCall(item)];
-                else if (item.type === 'reasoning')
-                    return [];
-                else throw new Error();
-            },
-        );
+        const parts: RoleMessage.Ai.Part.From<fdm, vdm>[] = [];
+        for (const item of output)
+            if (item.type === 'message')
+                for (const part of item.content)
+                    if (part.type === 'output_text') {
+                        const vrs = VerbatimCodec.Request.decode(part.text, this.comps.vdm);
+                        parts.push(new RoleMessage.Part.Text(part.text, vrs));
+                    } else if (part.type === 'refusal')
+                        throw new SyntaxError('Refusal', { cause: output });
+                    else throw new Error();
+            else if (item.type === 'function_call')
+                parts.push(this.comps.toolCodec.decodeFunctionCall(item));
+            else if (item.type === 'reasoning') {}
+            else throw new Error();
         return new MessageCodec.Message.Ai(parts, output);
     }
 
@@ -60,55 +49,64 @@ export class MessageCodec<
         userMessage: RoleMessage.User.From<fdm>,
     ): OpenAI.Responses.ResponseInput {
         const responseInput: OpenAI.Responses.ResponseInput = [];
-        const frs = userMessage.getFunctionResponses();
-        responseInput.push(...frs.map(fr => this.ctx.toolCodec.encodeFunctionResponse(fr)));
-        const content = userMessage.getParts().flatMap<OpenAI.Responses.ResponseInputContent>(part => {
+        let content: OpenAI.Responses.ResponseInputContent[] = [];
+        function flush() {
+            if (content.length) {
+                responseInput.push({
+                    type: 'message',
+                    role: 'user',
+                    content,
+                });
+                content = [];
+            }
+        }
+        for (const part of userMessage.getParts()) {
             if (part instanceof RoleMessage.Part.Text)
-                return [{
+                content.push({
                     type: 'input_text',
                     text: part.text,
-                } satisfies OpenAI.Responses.ResponseInputText];
-            else if (part instanceof Function.Response) return [];
+                });
             else if (part instanceof Media.Image)
-                return [{
+                content.push({
                     type: 'input_image',
                     image_url: `data:${part.mimeType};base64,${part.base64}`,
                     detail: this.encodeImageResolution(part.resolution),
-                } satisfies OpenAI.Responses.ResponseInputImage];
+                });
             else if (part instanceof Media.Pdf)
-                return [{
+                content.push({
                     type: 'input_file',
                     file_data: `data:${part.mimeType};base64,${part.base64}`,
-                } satisfies OpenAI.Responses.ResponseInputFile];
-            else throw new Error();
-        });
-        if (content.length) responseInput.push({
-            type: 'message',
-            role: 'user',
-            content,
-        });
+                });
+            else if (part instanceof Function.Response) {
+                flush();
+                responseInput.push(this.comps.toolCodec.encodeFunctionResponse(part));
+            } else throw new Error();
+        }
+        flush();
         return responseInput;
     }
 
     public encodeAiMessage(
         aiMessage: RoleMessage.Ai.From<fdm, vdm>,
     ): OpenAI.Responses.ResponseInput {
-        if (aiMessage instanceof MessageCodec.Message.Ai)
-            return aiMessage.getRaw().map(item => {
-                if (item.type !== 'computer_call_output') return item;
-                else throw new Error('Computer calls are not supported yet.');
-            });
-        else
-            return aiMessage.getParts().map(part => {
-                if (part instanceof RoleMessage.Part.Text)
-                    return {
-                        role: 'assistant',
-                        content: part.text,
-                    } satisfies OpenAI.Responses.EasyInputMessage;
-                else if (part instanceof Function.Call)
-                    return this.ctx.toolCodec.encodeFunctionCall(part);
-                else throw new Error();
-            });
+        if (aiMessage instanceof MessageCodec.Message.Ai) {
+            const responseInput = aiMessage.getRaw();
+            if (responseInput.every(item => item.type !== 'computer_call_output')) {} else
+                throw new Error('Computer calls are not supported yet.');
+            return responseInput;
+        }
+        const responseInput: OpenAI.Responses.ResponseInput = [];
+        for (const part of aiMessage.getParts()) {
+            if (part instanceof RoleMessage.Part.Text)
+                responseInput.push({
+                    role: 'assistant',
+                    content: part.text,
+                });
+            else if (part instanceof Function.Call)
+                responseInput.push(this.comps.toolCodec.encodeFunctionCall(part));
+            else throw new Error();
+        };
+        return responseInput;
     }
 
     public encodeDeveloperMessage(developerMessage: RoleMessage.Developer): string {
@@ -127,7 +125,7 @@ export class MessageCodec<
 }
 
 export namespace MessageCodec {
-    export interface Context<
+    export interface Components<
         in out fdm extends Function.Decl.Map.Proto,
         in out vdm extends Verbatim.Decl.Map.Proto,
     > {

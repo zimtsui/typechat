@@ -13,17 +13,18 @@ export class Transport<
 > extends OpenAIResponsesTransport<fdm, vdm> {
     protected override makeParams(
         session: Session.From<fdm, vdm>,
-    ): OpenAI.Responses.ResponseCreateParamsNonStreaming {
-        const tools = this.ctx.toolCodec.encodeFunctionDeclarationMap(this.ctx.fdm);
+    ): OpenAI.Responses.ResponseCreateParamsStreaming {
+        const tools = this.comps.toolCodec.encodeFunctionDeclarationMap(this.comps.fdm);
         return {
-            model: this.ctx.inferenceParams.model,
+            model: this.comps.inferenceParams.model,
             store: false,
-            input: session.chatMessages.flatMap(chatMessage => this.ctx.messageCodec.encodeChatMessage(chatMessage)),
-            instructions: session.developerMessage && this.ctx.messageCodec.encodeDeveloperMessage(session.developerMessage),
+            stream: true,
+            input: session.chatMessages.flatMap(chatMessage => this.comps.messageCodec.encodeChatMessage(chatMessage)),
+            instructions: session.developerMessage && this.comps.messageCodec.encodeDeveloperMessage(session.developerMessage),
             tools: tools.length ? tools : undefined,
-            tool_choice: tools.length ? ChoiceCodec.encode(this.ctx.choice) : undefined,
-            parallel_tool_calls: tools.length ? this.ctx.inferenceParams.parallelToolCall : undefined,
-            ...this.ctx.inferenceParams.additionalOptions,
+            tool_choice: tools.length ? ChoiceCodec.encode(this.comps.choice) : undefined,
+            parallel_tool_calls: tools.length ? this.comps.inferenceParams.parallelToolCall : undefined,
+            ...this.comps.inferenceParams.additionalOptions,
         };
     }
 

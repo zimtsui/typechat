@@ -1,5 +1,4 @@
 import { Function } from '../../function.ts';
-import { ResponseInvalid } from '../../engine.ts';
 import Anthropic from '@anthropic-ai/sdk';
 import Ajv from 'ajv';
 import { type TObject } from '@sinclair/typebox';
@@ -20,9 +19,9 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
         apifc: Anthropic.ToolUseBlock,
     ): Function.Call.From<fdm> {
         const fditem = this.comps.fdm[apifc.name];
-        if (fditem) {} else throw new ResponseInvalid('Unknown function call', { cause: apifc });
+        if (fditem) {} else throw new SyntaxError('Unknown function call', { cause: apifc });
         if (ajv.validate(fditem.parameters, apifc.input)) {}
-        else throw new ResponseInvalid('Function call not conforming to schema', { cause: apifc });
+        else throw new SyntaxError('Function call not conforming to schema', { cause: apifc });
         return Function.Call.of({
             id: apifc.id,
             name: apifc.name,

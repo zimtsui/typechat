@@ -2,7 +2,6 @@ import { Structuring } from './structuring.ts';
 import { Function } from '../function.ts';
 import { Verbatim } from '../verbatim.ts';
 import { RoleMessage } from './session.ts';
-import { ResponseInvalid } from '../engine.ts';
 import type { Engine } from '../engine.ts';
 import * as VerbatimCodec from '../verbatim/codec.ts';
 import { isRepeating } from '../repetition.ts';
@@ -27,17 +26,17 @@ export class StructuringValidator<
         vrs: Verbatim.Request.Of<vdu>[],
     ): RoleMessage.User<fdu> | void {
         if (this.comps.choice === Structuring.Choice.FCall.REQUIRED) {
-            if (!fcs.length) throw new ResponseInvalid('Function call required.');
+            if (!fcs.length) throw new SyntaxError('Function call required.');
 
         } else if (this.comps.choice === Structuring.Choice.FCall.ANYONE) {
-            if (!fcs.length) throw new ResponseInvalid('Function call required.');
-            if (fcs.length > 1) throw new ResponseInvalid('Only one function call allowed.');
+            if (!fcs.length) throw new SyntaxError('Function call required.');
+            if (fcs.length > 1) throw new SyntaxError('Only one function call allowed.');
 
         } else if (this.comps.choice instanceof Structuring.Choice.FCall) {
-            if (!fcs.length) throw new ResponseInvalid(`Function call of ${this.comps.choice.name} required.`);
-            if (fcs.length > 1) throw new ResponseInvalid('Only one function call allowed.');
+            if (!fcs.length) throw new SyntaxError(`Function call of ${this.comps.choice.name} required.`);
+            if (fcs.length > 1) throw new SyntaxError('Only one function call allowed.');
             if (fcs[0]!.name !== this.comps.choice.name)
-                throw new ResponseInvalid(`Only function call of ${this.comps.choice.name} allowed.`);
+                throw new SyntaxError(`Only function call of ${this.comps.choice.name} allowed.`);
 
         } else if (this.comps.choice === Structuring.Choice.VRequest.REQUIRED) {
             if (!vrs.length)
@@ -144,13 +143,13 @@ export class PartsValidator<
     ): void {
         for (const part of parts)
             if (isRepeating(part.text, 2, 20))
-                throw new ResponseInvalid('Repeating');
+                throw new SyntaxError('Repeating');
     }
 
     public validate(
         message: RoleMessage.Ai<fdu, vdu>,
     ): void {
-        if (message.getParts().length) {} else throw new ResponseInvalid('Empty message.');
+        if (message.getParts().length) {} else throw new SyntaxError('Empty message.');
         this.validateMessageTextParts(message.getTextParts());
     }
 

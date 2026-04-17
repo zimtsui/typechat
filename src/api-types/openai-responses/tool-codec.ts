@@ -1,6 +1,5 @@
 import OpenAI from 'openai';
 import { Function } from '../../function.ts';
-import { ResponseInvalid } from '../../engine.ts';
 import Ajv from 'ajv';
 
 const ajv = new Ajv();
@@ -52,16 +51,16 @@ export class ToolCodec<
         apifc: OpenAI.Responses.ResponseFunctionToolCall,
     ): Function.Call.From<fdm> {
         const fditem = this.comps.fdm[apifc.name];
-        if (fditem) {} else throw new ResponseInvalid('Unknown function call', { cause: apifc });
+        if (fditem) {} else throw new SyntaxError('Unknown function call', { cause: apifc });
         const args = (() => {
             try {
                 return JSON.parse(apifc.arguments);
             } catch (e) {
-                throw new ResponseInvalid('Invalid JSON of function call', { cause: apifc });
+                throw new SyntaxError('Invalid JSON of function call', { cause: apifc });
             }
         })();
         if (ajv.validate(fditem.parameters, args)) {}
-        else throw new ResponseInvalid('Function call not conforming to schema', { cause: apifc });
+        else throw new SyntaxError('Function call not conforming to schema', { cause: apifc });
         return Function.Call.of({
             id: apifc.call_id,
             name: apifc.name,

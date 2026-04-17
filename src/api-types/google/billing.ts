@@ -4,7 +4,7 @@ import { loggers } from '../../telemetry.ts';
 
 
 export class Billing {
-    public constructor(protected ctx: Billing.Context) {}
+    public constructor(protected comps: Billing.Components) {}
 
     public charge(usageMetadata: Google.GenerateContentResponseUsageMetadata): number {
         loggers.message.info(usageMetadata);
@@ -15,16 +15,16 @@ export class Billing {
         const cacheMissTokenCount = usageMetadata.promptTokenCount - cacheHitTokenCount;
         const thinkingTokenCount = usageMetadata.thoughtsTokenCount ?? 0;
         const cost =
-            this.ctx.pricing.inputPrice * cacheMissTokenCount / 1e6 +
-            this.ctx.pricing.cachePrice * cacheHitTokenCount / 1e6 +
-            this.ctx.pricing.outputPrice * candidatesTokenCount / 1e6 +
-            this.ctx.pricing.outputPrice * thinkingTokenCount / 1e6;
+            this.comps.pricing.inputPrice * cacheMissTokenCount / 1e6 +
+            this.comps.pricing.cachePrice * cacheHitTokenCount / 1e6 +
+            this.comps.pricing.outputPrice * candidatesTokenCount / 1e6 +
+            this.comps.pricing.outputPrice * thinkingTokenCount / 1e6;
         return cost;
     }
 }
 
 export namespace Billing {
-    export interface Context {
+    export interface Components {
         pricing: Pricing
     }
 }

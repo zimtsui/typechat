@@ -1,4 +1,3 @@
-import { ResponseInvalid } from '../../engine.ts';
 import { RoleMessage, type Session } from '../../compatible-engine/session.ts';
 import { Function } from '../../function.ts';
 import * as Google from '@google/genai';
@@ -13,7 +12,7 @@ export class MessageCodec<
     fdm extends Function.Decl.Map.Proto,
     vdm extends Verbatim.Decl.Map.Proto,
 > {
-    public constructor(protected ctx: MessageCodec.Context<fdm, vdm>) {}
+    public constructor(protected comps: MessageCodec.Components<fdm, vdm>) {}
 
     public encodeAiMessage(
         aiMessage: RoleMessage.Ai.From<fdm, vdm>,
@@ -50,7 +49,7 @@ export class MessageCodec<
             if (part instanceof RoleMessage.Part.Text)
                 return Google.createPartFromText(part.text);
             else if (part instanceof Function.Response)
-                return this.ctx.toolCodec.encodeFunctionResponse(part);
+                return this.comps.toolCodec.encodeFunctionResponse(part);
             else if (part instanceof Media.Pdf)
                 return Google.createPartFromBase64(
                     part.base64, `${part.mimeType}`,
@@ -72,26 +71,23 @@ export class MessageCodec<
         content: Google.Content,
     ): MessageCodec.Message.Ai.From<fdm, vdm> {
         if (content.parts) {} else throw new Error();
-        return new MessageCodec.Message.Ai(content.parts.flatMap(part => {
-            const parts: RoleMessage.Ai.Part.From<fdm, vdm>[] = [];
-            if (part.functionCall || part.text) {} else throw new ResponseInvalid('Unknown content part', { cause: content });
-            if (part.text) try {
-                const vrs = VerbatimCodec.Request.decode(part.text, this.ctx.vdm);
+        const parts: RoleMessage.Ai.Part.From<fdm, vdm>[] = [];
+        for (const part of content.parts) {
+            if (part.functionCall || part.text) {} else
+                throw new SyntaxError('Unknown content part', { cause: content });
+            if (part.text) {
+                const vrs = VerbatimCodec.Request.decode(part.text, this.comps.vdm);
                 parts.push(new RoleMessage.Part.Text(part.text, vrs));
-            } catch (e) {
-                if (e instanceof SyntaxError)
-                    throw new ResponseInvalid('Invalid verbatim message', { cause: content });
-                else throw e;
             }
-            if (part.functionCall) parts.push(this.ctx.toolCodec.decodeFunctionCall(part.functionCall));
-            return parts;
-        }), content);
+            if (part.functionCall) parts.push(this.comps.toolCodec.decodeFunctionCall(part.functionCall));
+        }
+        return new MessageCodec.Message.Ai(parts, content);
     }
 }
 
 
 export namespace MessageCodec {
-    export interface Context<
+    export interface Components<
         in out fdm extends Function.Decl.Map.Proto,
         in out vdm extends Verbatim.Decl.Map.Proto,
     > {

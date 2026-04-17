@@ -1,4 +1,3 @@
-import { ResponseInvalid } from '../../engine.ts';
 import { RoleMessage, type Session } from '../../compatible-engine/session.ts';
 import { Function } from '../../function.ts';
 import OpenAI from 'openai';
@@ -18,21 +17,17 @@ export class MessageCodec<
         message: OpenAI.ChatCompletionMessage,
     ): RoleMessage.Ai.From<fdm, vdm> {
         const parts: RoleMessage.Ai.Part.From<fdm, vdm>[] = [];
-        if (message.content) try {
+        if (message.content) {
             const vrs = VerbatimCodec.Request.decode(message.content, this.comps.vdm);
             parts.push(new RoleMessage.Part.Text(message.content, vrs));
-        } catch (e) {
-            if (e instanceof SyntaxError)
-                throw new ResponseInvalid('Invalid verbatim message', { cause: message });
-            else throw e;
         }
         if (message.tool_calls)
-            parts.push(...message.tool_calls.map(apifc => {
-                if (apifc.type === 'function') {} else throw new Error();
-                return this.comps.toolCodec.decodeFunctionCall(apifc);
-            }));
-        if (parts.length) {} else throw new ResponseInvalid('Content or tool calls not found in Response', { cause: message });
-        return new RoleMessage.Ai(parts);
+            for (const apifc of message.tool_calls)
+                if (apifc.type === 'function')
+                    parts.push(this.comps.toolCodec.decodeFunctionCall(apifc));
+                else throw new Error();
+        if (parts.length) return new RoleMessage.Ai(parts);
+        else throw new SyntaxError('Content or tool calls not found in Response', { cause: message });
     }
 
     public encodeDeveloperMessage(developerMessage: RoleMessage.Developer): OpenAI.ChatCompletionSystemMessageParam {

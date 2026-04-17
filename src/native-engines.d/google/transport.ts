@@ -1,4 +1,4 @@
-import { NetworkError, ResponseInvalid, type InferenceParams, type ProviderSpec } from '../../engine.ts';
+import { type InferenceParams, type ProviderSpec } from '../../engine.ts';
 import { RoleMessage, type Session } from './session.ts';
 import { Function } from '../../function.ts';
 import * as Google from '@google/genai';
@@ -30,8 +30,8 @@ export class GoogleNativeTransport<
 > {
     protected apiURL: URL;
 
-    public constructor(protected ctx: GoogleNativeTransport.Context<fdm, vdm>) {
-        this.apiURL = new URL(`${this.ctx.providerSpec.baseUrl}/v1beta/models/${this.ctx.inferenceParams.model}:generateContent`);
+    public constructor(protected comps: GoogleNativeTransport.Components<fdm, vdm>) {
+        this.apiURL = new URL(`${this.comps.providerSpec.baseUrl}/v1beta/models/${this.comps.inferenceParams.model}:generateContent`);
     }
 
     public async fetch(
@@ -39,25 +39,25 @@ export class GoogleNativeTransport<
         session: Session.From<fdm, vdm>,
         signal?: AbortSignal,
     ): Promise<RoleMessage.Ai.From<fdm, vdm>> {
-        const systemInstruction = session.developerMessage && this.ctx.messageCodec.encodeDeveloperMessage(session.developerMessage);
-        const contents = this.ctx.messageCodec.encodeChatMessages(session.chatMessages);
+        const systemInstruction = session.developerMessage && this.comps.messageCodec.encodeDeveloperMessage(session.developerMessage);
+        const contents = this.comps.messageCodec.encodeChatMessages(session.chatMessages);
 
-        await this.ctx.throttle.requests(wfctx);
+        await this.comps.throttle.requests(wfctx);
 
-        const apifds = this.ctx.toolCodec.encodeFunctionDeclarationMap(this.ctx.fdm);
+        const apifds = this.comps.toolCodec.encodeFunctionDeclarationMap(this.comps.fdm);
         const apiTools: Google.Tool[] = [];
         if (apifds.length) apiTools.push({ functionDeclarations: apifds });
-        if (this.ctx.urlContext) apiTools.push({ urlContext: {} });
-        if (this.ctx.googleSearch) apiTools.push({ googleSearch: {} });
-        if (this.ctx.codeExecution) apiTools.push({ codeExecution: {} });
+        if (this.comps.urlContext) apiTools.push({ urlContext: {} });
+        if (this.comps.googleSearch) apiTools.push({ googleSearch: {} });
+        if (this.comps.codeExecution) apiTools.push({ codeExecution: {} });
         const apiToolConfig: Google.ToolConfig = {};
-        if (apifds.length) apiToolConfig.functionCallingConfig = ChoiceCodec.encode(this.ctx.choice);
+        if (apifds.length) apiToolConfig.functionCallingConfig = ChoiceCodec.encode(this.comps.choice);
         const reqbody: RestfulRequest = {
             contents,
             tools: apiTools.length ? apiTools : undefined,
             toolConfig: apiToolConfig,
             systemInstruction,
-            generationConfig: this.ctx.inferenceParams.additionalOptions,
+            generationConfig: this.comps.inferenceParams.additionalOptions,
         };
 
         loggers.message.debug(reqbody);
@@ -68,17 +68,13 @@ export class GoogleNativeTransport<
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-goog-api-key': this.ctx.providerSpec.apiKey,
+                    'x-goog-api-key': this.comps.providerSpec.apiKey,
                 } satisfies HeaderRecord,
                 body: JSON.stringify(reqbody),
-                dispatcher: this.ctx.providerSpec.dispatcher,
+                dispatcher: this.comps.providerSpec.dispatcher,
                 signal,
             },
-        ).catch(e => {
-            if (e instanceof TypeError)
-                throw new NetworkError(undefined, { cause: e });
-            else throw e;
-        });
+        );
         loggers.message.debug(res);
         if (res.ok) {} else {
             const contentType = res.headers.get('Content-Type');
@@ -92,26 +88,27 @@ export class GoogleNativeTransport<
         }
         const response = await res.json() as Google.GenerateContentResponse;
 
-        if (response.candidates?.[0]?.content?.parts?.length) {} else throw new ResponseInvalid('Content missing', { cause: response });
+        if (response.candidates?.[0]?.content?.parts?.length) {} else
+            throw new SyntaxError('Content missing', { cause: response });
         if (response.candidates[0].finishReason === Google.FinishReason.MAX_TOKENS)
-            throw new ResponseInvalid('Token limit exceeded.', { cause: response });
-        if (response.candidates[0].finishReason === Google.FinishReason.STOP) {}
-        else throw new ResponseInvalid('Abnormal finish reason', { cause: response });
+            throw new SyntaxError('Token limit exceeded.', { cause: response });
+        if (response.candidates[0].finishReason === Google.FinishReason.STOP) {} else
+            throw new SyntaxError('Abnormal finish reason', { cause: response });
 
         for (const part of response.candidates[0].content.parts) {
             if (part.text) loggers.inference.info(part.text);
             if (part.functionCall) loggers.message.info(part.functionCall);
         }
 
-        if (response.usageMetadata) {} else throw new ResponseInvalid('Usage metadata missing', { cause: response });
-        wfctx.cost?.(this.ctx.billing.charge(response.usageMetadata));
+        if (response.usageMetadata) {} else throw new SyntaxError('Usage metadata missing', { cause: response });
+        wfctx.cost?.(this.comps.billing.charge(response.usageMetadata));
 
-        return this.ctx.messageCodec.decodeAiMessage(response.candidates[0].content);
+        return this.comps.messageCodec.decodeAiMessage(response.candidates[0].content);
     }
 }
 
 export namespace GoogleNativeTransport {
-    export interface Context<
+    export interface Components<
         in out fdm extends Function.Decl.Map.Proto,
         in out vdm extends Verbatim.Decl.Map.Proto,
     > {

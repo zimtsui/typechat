@@ -1,4 +1,4 @@
-import { Engine, NetworkError, ResponseInvalid, type InferenceParams as InferenceParams, type ProviderSpec } from '../../engine.ts';
+import { Engine, type InferenceParams as InferenceParams, type ProviderSpec } from '../../engine.ts';
 import { RoleMessage, type Session } from '../../compatible-engine/session.ts';
 import { Function } from '../../function.ts';
 import * as Google from '@google/genai';
@@ -27,8 +27,8 @@ export class Transport<
     Session.From<fdm, vdm>
 > {
     protected apiURL: URL;
-    public constructor(protected ctx: Transport.Context<fdm, vdm>) {
-        this.apiURL = new URL(`${this.ctx.providerSpec.baseUrl}/v1beta/models/${this.ctx.inferenceParams.model}:generateContent`)
+    public constructor(protected comps: Transport.Components<fdm, vdm>) {
+        this.apiURL = new URL(`${this.comps.providerSpec.baseUrl}/v1beta/models/${this.comps.inferenceParams.model}:generateContent`)
     }
 
     public async fetch(
@@ -36,22 +36,22 @@ export class Transport<
         session: Session.From<fdm, vdm>,
         signal?: AbortSignal,
     ): Promise<RoleMessage.Ai.From<fdm, vdm>> {
-        await this.ctx.throttle.requests(wfctx);
+        await this.comps.throttle.requests(wfctx);
 
         // Prepare request body
-        const systemInstruction = session.developerMessage && this.ctx.messageCodec.encodeDeveloperMessage(session.developerMessage);
-        const contents = this.ctx.messageCodec.encodeChatMessages(session.chatMessages);
-        const apiFds = this.ctx.toolCodec.encodeFunctionDeclarationMap(this.ctx.fdm);
+        const systemInstruction = session.developerMessage && this.comps.messageCodec.encodeDeveloperMessage(session.developerMessage);
+        const contents = this.comps.messageCodec.encodeChatMessages(session.chatMessages);
+        const apiFds = this.comps.toolCodec.encodeFunctionDeclarationMap(this.comps.fdm);
         const apiTools: Google.Tool[] = [];
         if (apiFds.length) apiTools.push({ functionDeclarations: apiFds });
         const apiToolConfig: Google.ToolConfig = {};
-        if (apiFds.length) apiToolConfig.functionCallingConfig = ChoiceCodec.encode(this.ctx.choice);
+        if (apiFds.length) apiToolConfig.functionCallingConfig = ChoiceCodec.encode(this.comps.choice);
         const reqbody: RestfulRequest = {
             contents,
             tools: apiTools,
             toolConfig: apiToolConfig,
             systemInstruction,
-            generationConfig: this.ctx.inferenceParams.additionalOptions,
+            generationConfig: this.comps.inferenceParams.additionalOptions,
         };
         loggers.message.debug(reqbody);
 
@@ -62,17 +62,13 @@ export class Transport<
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-goog-api-key': this.ctx.providerSpec.apiKey,
+                    'x-goog-api-key': this.comps.providerSpec.apiKey,
                 },
                 body: JSON.stringify(reqbody),
-                dispatcher: this.ctx.providerSpec.dispatcher,
+                dispatcher: this.comps.providerSpec.dispatcher,
                 signal,
             },
-        ).catch(e => {
-            if (e instanceof TypeError)
-                throw new NetworkError(undefined, { cause: e });
-            else throw e;
-        });
+        );
 
         // Get response
         if (res.ok) {} else {
@@ -89,25 +85,27 @@ export class Transport<
         loggers.message.debug(response);
 
         // Validate response
-        if (response.candidates?.[0]?.content?.parts?.length) {} else throw new ResponseInvalid('Content missing', { cause: response });
+        if (response.candidates?.[0]?.content?.parts?.length) {} else
+            throw new SyntaxError('Content missing', { cause: response });
         if (response.candidates[0].finishReason === Google.FinishReason.MAX_TOKENS)
-            throw new ResponseInvalid('Token limit exceeded.', { cause: response });
-        if (response.candidates[0].finishReason === Google.FinishReason.STOP) {}
-        else throw new ResponseInvalid('Abnormal finish reason', { cause: response });
-        if (response.usageMetadata) {} else throw new ResponseInvalid('Usage metadata missing', { cause: response });
+            throw new SyntaxError('Token limit exceeded.', { cause: response });
+        if (response.candidates[0].finishReason === Google.FinishReason.STOP) {} else
+            throw new SyntaxError('Abnormal finish reason', { cause: response });
+        if (response.usageMetadata) {} else
+            throw new SyntaxError('Usage metadata missing', { cause: response });
         for (const part of response.candidates[0].content.parts) {
             if (part.text) loggers.inference.info(part.text);
             if (part.functionCall) loggers.message.info(part.functionCall);
         }
-        wfctx.cost?.(this.ctx.billing.charge(response.usageMetadata));
+        wfctx.cost?.(this.comps.billing.charge(response.usageMetadata));
 
-        return this.ctx.messageCodec.decodeAiMessage(response.candidates[0].content);
+        return this.comps.messageCodec.decodeAiMessage(response.candidates[0].content);
     }
 
 }
 
 export namespace Transport {
-    export interface Context<
+    export interface Components<
         in out fdm extends Function.Decl.Map.Proto,
         in out vdm extends Verbatim.Decl.Map.Proto,
     > {

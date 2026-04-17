@@ -1,7 +1,7 @@
-import { NetworkError, ResponseInvalid, type InferenceParams, type ProviderSpec } from '../../engine.ts';
+import { type InferenceParams, type ProviderSpec } from '../../engine.ts';
 import { RoleMessage, type Session } from './session.ts';
 import { Function } from '../../function.ts';
-import type OpenAI from 'openai';
+import OpenAI from 'openai';
 import * as Undici from 'undici';
 import { type InferenceContext } from '../../inference-context.ts';
 import { Throttle } from '../../throttle.ts';
@@ -12,8 +12,6 @@ import type { Billing } from '../../api-types/openai-responses/billing.ts';
 import type { Verbatim } from '../../verbatim.ts';
 import * as ChoiceCodec from './choice-codec.ts';
 import { Structuring } from './structuring.ts';
-import { MIMEType } from 'whatwg-mimetype';
-import { HeaderRecord } from 'undici/types/header';
 
 
 
@@ -21,27 +19,34 @@ export class Transport<
     fdm extends Function.Decl.Map.Proto,
     vdm extends Verbatim.Decl.Map.Proto,
 > {
-    protected apiURL: URL;
+    protected client: OpenAI;
 
-    public constructor(protected ctx: Transport.Context<fdm, vdm>) {
-        this.apiURL = new URL(`${this.ctx.providerSpec.baseUrl}/responses`);
+    public constructor(protected comps: Transport.Components<fdm, vdm>) {
+        this.client = new OpenAI({
+            baseURL: this.comps.providerSpec.baseUrl,
+            apiKey: this.comps.providerSpec.apiKey,
+            fetchOptions: {
+                dispatcher: this.comps.providerSpec.dispatcher,
+            },
+        });
     }
 
     protected makeParams(
         session: Session.From<fdm, vdm>,
-    ): OpenAI.Responses.ResponseCreateParamsNonStreaming {
-        const tools: OpenAI.Responses.Tool[] = this.ctx.toolCodec.encodeFunctionDeclarationMap(this.ctx.fdm);
-        if (this.ctx.applyPatch) tools.push({ type: 'apply_patch' });
+    ): OpenAI.Responses.ResponseCreateParamsStreaming {
+        const tools: OpenAI.Responses.Tool[] = this.comps.toolCodec.encodeFunctionDeclarationMap(this.comps.fdm);
+        if (this.comps.applyPatch) tools.push({ type: 'apply_patch' });
         return {
-            model: this.ctx.inferenceParams.model,
+            model: this.comps.inferenceParams.model,
             include: ['reasoning.encrypted_content'],
             store: false,
-            input: session.chatMessages.flatMap(chatMessage => this.ctx.messageCodec.encodeChatMessage(chatMessage)),
-            instructions: session.developerMessage && this.ctx.messageCodec.encodeDeveloperMessage(session.developerMessage),
+            stream: true,
+            input: session.chatMessages.flatMap(chatMessage => this.comps.messageCodec.encodeChatMessage(chatMessage)),
+            instructions: session.developerMessage && this.comps.messageCodec.encodeDeveloperMessage(session.developerMessage),
             tools: tools.length ? tools : undefined,
-            tool_choice: tools.length ? ChoiceCodec.encode(this.ctx.choice) : undefined,
-            parallel_tool_calls: tools.length ? this.ctx.inferenceParams.parallelToolCall : undefined,
-            ...this.ctx.inferenceParams.additionalOptions,
+            tool_choice: tools.length ? ChoiceCodec.encode(this.comps.choice) : undefined,
+            parallel_tool_calls: tools.length ? this.comps.inferenceParams.parallelToolCall : undefined,
+            ...this.comps.inferenceParams.additionalOptions,
         };
     }
 
@@ -49,7 +54,7 @@ export class Transport<
         for (const item of output)
             if (item.type === 'message') {
                 if (item.content.every(part => part.type === 'output_text')) {} else
-                    throw new ResponseInvalid('Refusal', { cause: output });
+                    throw new SyntaxError('Refusal', { cause: output });
                 loggers.inference.info(item.content.map(part => part.text).join(''));
             } else if (item.type === 'function_call')
                 loggers.message.info(item);
@@ -62,62 +67,42 @@ export class Transport<
         session: Session.From<fdm, vdm>,
         signal?: AbortSignal,
     ): Promise<RoleMessage.Ai.From<fdm, vdm>> {
-        await this.ctx.throttle.requests(wfctx);
+        await this.comps.throttle.requests(wfctx);
 
         // Prepare request
         const params = this.makeParams(session);
         loggers.message.debug(params);
 
         // Send request
-        const res = await Undici.fetch(
-            this.apiURL,
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.ctx.providerSpec.apiKey}`,
-                } satisfies HeaderRecord,
-                body: JSON.stringify(params),
-                dispatcher: this.ctx.providerSpec.dispatcher,
-                signal,
-            },
-        ).catch(e => {
-            if (e instanceof TypeError)
-                throw new NetworkError(undefined, { cause: e });
-            else throw e;
-        });
-
-        // Get response
-        if (res.ok) {} else {
-            const contentType = res.headers.get('Content-Type');
-            if (contentType) {} else throw new Error(res.statusText, { cause: res });
-            const mimeType = new MIMEType(contentType);
-            if (mimeType.essence === 'application/json')
-                throw new Error(res.statusText, { cause: await res.json() });
-            else if (mimeType.type === 'text')
-                throw new Error(res.statusText, { cause: await res.text() });
-            else throw new Error(res.statusText, { cause: res });
+        let response: OpenAI.Responses.Response | null = null;
+        const stream = await this.client.responses.create(params, { signal });
+        for await (const event of stream) {
+            loggers.stream.trace(event);
+            if (event.type === 'response.completed')
+                response = event.response;
+            else if (event.type === 'response.incomplete')
+                response = event.response;
+            else if (event.type === 'error')
+                throw new SyntaxError(event.message, { cause: event });
         }
-        const response = await res.json() as OpenAI.Responses.Response;
-        loggers.message.debug(response);
 
         // Validate response
-        if (response.status === 'incomplete' && response.incomplete_details?.reason === 'max_output_tokens')
-            throw new ResponseInvalid('Token limit exceeded.', { cause: response });
-        if (response.status === 'completed') {}
-        else throw new ResponseInvalid('Abnormal response status', { cause: response });
+        if (response) {} else throw new Error();
+        loggers.message.debug(response);
+        if (response.status === 'completed') {} else
+            throw new SyntaxError('Abnormal response status', { cause: response });
         if (response.usage) {} else throw new Error();
 
         this.logAiMessage(response.output);
-        wfctx.cost?.(this.ctx.billing.charge(response.usage));
+        wfctx.cost?.(this.comps.billing.charge(response.usage));
         loggers.message.info(response.usage);
 
-        return this.ctx.messageCodec.decodeAiMessage(response.output);
+        return this.comps.messageCodec.decodeAiMessage(response.output);
     }
 }
 
 export namespace Transport {
-    export interface Context<
+    export interface Components<
         in out fdm extends Function.Decl.Map.Proto,
         in out vdm extends Verbatim.Decl.Map.Proto,
     > {

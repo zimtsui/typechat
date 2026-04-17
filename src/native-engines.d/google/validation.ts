@@ -6,7 +6,7 @@ import {
     StructuringValidator as CompatibleStructuringValidator,
     PartsValidator as CompatiblePartsValidator,
 } from '../../compatible-engine/validation.ts';
-import { ResponseInvalid, Engine } from '../../engine.ts';
+import { Engine } from '../../engine.ts';
 
 
 
@@ -15,8 +15,8 @@ export class StructuringValidator<
     in out vdu extends Verbatim.Decl.Proto,
 > implements Engine.StructuringValidator<RoleMessage.User<fdu>, RoleMessage.Ai<fdu, vdu>> {
     protected compatibleStructuringValidator: CompatibleStructuringValidator<fdu, vdu>;
-    public constructor(protected ctx: StructuringValidator.Context<fdu, vdu>) {
-        this.compatibleStructuringValidator = new CompatibleStructuringValidator({ choice: this.ctx.choice });
+    public constructor(protected comps: StructuringValidator.Components<fdu, vdu>) {
+        this.compatibleStructuringValidator = new CompatibleStructuringValidator({ choice: this.comps.choice });
     }
 
     public validate(
@@ -34,17 +34,17 @@ export namespace StructuringValidator {
         vdm extends Verbatim.Decl.Map.Proto,
     > = StructuringValidator<Function.Decl.From<fdm>, Verbatim.Decl.From<vdm>>;
 
-    export interface Context<
+    export interface Components<
         in out fdu extends Function.Decl.Proto,
         in out vdu extends Verbatim.Decl.Proto,
     > {
         choice: Structuring.Choice<fdu, vdu>;
     }
-    export namespace Context {
+    export namespace Components {
         export type From<
             fdm extends Function.Decl.Map.Proto,
             vdm extends Verbatim.Decl.Map.Proto,
-        > = Context<Function.Decl.From<fdm>, Verbatim.Decl.From<vdm>>;
+        > = Components<Function.Decl.From<fdm>, Verbatim.Decl.From<vdm>>;
     }
 }
 
@@ -61,7 +61,7 @@ export class PartsValidator<
     public validate(
         message: RoleMessage.Ai<fdu, vdu>,
     ): void {
-        if (message.getParts().length) {} else throw new ResponseInvalid('Empty message.');
+        if (message.getParts().length) {} else throw new SyntaxError('Empty message.');
         this.compatiblePartsValidator.validateMessageTextParts(
             message.getChatParts().filter(part => part instanceof RoleMessage.Part.Text),
         );

@@ -1,4 +1,3 @@
-import { ResponseInvalid } from '../../engine.ts';
 import { Function } from '../../function.ts';
 import * as Google from '@google/genai';
 import Ajv from 'ajv';
@@ -53,9 +52,9 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
     ): Function.Call.From<fdm> {
         if (googlefc.name) {} else throw new Error();
         const fditem = this.comps.fdm[googlefc.name];
-        if (fditem) {} else throw new ResponseInvalid('Unknown function call', { cause: googlefc });
+        if (fditem) {} else throw new SyntaxError('Unknown function call', { cause: googlefc });
         if (ajv.validate(fditem.parameters, googlefc.args)) {}
-        else throw new ResponseInvalid('Function call not conforming to schema', { cause: googlefc });
+        else throw new SyntaxError('Function call not conforming to schema', { cause: googlefc });
         return Function.Call.of({
             id: googlefc.id,
             name: googlefc.name,

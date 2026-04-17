@@ -2,7 +2,6 @@ import { Structuring } from './structuring.ts';
 import { Function } from '../../function.ts';
 import { Verbatim } from '../../verbatim.ts';
 import { RoleMessage } from './session.ts';
-import { ResponseInvalid } from '../../engine.ts';
 import type { Engine } from '../../engine.ts';
 import * as VerbatimCodec from '../../verbatim/codec.ts';
 import { PartsValidator as CompatiblePartsValidator } from '../../compatible-engine/validation.ts';
@@ -12,26 +11,26 @@ export class StructuringValidator<
     in out fdu extends Function.Decl.Proto,
     in out vdu extends Verbatim.Decl.Proto,
 > implements Engine.StructuringValidator<RoleMessage.User<fdu>, RoleMessage.Ai<fdu, vdu>> {
-    public constructor(protected ctx: StructuringValidator.Context<fdu, vdu>) {}
+    public constructor(protected comps: StructuringValidator.Components<fdu, vdu>) {}
 
     public validate(message: RoleMessage.Ai<fdu, vdu>) {
         const tcs = message.getToolCalls();
         const vrs = message.getVerbatimRequests();
 
-        if (this.ctx.choice === Structuring.Choice.TCall.REQUIRED) {
-            if (!tcs.length) throw new ResponseInvalid('Tool call required.');
+        if (this.comps.choice === Structuring.Choice.TCall.REQUIRED) {
+            if (!tcs.length) throw new SyntaxError('Tool call required.');
 
-        } else if (this.ctx.choice === Structuring.Choice.TCall.ANYONE) {
-            if (!tcs.length) throw new ResponseInvalid('Tool call required.');
-            if (tcs.length > 1) throw new ResponseInvalid('Only one tool call allowed.');
+        } else if (this.comps.choice === Structuring.Choice.TCall.ANYONE) {
+            if (!tcs.length) throw new SyntaxError('Tool call required.');
+            if (tcs.length > 1) throw new SyntaxError('Only one tool call allowed.');
 
-        } else if (this.ctx.choice instanceof Structuring.Choice.TCall.FCall) {
-            if (!tcs.length) throw new ResponseInvalid(`Function call of ${this.ctx.choice.name} required.`);
-            if (tcs.length > 1) throw new ResponseInvalid('Only one function call allowed.');
-            if (tcs[0]! instanceof Function.Call && tcs[0]!.name === this.ctx.choice.name) {} else
-                throw new ResponseInvalid(`Only function call of ${this.ctx.choice.name} allowed.`);
+        } else if (this.comps.choice instanceof Structuring.Choice.TCall.FCall) {
+            if (!tcs.length) throw new SyntaxError(`Function call of ${this.comps.choice.name} required.`);
+            if (tcs.length > 1) throw new SyntaxError('Only one function call allowed.');
+            if (tcs[0]! instanceof Function.Call && tcs[0]!.name === this.comps.choice.name) {} else
+                throw new SyntaxError(`Only function call of ${this.comps.choice.name} allowed.`);
 
-        } else if (this.ctx.choice === Structuring.Choice.VRequest.REQUIRED) {
+        } else if (this.comps.choice === Structuring.Choice.VRequest.REQUIRED) {
             if (!vrs.length)
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
@@ -39,7 +38,7 @@ export class StructuringValidator<
                     ),
                 ]);
 
-        } else if (this.ctx.choice === Structuring.Choice.VRequest.ANYONE) {
+        } else if (this.comps.choice === Structuring.Choice.VRequest.ANYONE) {
             if (!vrs.length)
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
@@ -53,27 +52,27 @@ export class StructuringValidator<
                     ),
                 ]);
 
-        } else if (this.ctx.choice instanceof Structuring.Choice.VRequest) {
+        } else if (this.comps.choice instanceof Structuring.Choice.VRequest) {
             if (!vrs.length)
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
-                        VerbatimCodec.Meta.encode(`Error: No valid verbatim request through channel \`${this.ctx.choice.name}\` found. Check your output format.`),
+                        VerbatimCodec.Meta.encode(`Error: No valid verbatim request through channel \`${this.comps.choice.name}\` found. Check your output format.`),
                     ),
                 ]);
             if (vrs.length > 1)
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
-                        VerbatimCodec.Meta.encode(`Error: Only 1 verbatim request through channel \`${this.ctx.choice.name}\` allowed.`),
+                        VerbatimCodec.Meta.encode(`Error: Only 1 verbatim request through channel \`${this.comps.choice.name}\` allowed.`),
                     ),
                 ]);
-            if (vrs[0]!.name !== this.ctx.choice.name)
+            if (vrs[0]!.name !== this.comps.choice.name)
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
-                        VerbatimCodec.Meta.encode(`Error: Only verbatim request through channel \`${this.ctx.choice.name}\` allowed.`),
+                        VerbatimCodec.Meta.encode(`Error: Only verbatim request through channel \`${this.comps.choice.name}\` allowed.`),
                     ),
                 ]);
 
-        } else if (this.ctx.choice === Structuring.Choice.REQUIRED) {
+        } else if (this.comps.choice === Structuring.Choice.REQUIRED) {
             if (tcs.length + vrs.length) {} else
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
@@ -81,7 +80,7 @@ export class StructuringValidator<
                     ),
                 ]);
 
-        } else if (this.ctx.choice === Structuring.Choice.ANYONE) {
+        } else if (this.comps.choice === Structuring.Choice.ANYONE) {
             if (tcs.length + vrs.length) {} else
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
@@ -95,7 +94,7 @@ export class StructuringValidator<
                     ),
                 ]);
 
-        } else if (this.ctx.choice === Structuring.Choice.NONE) {
+        } else if (this.comps.choice === Structuring.Choice.NONE) {
             if (tcs.length + vrs.length)
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
@@ -113,17 +112,17 @@ export namespace StructuringValidator {
         vdm extends Verbatim.Decl.Map.Proto,
     > = StructuringValidator<Function.Decl.From<fdm>, Verbatim.Decl.From<vdm>>;
 
-    export interface Context<
+    export interface Components<
         in out fdu extends Function.Decl.Proto,
         in out vdu extends Verbatim.Decl.Proto,
     > {
         choice: Structuring.Choice<fdu, vdu>;
     }
-    export namespace Context {
+    export namespace Components {
         export type From<
             fdm extends Function.Decl.Map.Proto,
             vdm extends Verbatim.Decl.Map.Proto,
-        > = Context<Function.Decl.From<fdm>, Verbatim.Decl.From<vdm>>;
+        > = Components<Function.Decl.From<fdm>, Verbatim.Decl.From<vdm>>;
     }
 }
 
@@ -139,7 +138,7 @@ export class PartsValidator<
     public validate(
         message: RoleMessage.Ai<fdu, vdu>,
     ): void {
-        if (message.getParts().length) {} else throw new ResponseInvalid('Empty message.');
+        if (message.getParts().length) {} else throw new SyntaxError('Empty message.');
         this.compatiblePartsValidator.validateMessageTextParts(message.getTextParts());
     }
 }

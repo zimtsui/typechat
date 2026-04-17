@@ -4,7 +4,7 @@ import OpenAI from 'openai';
 import type { InferenceContext } from '../../inference-context.ts';
 import type { Verbatim } from '../../verbatim.ts';
 import type { Engine } from '../../engine.ts';
-import { ResponseInvalid, type InferenceParams, type ProviderSpec, NetworkError } from '../../engine.ts';
+import { type InferenceParams, type ProviderSpec } from '../../engine.ts';
 import { loggers } from '../../telemetry.ts';
 import type { Billing } from '../../api-types/openai-chatcompletions/billing.ts';
 import type { ToolCodec } from '../../api-types/openai-chatcompletions/tool-codec.ts';
@@ -67,7 +67,7 @@ export class Transport<
         stock: OpenAI.ChatCompletionChunk,
     ): OpenAI.ChatCompletion {
         const stockChoice = stock?.choices[0];
-        if (stockChoice?.finish_reason) {} else throw new ResponseInvalid('Finish reason missing', { cause: stock });
+        if (stockChoice?.finish_reason) {} else throw new SyntaxError('Finish reason missing', { cause: stock });
 
         const completion: OpenAI.ChatCompletion = {
             id: stock.id,
@@ -117,61 +117,55 @@ export class Transport<
 
             // Get response
             let stock: OpenAI.ChatCompletionChunk | null = null;
-            try {
-                for await (const chunk of stream) {
-                    stock ??= {
-                        id: chunk.id,
-                        created: chunk.created,
-                        model: chunk.model,
-                        choices: [],
-                        object: 'chat.completion.chunk',
-                    };
+            for await (const chunk of stream) {
+                stock ??= {
+                    id: chunk.id,
+                    created: chunk.created,
+                    model: chunk.model,
+                    choices: [],
+                    object: 'chat.completion.chunk',
+                };
 
-                    // choice
-                    const deltaChoice = chunk.choices[0];
-                    if (deltaChoice) {
-                        if (!stock.choices.length)
-                            stock.choices.push({
-                                index: 0,
-                                finish_reason: null,
-                                delta: {},
-                            });
+                // choice
+                const deltaChoice = chunk.choices[0];
+                if (deltaChoice) {
+                    if (!stock.choices.length)
+                        stock.choices.push({
+                            index: 0,
+                            finish_reason: null,
+                            delta: {},
+                        });
 
-                        // content
-                        if (deltaChoice.delta.content) {
-                            stock.choices[0]!.delta.content ??= '';
-                            stock.choices[0]!.delta.content! += deltaChoice.delta.content;
-                        }
+                    // content
+                    if (deltaChoice.delta.content) {
+                        stock.choices[0]!.delta.content ??= '';
+                        stock.choices[0]!.delta.content! += deltaChoice.delta.content;
+                    }
 
-                        // function calls
-                        if (deltaChoice.delta.tool_calls) {
-                            stock.choices[0]!.delta.tool_calls ??= [];
-                            for (const deltaToolCall of deltaChoice.delta.tool_calls) {
-                                const toolCalls = stock.choices[0]!.delta.tool_calls!;
-                                toolCalls[deltaToolCall.index] ??= { index: deltaToolCall.index };
-                                toolCalls[deltaToolCall.index]!.id ??= deltaToolCall.id;
-                                if (deltaToolCall.function) {
-                                    toolCalls[deltaToolCall.index]!.function ??= {};
-                                    toolCalls[deltaToolCall.index]!.function!.name ??= deltaToolCall.function.name;
-                                    if (deltaToolCall.function.arguments) {
-                                        toolCalls[deltaToolCall.index]!.function!.arguments ??= '';
-                                        toolCalls[deltaToolCall.index]!.function!.arguments! += deltaToolCall.function?.arguments || '';
-                                    }
+                    // function calls
+                    if (deltaChoice.delta.tool_calls) {
+                        stock.choices[0]!.delta.tool_calls ??= [];
+                        for (const deltaToolCall of deltaChoice.delta.tool_calls) {
+                            const toolCalls = stock.choices[0]!.delta.tool_calls!;
+                            toolCalls[deltaToolCall.index] ??= { index: deltaToolCall.index };
+                            toolCalls[deltaToolCall.index]!.id ??= deltaToolCall.id;
+                            if (deltaToolCall.function) {
+                                toolCalls[deltaToolCall.index]!.function ??= {};
+                                toolCalls[deltaToolCall.index]!.function!.name ??= deltaToolCall.function.name;
+                                if (deltaToolCall.function.arguments) {
+                                    toolCalls[deltaToolCall.index]!.function!.arguments ??= '';
+                                    toolCalls[deltaToolCall.index]!.function!.arguments! += deltaToolCall.function?.arguments || '';
                                 }
                             }
                         }
-
-                        // finish reason
-                        stock.choices[0]!.finish_reason ??= deltaChoice.finish_reason;
                     }
 
-                    // usage
-                    stock.usage ??= chunk.usage;
+                    // finish reason
+                    stock.choices[0]!.finish_reason ??= deltaChoice.finish_reason;
                 }
-            } catch (e) {
-                if (e instanceof TypeError)
-                    throw new NetworkError(undefined, { cause: e });
-                else throw e;
+
+                // usage
+                stock.usage ??= chunk.usage;
             }
 
             // Validate response
@@ -179,12 +173,12 @@ export class Transport<
             const completion = this.mergeCompletion(stock);
 
             const choice = completion.choices[0];
-            if (choice) {} else throw new ResponseInvalid('Content missing', { cause: completion });
+            if (choice) {} else throw new SyntaxError('Content missing', { cause: completion });
             if (choice.message.content) loggers.inference.info(choice.message.content);
 
-            if (choice.finish_reason === 'length') throw new ResponseInvalid('Token limit exceeded.', { cause: completion });
+            if (choice.finish_reason === 'length') throw new SyntaxError('Token limit exceeded.', { cause: completion });
             if (['stop', 'tool_calls'].includes(choice.finish_reason)) {}
-            else throw new ResponseInvalid('Abnormal finish reason', { cause: choice.finish_reason });
+            else throw new SyntaxError('Abnormal finish reason', { cause: choice.finish_reason });
 
             if (completion.usage) {} else throw new Error();
             const cost = this.comps.billing.charge(completion.usage);
@@ -195,8 +189,10 @@ export class Transport<
 
             return this.comps.messageCodec.decodeAiMessage(choice.message);
         } catch (e) {
-            if (e instanceof OpenAI.APIError)
-                throw new ResponseInvalid(undefined, { cause: e });
+            if (e instanceof OpenAI.InternalServerError)
+                throw new TypeError('OpenAI internal server error', { cause: e });
+            else if (e instanceof OpenAI.APIConnectionError)
+                throw new TypeError('OpenAI API connection error', { cause: e });
             else throw e;
         }
     }

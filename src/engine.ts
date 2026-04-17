@@ -103,8 +103,8 @@ export namespace Engine {
 
         /**
         * @throws {@link InferenceTimeout} 推理超时
-        * @throws {@link ResponseInvalid} 模型抽风
-        * @throws {@link NetworkError} 网络故障
+        * @throws {@link SyntaxError} 模型抽风
+        * @throws {@link TypeError} 网络故障
         */
         public async stateless(
             wfctx: InferenceContext,
@@ -119,12 +119,12 @@ export namespace Engine {
                 try {
                     const response = await this.infer(wfctx, session, signal);
                     const rejection = this.structuringValidator.validate(response);
-                    if (rejection) throw new ResponseInvalid.Recoverable();
+                    if (rejection) throw new Recoverable();
                     return response;
                 } catch (e) {
                     if (signalTimeout?.aborted) e = new InferenceTimeout(undefined, { cause: e });      // 推理超时
-                    else if (e instanceof ResponseInvalid) {}			                                // 模型抽风
-                    else if (e instanceof NetworkError) {}         		                                // 网络故障
+                    else if (e instanceof SyntaxError) {}			                                // 模型抽风
+                    else if (e instanceof TypeError) {}         		                                // 网络故障
                     else throw e;
                     if (retry < this.inferenceParams.retry) loggers.message.warn(e); else throw e;
                 }
@@ -149,14 +149,14 @@ export namespace Engine {
                     const rejection = this.structuringValidator.validate(response);
                     if (rejection) {
                         session.chatMessages.push(response, rejection);
-                        throw new ResponseInvalid.Recoverable();
+                        throw new Recoverable();
                     }
                     session.chatMessages.push(response);
                     return response;
                 } catch (e) {
                     if (signalTimeout?.aborted) e = new InferenceTimeout(undefined, { cause: e });      // 推理超时
-                    else if (e instanceof ResponseInvalid) {}			                                // 模型抽风
-                    else if (e instanceof NetworkError) {}         		                                // 网络故障
+                    else if (e instanceof SyntaxError) {}			                                // 模型抽风
+                    else if (e instanceof TypeError) {}         		                                // 网络故障
                     else throw e;
                     if (retry < this.inferenceParams.retry) {} else throw e;
                     loggers.message.warn(e);
@@ -197,12 +197,7 @@ export namespace Engine {
 }
 
 export class InferenceTimeout extends Error {}
-export class NetworkError extends Error {}
-export class ResponseInvalid extends Error {}
-export namespace ResponseInvalid {
-    export class Recoverable extends ResponseInvalid {}
-}
-
+export class Recoverable extends SyntaxError {}
 
 declare global {
     export namespace NodeJS {
