@@ -6,8 +6,8 @@ import Ajv from 'ajv';
 const ajv = new Ajv();
 
 
-export class OpenAIChatCompletionsToolCodec<in out fdm extends Function.Decl.Map.Proto> {
-    public constructor(protected ctx: OpenAIChatCompletionsToolCodec.Context<fdm>) {}
+export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
+    public constructor(protected comps: ToolCodec.Components<fdm>) {}
 
 
     public encodeFunctionCall(
@@ -27,7 +27,7 @@ export class OpenAIChatCompletionsToolCodec<in out fdm extends Function.Decl.Map
     public decodeFunctionCall(
         apifc: OpenAI.ChatCompletionMessageFunctionToolCall,
     ): Function.Call.From<fdm> {
-        const fditem = this.ctx.fdm[apifc.function.name];
+        const fditem = this.comps.fdm[apifc.function.name];
         if (fditem) {} else throw new ResponseInvalid('Unknown function call', { cause: apifc });
         const args = (() => {
             try {
@@ -87,8 +87,8 @@ export class OpenAIChatCompletionsToolCodec<in out fdm extends Function.Decl.Map
 
 }
 
-export namespace OpenAIChatCompletionsToolCodec {
-    export interface Context<in out fdm extends Function.Decl.Map.Proto> {
+export namespace ToolCodec {
+    export interface Components<in out fdm extends Function.Decl.Map.Proto> {
         fdm: fdm;
     }
 }

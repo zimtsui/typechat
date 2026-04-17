@@ -105,12 +105,10 @@ export namespace Engine {
         * @throws {@link InferenceTimeout} 推理超时
         * @throws {@link ResponseInvalid} 模型抽风
         * @throws {@link NetworkError} 网络故障
-        * @throws {@link CustomRetry} 自定义重试
         */
         public async stateless(
             wfctx: InferenceContext,
             session: session,
-            validate: (response: aim) => Promise<boolean> = () => Promise.resolve(true),
         ): Promise<aim> {
             for (let retry = 0;; retry++) {
                 const signalTimeout = this.inferenceParams.timeout ? AbortSignal.timeout(this.inferenceParams.timeout) : undefined;
@@ -122,13 +120,11 @@ export namespace Engine {
                     const response = await this.infer(wfctx, session, signal);
                     const rejection = this.structuringValidator.validate(response);
                     if (rejection) throw new ResponseInvalid.Recoverable();
-                    if (await validate(response)) {} else throw new CustomRetry(undefined, { cause: response });
                     return response;
                 } catch (e) {
                     if (signalTimeout?.aborted) e = new InferenceTimeout(undefined, { cause: e });      // 推理超时
                     else if (e instanceof ResponseInvalid) {}			                                // 模型抽风
                     else if (e instanceof NetworkError) {}         		                                // 网络故障
-                    else if (e instanceof CustomRetry) {}         		                                // 自定义重试
                     else throw e;
                     if (retry < this.inferenceParams.retry) loggers.message.warn(e); else throw e;
                 }
@@ -141,7 +137,6 @@ export namespace Engine {
         public async stateful(
             wfctx: InferenceContext,
             session: session,
-            validate: (response: aim) => Promise<boolean> = () => Promise.resolve(true),
         ): Promise<aim> {
             for (let retry = 0;; retry++) {
                 const signalTimeout = this.inferenceParams.timeout ? AbortSignal.timeout(this.inferenceParams.timeout) : undefined;
@@ -156,14 +151,12 @@ export namespace Engine {
                         session.chatMessages.push(response, rejection);
                         throw new ResponseInvalid.Recoverable();
                     }
-                    if (await validate(response)) {} else throw new CustomRetry(undefined, { cause: response });
                     session.chatMessages.push(response);
                     return response;
                 } catch (e) {
                     if (signalTimeout?.aborted) e = new InferenceTimeout(undefined, { cause: e });      // 推理超时
                     else if (e instanceof ResponseInvalid) {}			                                // 模型抽风
                     else if (e instanceof NetworkError) {}         		                                // 网络故障
-                    else if (e instanceof CustomRetry) {}         		                                // 自定义重试
                     else throw e;
                     if (retry < this.inferenceParams.retry) {} else throw e;
                     loggers.message.warn(e);
@@ -205,7 +198,6 @@ export namespace Engine {
 
 export class InferenceTimeout extends Error {}
 export class NetworkError extends Error {}
-export class CustomRetry extends Error {}
 export class ResponseInvalid extends Error {}
 export namespace ResponseInvalid {
     export class Recoverable extends ResponseInvalid {}

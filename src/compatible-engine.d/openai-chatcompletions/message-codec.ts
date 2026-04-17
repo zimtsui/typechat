@@ -2,7 +2,7 @@ import { ResponseInvalid } from '../../engine.ts';
 import { RoleMessage, type Session } from '../../compatible-engine/session.ts';
 import { Function } from '../../function.ts';
 import OpenAI from 'openai';
-import type { OpenAIChatCompletionsToolCodec } from '../../api-types/openai-chatcompletions/tool-codec.ts';
+import type { ToolCodec } from '../../api-types/openai-chatcompletions/tool-codec.ts';
 import type { Verbatim } from '../../verbatim.ts';
 import * as VerbatimCodec from '../../verbatim/codec.ts';
 
@@ -12,14 +12,14 @@ export class MessageCodec<
     in out fdm extends Function.Decl.Map.Proto,
     in out vdm extends Verbatim.Decl.Map.Proto,
 > {
-    public constructor(protected ctx: MessageCodec.Context<fdm, vdm>) {}
+    public constructor(protected comps: MessageCodec.Components<fdm, vdm>) {}
 
     public decodeAiMessage(
         message: OpenAI.ChatCompletionMessage,
     ): RoleMessage.Ai.From<fdm, vdm> {
         const parts: RoleMessage.Ai.Part.From<fdm, vdm>[] = [];
         if (message.content) try {
-            const vrs = VerbatimCodec.Request.decode(message.content, this.ctx.vdm);
+            const vrs = VerbatimCodec.Request.decode(message.content, this.comps.vdm);
             parts.push(new RoleMessage.Part.Text(message.content, vrs));
         } catch (e) {
             if (e instanceof SyntaxError)
@@ -29,7 +29,7 @@ export class MessageCodec<
         if (message.tool_calls)
             parts.push(...message.tool_calls.map(apifc => {
                 if (apifc.type === 'function') {} else throw new Error();
-                return this.ctx.toolCodec.decodeFunctionCall(apifc);
+                return this.comps.toolCodec.decodeFunctionCall(apifc);
             }));
         if (parts.length) {} else throw new ResponseInvalid('Content or tool calls not found in Response', { cause: message });
         return new RoleMessage.Ai(parts);
@@ -50,7 +50,7 @@ export class MessageCodec<
         if (textParts.length && !frs.length)
             return [{ role: 'user', content: textParts.map(part => ({ type: 'text', text: part.text })) }];
         else if (!textParts.length && frs.length)
-            return frs.map(fr => this.ctx.toolCodec.encodeFunctionResponse(fr));
+            return frs.map(fr => this.comps.toolCodec.encodeFunctionResponse(fr));
         else throw new Error('Unsupported user message type.');
     }
 
@@ -63,7 +63,7 @@ export class MessageCodec<
         return {
             role: 'assistant',
             content: textParts.length ? textParts.map(part => part.text).join('') : undefined,
-            tool_calls: fcParts.length ? fcParts.map(fc => this.ctx.toolCodec.encodeFunctionCall(fc)) : undefined,
+            tool_calls: fcParts.length ? fcParts.map(fc => this.comps.toolCodec.encodeFunctionCall(fc)) : undefined,
         };
     }
 
@@ -88,11 +88,11 @@ export class MessageCodec<
 }
 
 export namespace MessageCodec {
-    export interface Context<
+    export interface Components<
         in out fdm extends Function.Decl.Map.Proto,
         in out vdm extends Verbatim.Decl.Map.Proto,
     > {
-        toolCodec: OpenAIChatCompletionsToolCodec<fdm>;
+        toolCodec: ToolCodec<fdm>;
         vdm: vdm;
     }
 }

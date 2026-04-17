@@ -10,7 +10,7 @@ const ajv = new Ajv();
 export class ToolCodec<
     in out fdm extends Function.Decl.Map.Proto,
 > {
-    public constructor(protected ctx: ToolCodec.Context<fdm>) {}
+    public constructor(protected comps: ToolCodec.Components<fdm>) {}
 
     public encodeFunctionResponse(
         fr: Function.Response.From<fdm>,
@@ -51,7 +51,7 @@ export class ToolCodec<
     public decodeFunctionCall(
         apifc: OpenAI.Responses.ResponseFunctionToolCall,
     ): Function.Call.From<fdm> {
-        const fditem = this.ctx.fdm[apifc.name];
+        const fditem = this.comps.fdm[apifc.name];
         if (fditem) {} else throw new ResponseInvalid('Unknown function call', { cause: apifc });
         const args = (() => {
             try {
@@ -83,7 +83,7 @@ export class ToolCodec<
 }
 
 export namespace ToolCodec {
-    export interface Context<in out fdm extends Function.Decl.Map.Proto> {
+    export interface Components<in out fdm extends Function.Decl.Map.Proto> {
         fdm: fdm;
     }
 }

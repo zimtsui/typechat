@@ -37,15 +37,15 @@ export class Transport<
     ): OpenAI.Responses.ResponseCreateParamsNonStreaming {
         const tools = this.ctx.toolCodec.encodeFunctionDeclarationMap(this.ctx.fdm);
         return {
-            model: this.ctx.inferenceSpec.model,
+            model: this.ctx.inferenceParams.model,
             include: ['reasoning.encrypted_content'],
             store: false,
             input: session.chatMessages.flatMap(chatMessage => this.ctx.messageCodec.encodeChatMessage(chatMessage)),
             instructions: session.developerMessage && this.ctx.messageCodec.encodeDeveloperMessage(session.developerMessage),
             tools: tools.length ? tools : undefined,
             tool_choice: tools.length ? ChoiceCodec.encode(this.ctx.choice) : undefined,
-            parallel_tool_calls: tools.length ? this.ctx.inferenceSpec.parallelToolCall : undefined,
-            ...this.ctx.inferenceSpec.additionalOptions,
+            parallel_tool_calls: tools.length ? this.ctx.inferenceParams.parallelToolCall : undefined,
+            ...this.ctx.inferenceParams.additionalOptions,
         };
     }
 
@@ -122,7 +122,7 @@ export namespace Transport {
         in out fdm extends Function.Decl.Map.Proto,
         in out vdm extends Verbatim.Decl.Map.Proto,
     > {
-        inferenceSpec: InferenceParams;
+        inferenceParams: InferenceParams;
         providerSpec: ProviderSpec;
         fdm: fdm;
         throttle: Throttle;

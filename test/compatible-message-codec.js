@@ -6,7 +6,7 @@ import { Media } from '../build/media.js';
 import { RoleMessage as CompatibleRoleMessage } from '../build/compatible-engine/session.js';
 import { ToolCodec as AnthropicToolCodec } from '../build/api-types/anthropic/tool-codec.js';
 import { ToolCodec as GoogleToolCodec } from '../build/api-types/google/tool-codec.js';
-import { OpenAIChatCompletionsToolCodec } from '../build/api-types/openai-chatcompletions/tool-codec.js';
+import { ToolCodec as OpenAIChatCompletionsToolCodec } from '../build/api-types/openai-chatcompletions/tool-codec.js';
 import { ToolCodec as OpenAIResponsesToolCodec } from '../build/api-types/openai-responses/tool-codec.js';
 import { MessageCodec as AnthropicMessageCodec } from '../build/compatible-engine.d/anthropic/message-codec.js';
 import * as AnthropicChoiceCodec from '../build/compatible-engine.d/anthropic/choice-codec.js';
@@ -14,9 +14,9 @@ import { MessageCodec as GoogleMessageCodec } from '../build/compatible-engine.d
 import { MessageCodec as OpenAIChatCompletionsMessageCodec } from '../build/compatible-engine.d/openai-chatcompletions/message-codec.js';
 import { MessageCodec as OpenAIResponsesMessageCodec } from '../build/compatible-engine.d/openai-responses/message-codec.js';
 import { Structuring as CompatibleStructuring } from '../build/compatible-engine/structuring.js';
-import { MonolithTransport as OpenAIChatCompletionsMonolithTransport } from '../build/compatible-engine.d/openai-chatcompletions/transport.d/monolith.js';
-import { StreamTransport as OpenAIChatCompletionsStreamTransport } from '../build/compatible-engine.d/openai-chatcompletions/transport.d/stream.js';
+import { Transport as OpenAIChatCompletionsTransport } from '../build/compatible-engine.d/openai-chatcompletions/transport.js';
 import { Transport as OpenAIResponsesTransport } from '../build/compatible-engine.d/openai-responses/transport.js';
+import { Transport as VolcengineTransport } from '../build/compatible-engine.d/volcengine/transport.js';
 import { Transport as OpenAIResponsesNativeTransport } from '../build/native-engines.d/openai-responses/transport.js';
 
 
@@ -175,10 +175,7 @@ test('Anthropic compatible codec rejects media user message', t => {
 });
 
 test('OpenAI chat completions codec rejects media user message', t => {
-    const toolCodec = new OpenAIChatCompletionsToolCodec({
-        parallelToolCall: false,
-        fdm: functionDeclarationMap,
-    });
+    const toolCodec = new OpenAIChatCompletionsToolCodec({ fdm: functionDeclarationMap });
     const messageCodec = new OpenAIChatCompletionsMessageCodec({
         toolCodec,
         vdm: verbatimDeclarationMap,
@@ -202,19 +199,13 @@ test('Anthropic choice codec leaves disable_parallel_tool_use undefined when opt
     t.is(encoded.disable_parallel_tool_use, undefined);
 });
 
-test('OpenAI Chat Completions monolith transport reads parallelToolCall from inferenceParams', t => {
-    class FakeMonolithTransport extends OpenAIChatCompletionsMonolithTransport {
-        getDeltaThoughts() {
-            return '';
-        }
-    }
-
+test('OpenAI Chat Completions transport reads parallelToolCall from inferenceParams', t => {
     const toolCodec = new OpenAIChatCompletionsToolCodec({ fdm: functionDeclarationMap });
     const messageCodec = new OpenAIChatCompletionsMessageCodec({
         toolCodec,
         vdm: verbatimDeclarationMap,
     });
-    const transport = new FakeMonolithTransport({
+    const transport = new OpenAIChatCompletionsTransport({
         fdm: functionDeclarationMap,
         throttle: { requests: async () => {} },
         choice: CompatibleStructuring.Choice.AUTO,
@@ -231,7 +222,6 @@ test('OpenAI Chat Completions monolith transport reads parallelToolCall from inf
         messageCodec,
         toolCodec,
         billing: { charge: () => 0 },
-        validator: {},
     });
     const session = {
         chatMessages: [new CompatibleRoleMessage.User([
@@ -244,19 +234,13 @@ test('OpenAI Chat Completions monolith transport reads parallelToolCall from inf
     t.is(params.parallel_tool_calls, true);
 });
 
-test('OpenAI Chat Completions stream transport reads parallelToolCall from inferenceParams', t => {
-    class FakeStreamTransport extends OpenAIChatCompletionsStreamTransport {
-        getDeltaThoughts() {
-            return '';
-        }
-    }
-
+test('OpenAI Chat Completions transport streams usage by default', t => {
     const toolCodec = new OpenAIChatCompletionsToolCodec({ fdm: functionDeclarationMap });
     const messageCodec = new OpenAIChatCompletionsMessageCodec({
         toolCodec,
         vdm: verbatimDeclarationMap,
     });
-    const transport = new FakeStreamTransport({
+    const transport = new OpenAIChatCompletionsTransport({
         fdm: functionDeclarationMap,
         throttle: { requests: async () => {} },
         choice: CompatibleStructuring.Choice.AUTO,
@@ -273,7 +257,6 @@ test('OpenAI Chat Completions stream transport reads parallelToolCall from infer
         messageCodec,
         toolCodec,
         billing: { charge: () => 0 },
-        validator: {},
     });
     const session = {
         chatMessages: [new CompatibleRoleMessage.User([
@@ -284,6 +267,10 @@ test('OpenAI Chat Completions stream transport reads parallelToolCall from infer
     const params = transport.makeParams(session);
 
     t.is(params.parallel_tool_calls, false);
+    t.true(params.stream);
+    t.deepEqual(params.stream_options, {
+        include_usage: true,
+    });
 });
 
 test('OpenAI Responses compatible transport reads parallelToolCall from inference params', t => {
@@ -293,7 +280,7 @@ test('OpenAI Responses compatible transport reads parallelToolCall from inferenc
         vdm: verbatimDeclarationMap,
     });
     const transport = new OpenAIResponsesTransport({
-        inferenceSpec: {
+        inferenceParams: {
             model: 'test-model',
             parallelToolCall: true,
             retry: 3,
@@ -309,7 +296,6 @@ test('OpenAI Responses compatible transport reads parallelToolCall from inferenc
         messageCodec,
         toolCodec,
         billing: { charge: () => 0 },
-        validator: {},
     });
     const session = {
         chatMessages: [new CompatibleRoleMessage.User([
@@ -320,6 +306,42 @@ test('OpenAI Responses compatible transport reads parallelToolCall from inferenc
     const params = transport.makeParams(session);
 
     t.is(params.parallel_tool_calls, true);
+});
+
+test('Volcengine transport omits encrypted reasoning include from params', t => {
+    const toolCodec = new OpenAIResponsesToolCodec({ fdm: functionDeclarationMap });
+    const messageCodec = new OpenAIResponsesMessageCodec({
+        toolCodec,
+        vdm: verbatimDeclarationMap,
+    });
+    const transport = new VolcengineTransport({
+        inferenceParams: {
+            model: 'test-model',
+            parallelToolCall: true,
+            retry: 3,
+        },
+        providerSpec: {
+            baseUrl: 'https://example.invalid/volcengine',
+            apiKey: 'test-key',
+            dispatcher: undefined,
+        },
+        fdm: functionDeclarationMap,
+        throttle: { requests: async () => {} },
+        choice: CompatibleStructuring.Choice.AUTO,
+        messageCodec,
+        toolCodec,
+        billing: { charge: () => 0 },
+    });
+    const session = {
+        chatMessages: [new CompatibleRoleMessage.User([
+            new CompatibleRoleMessage.Part.Text('Hello.\n', []),
+        ])],
+    };
+
+    const params = transport.makeParams(session);
+
+    t.is(params.parallel_tool_calls, true);
+    t.is(params.include, undefined);
 });
 
 test('OpenAI Responses native transport reads parallelToolCall from inferenceParams', t => {
@@ -346,7 +368,6 @@ test('OpenAI Responses native transport reads parallelToolCall from inferencePar
         messageCodec,
         toolCodec,
         billing: { charge: () => 0 },
-        validator: {},
     });
     const session = {
         chatMessages: [new CompatibleRoleMessage.User([

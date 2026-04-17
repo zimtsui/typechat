@@ -4,6 +4,7 @@ import { Adaptor } from '../build/adaptor.js';
 import { Throttle } from '../build/throttle.js';
 import { OpenAIResponsesCompatibleEngine } from '../build/compatible-engine.d/openai-responses.js';
 import { GoogleCompatibleEngine } from '../build/compatible-engine.d/google.js';
+import { VolcengineCompatibleEngine } from '../build/compatible-engine.d/volcengine.js';
 import { OpenAIResponsesNativeEngine } from '../build/native-engines.d/openai-responses.js';
 import { GoogleNativeEngine } from '../build/native-engines.d/google.js';
 
@@ -85,6 +86,13 @@ test('Adaptor creates compatible engines matching endpoint apiType', t => {
                     model: 'test-model',
                     name: 'Google Compatible',
                 },
+                volcengine: {
+                    apiType: 'volcengine',
+                    baseUrl: 'https://example.invalid/volcengine',
+                    apiKey: 'test-key',
+                    model: 'test-model',
+                    name: 'Volcengine Compatible',
+                },
             },
         },
     });
@@ -99,9 +107,15 @@ test('Adaptor creates compatible engines matching endpoint apiType', t => {
         functionDeclarationMap,
         verbatimDeclarationMap,
     });
+    const volcengineEngine = adaptor.makeCompatibleEngine({
+        endpoint: 'volcengine',
+        functionDeclarationMap,
+        verbatimDeclarationMap,
+    });
 
     t.true(openaiEngine instanceof OpenAIResponsesCompatibleEngine.Instance);
     t.true(googleEngine instanceof GoogleCompatibleEngine.Instance);
+    t.true(volcengineEngine instanceof VolcengineCompatibleEngine.Instance);
 });
 
 test('Adaptor creates native engines matching endpoint apiType', t => {

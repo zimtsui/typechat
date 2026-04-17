@@ -2,8 +2,8 @@ import type { Pricing } from '../../engine.ts';
 import OpenAI from 'openai';
 
 
-export class OpenAIChatCompletionsBilling {
-    public constructor(protected ctx: OpenAIChatCompletionsBilling.Context) {}
+export class Billing {
+    public constructor(protected ctx: Billing.Context) {}
 
     public charge(usage: OpenAI.CompletionUsage): number {
         const cacheHitTokenCount = usage.prompt_tokens_details?.cached_tokens ?? 0;
@@ -16,7 +16,7 @@ export class OpenAIChatCompletionsBilling {
     }
 }
 
-export namespace OpenAIChatCompletionsBilling {
+export namespace Billing {
     export interface Context {
         pricing: Pricing
     }

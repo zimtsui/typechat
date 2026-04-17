@@ -12,7 +12,7 @@ export namespace EndpointSpec {
         apiType: Type.Union([
             Type.Literal('openai-responses'),
             Type.Literal('google'),
-            Type.Literal('aliyun'),
+            Type.Literal('volcengine'),
             Type.Literal('anthropic'),
         ]),
         inputPrice: Type.Optional(Type.Number()),

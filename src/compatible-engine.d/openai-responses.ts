@@ -32,7 +32,7 @@ export namespace OpenAIResponsesCompatibleEngine {
             });
             this.billing = new Billing({ pricing: this.pricing });
             this.transport = new OpenAIResponsesCompatibleEngine.Transport({
-                inferenceSpec: this.inferenceParams,
+                inferenceParams: this.inferenceParams,
                 providerSpec: this.providerSpec,
                 fdm: this.fdm,
                 throttle: this.throttle,
