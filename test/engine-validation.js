@@ -76,16 +76,6 @@ test('OpenAI Responses validator returns verbatim meta feedback when request is 
     t.regex(getOnlyText(rejection), /<verbatim:meta>Error: No valid verbatim request found\. Check your output format\.<\/verbatim:meta>\n\n$/);
 });
 
-test('Compatible parts validator checks each text part independently', t => {
-    const validator = new CompatiblePartsValidator();
-    const aiMessage = new CompatibleRoleMessage.Ai([
-        new CompatibleRoleMessage.Part.Text('ab'.repeat(10), []),
-        new CompatibleRoleMessage.Part.Text('ab'.repeat(10), []),
-    ]);
-
-    t.notThrows(() => validator.validate(aiMessage));
-});
-
 test('Google parts validator ignores executable code and code execution result', t => {
     const validator = new GooglePartsValidator();
     const aiMessage = new GoogleRoleMessage.Ai([

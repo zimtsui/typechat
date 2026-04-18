@@ -1,13 +1,7 @@
 
-export function isRepeating(str: string, len = 256, threshold = .9): boolean {
-    for (let i = 0; i + len <= str.length; i += len)
-        if (diversity(str.slice(i, i + len)) < threshold)
-            return true;
+export function isRepeating(str: string, threshold = .9): boolean { return diversity(str) < threshold; }
 
-    return false;
-}
-
-function diversity(str: string): number {
+export function diversity(str: string): number {
     const sa = makeSuffixArray(str);
     const rk = new Array<number>(sa.length);
     for (let i = 0; i < sa.length; i++) rk[sa[i]!] = i;
