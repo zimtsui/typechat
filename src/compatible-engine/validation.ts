@@ -142,7 +142,7 @@ export class PartsValidator<
         parts: RoleMessage.Part.Text<vdu>[],
     ): void {
         for (const part of parts)
-            if (isRepeating(part.text, 2, 20))
+            if (isRepeating(part.text))
                 throw new SyntaxError('Repeating');
     }
 
