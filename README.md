@@ -2,24 +2,14 @@
 
 [![NPM Version](https://img.shields.io/npm/v/@zimtsui/typechat?style=flat-square)](https://www.npmjs.com/package/@zimtsui/typechat)
 
-TypeChat 是一个强类型的 LLM 推理 API 适配器。
+TypeChat 是一个强类型的 LLM 推理服务商 API 适配器。
 
 ## 支持服务商 API 类型
 
+-   OpenAI Chat Completions
 -   OpenAI Responses
 -   Google
--   阿里云 OpenAI Chat Completions Compatible
 -   Anthropic
-
-## 核心概念
-
-- `Session`：会话状态。
-- `InferenceContext`：工作流环境，包含 [Typelemetry](https://github.com/zimtsui/typelemetry) Logger、`AbortSignal`、用户防止并发过载的[读写锁](https://github.com/zimtsui/typelocks)。
-- `Engine`：推理引擎，从一个会话状态生成下一个会话状态。
-- `Endpoint`：代表一家服务商的一个模型的 API 端点。
-- `Adaptor`：Engine 工厂。
-- `RoleMessage`：三类角色消息 `Developer`、`User`、`AI`，消息由 `Text/Function.Call/Response` 片段组成。
-- `Function.Declaration.Map`：函数工具声明集合，使用 [JSON Schema](https://json-schema.org/) 描述函数参数。
 
 ## 配置
 
@@ -35,7 +25,7 @@ export const config: Config = {
                 apiType: 'openai-responses',
                 baseUrl: 'https://api.openai.com/v1',
                 apiKey: process.env.OPENAI_API_KEY!,
-                model: 'gpt-5-mini',
+                model: 'gpt-5.4-mini',
             },
             'gemini-3-flash': {
                 name: 'Gemini 3 Flash',
@@ -148,17 +138,18 @@ try {
 }
 ```
 
-### XML Verbatim 频道
+### XML 逐字频道
 
-When a LLM outputs structured data in JSON format, if there are too many special characters in the parameters (for example, a large Markdown document containing a lot of LaTeX math formulas), the LLM is prone to make mistakes in JSON escaping.
+When a LLM outputs structured data in JSON format (e.g., legacy LLM function calling), if there are too many special characters in a string property (e.g., a large LaTeX document, or a complex shell command), the LLM is prone to make mistakes in JSON escaping.
 
-XML Verbatim Channel is designed to avoid escaping in structured output of large text.
+XML Verbatim Channel is designed to avoid escaping in LLM messages.
 
 ```ts
 import { Adaptor, RoleMessage, type Session, Structuring, Verbatim } from '@zimtsui/typechat';
 import Assets from '@zimtsui/typechat/assets';
 import * as Codec from '@zimtsui/typechat/codec';
 import { config } from './config.ts';
+import { MIMEType } from 'whatwg-mimetype';
 
 // 声明 XML Verbatim 频道
 const vdm = {
@@ -167,7 +158,7 @@ const vdm = {
         parameters: {
             command: {
                 description: 'Bash 命令',
-                mimeType: 'text/plain',
+                mimeType: new MIMEType('text/plain'),
                 required: true as const,
             },
         },

@@ -10,7 +10,7 @@ export const config: Config = {
                 apiType: 'openai-responses',
                 baseUrl: 'https://api.openai.com/v1',
                 apiKey: process.env.OPENAI_API_KEY!,
-                model: 'gpt-5-mini',
+                model: 'gpt-5.4-mini',
             },
             'gemini-3-flash': {
                 name: 'Gemini 3 Flash',

@@ -2,6 +2,7 @@ import { Adaptor, RoleMessage, type Session, Structuring, Verbatim } from '@zimt
 import Assets from '@zimtsui/typechat/assets';
 import * as Codec from '@zimtsui/typechat/codec';
 import { config } from './config.ts';
+import { MIMEType } from 'whatwg-mimetype';
 
 // 声明 XML Verbatim 频道
 const vdm = {
@@ -10,7 +11,7 @@ const vdm = {
         parameters: {
             command: {
                 description: 'Bash 命令',
-                mimeType: 'text/plain',
+                mimeType: new MIMEType('text/plain'),
                 required: true as const,
             },
         },
