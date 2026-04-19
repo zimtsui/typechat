@@ -146,7 +146,7 @@ test('Engine stateful retries validator rejection without mutating session by de
     ]);
 });
 
-test('Engine middleware can recover validator rejection into session history', async t => {
+test('Engine Recoverable middleware appends validator rejection into session history', async t => {
     class FakeEngine extends Engine.Instance {
         constructor(responses, structuringValidator, partsValidator) {
             super({
@@ -196,17 +196,7 @@ test('Engine middleware can recover validator rejection into session history', a
     }, {
         validate() {},
     });
-    engine.use(async (wfctx, session, next) => {
-        try {
-            return await next();
-        } catch (e) {
-            if (e instanceof Recoverable) {
-                session.chatMessages.push(e.resume(), e.recover());
-                return next();
-            }
-            else throw e;
-        }
-    });
+    engine.use(Recoverable.recover);
     const session = { chatMessages: [] };
 
     const response = await engine.stateful({}, session);

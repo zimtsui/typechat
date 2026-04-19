@@ -253,6 +253,19 @@ export class Recoverable<userm, aim> extends SyntaxError {
     public recover(): userm {
         return this.rejection;
     }
+
+    public static async recover<
+        userm, aim, devm,
+        session extends Engine.Session<userm, aim, devm>
+    >(wfctx: InferenceContext, session: session, next: () => Promise<aim>): Promise<aim> {
+        try {
+            return await next();
+        } catch (e) {
+            if (e instanceof Recoverable) {} else throw e;
+            session.chatMessages.push(e.resume(), e.recover());
+            throw e;
+        }
+    }
 }
 
 declare global {
