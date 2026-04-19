@@ -20,6 +20,7 @@ export interface ProviderSpec {
     baseUrl: string;
     apiKey: string;
     dispatcher: Dispatcher;
+    retry: number;
 }
 export interface InferenceParams {
     model: string;
@@ -49,8 +50,8 @@ export namespace Engine {
         public fdm: fdm;
         public vdm: vdm;
         protected throttle: Throttle;
-        protected abstract structuringValidator: Engine.StructuringValidator.From<userm, aim>;
-        protected abstract partsValidator: Engine.PartsValidator.From<userm, aim>;
+        protected abstract structuringValidator: Engine.StructuringValidator<userm, aim>;
+        protected abstract partsValidator: Engine.PartsValidator<aim>;
         protected abstract transport: Engine.Transport<userm, aim, devm, session>;
 
         public constructor(options: Engine.Options<fdm, vdm>) {
@@ -70,6 +71,7 @@ export namespace Engine {
                 baseUrl: options.baseUrl,
                 apiKey: options.apiKey,
                 dispatcher,
+                retry: options.retry ?? 2,
             };
 
             this.name = options.name;
@@ -78,7 +80,7 @@ export namespace Engine {
                 additionalOptions: options.additionalOptions,
                 timeout: options.timeout,
                 parallelToolCall: options.parallelToolCall,
-                retry: options.retry ?? 3,
+                retry: options.retry ?? 2,
             };
 
             this.pricing = {
@@ -91,14 +93,31 @@ export namespace Engine {
             this.throttle = options.throttle;
         }
 
+        /**
+        * @throws {@link SyntaxError} 模型抽风
+        * @throws {@link Recoverable} 模型抽风但可恢复
+        * @throws {@link TypeError} 网络故障
+        */
         protected async infer(
             wfctx: InferenceContext,
             session: session,
-            signal?: AbortSignal,
         ): Promise<aim> {
-            const aiMessage = await this.transport.fetch(wfctx, session, signal);
-            this.partsValidator.validate(aiMessage);
-            return aiMessage;
+            const signalTimeout = this.inferenceParams.timeout ? AbortSignal.timeout(this.inferenceParams.timeout) : null;
+            const signals: AbortSignal[] = [];
+            if (signalTimeout) signals.push(signalTimeout);
+            if (wfctx.signal) signals.push(wfctx.signal);
+            const signal = AbortSignal.any(signals);
+            try {
+                const aiMessage = await this.transport.fetch(wfctx, session, signal);
+                this.partsValidator.validate(aiMessage);
+                const rejection = this.structuringValidator.validate(aiMessage);
+                if (rejection) throw new Recoverable(aiMessage, rejection);
+                return aiMessage;
+            } catch (e) {
+                if (signalTimeout?.aborted)
+                    throw new InferenceTimeout(undefined, { cause: e });
+                else throw e;
+            }
         }
 
         /**
@@ -110,57 +129,57 @@ export namespace Engine {
             wfctx: InferenceContext,
             session: session,
         ): Promise<aim> {
-            for (let retry = 0;; retry++) {
-                const signalTimeout = this.inferenceParams.timeout ? AbortSignal.timeout(this.inferenceParams.timeout) : undefined;
-                const signals: AbortSignal[] = [];
-                if (signalTimeout) signals.push(signalTimeout);
-                if (wfctx.signal) signals.push(wfctx.signal);
-                const signal = AbortSignal.any(signals);
-                try {
-                    const response = await this.infer(wfctx, session, signal);
-                    const rejection = this.structuringValidator.validate(response);
-                    if (rejection) throw new Recoverable();
-                    return response;
-                } catch (e) {
-                    if (signalTimeout?.aborted) e = new InferenceTimeout(undefined, { cause: e });      // 推理超时
-                    else if (e instanceof SyntaxError) {}			                                // 模型抽风
-                    else if (e instanceof TypeError) {}         		                                // 网络故障
-                    else throw e;
-                    if (retry < this.inferenceParams.retry) loggers.message.warn(e); else throw e;
-                }
+            for (let retryProvider = 0, retryInference = 0;;) try {
+                return await this.infer(wfctx, session);
+            } catch (e) {
+                if (e instanceof InferenceTimeout) {    // 推理超时
+                    if (retryInference < this.inferenceParams.retry) {} else throw e;
+                    loggers.message.warn(e);
+                    retryInference++;
+                } else if (e instanceof SyntaxError) {  // 模型抽风
+                    if (retryInference < this.inferenceParams.retry) {} else throw e;
+                    loggers.message.warn(e);
+                    retryInference++;
+                } else if (e instanceof TypeError) {    // 网络故障
+                    if (retryProvider < this.providerSpec.retry) {} else throw e;
+                    loggers.message.warn(e);
+                    retryProvider++;
+                } else throw e;
             }
         }
 
         /**
+        * @throws {@link InferenceTimeout} 推理超时
+        * @throws {@link SyntaxError} 模型抽风
+        * @throws {@link TypeError} 网络故障
         * @param session mutable
         */
         public async stateful(
             wfctx: InferenceContext,
             session: session,
         ): Promise<aim> {
-            for (let retry = 0;; retry++) {
-                const signalTimeout = this.inferenceParams.timeout ? AbortSignal.timeout(this.inferenceParams.timeout) : undefined;
-                const signals: AbortSignal[] = [];
-                if (signalTimeout) signals.push(signalTimeout);
-                if (wfctx.signal) signals.push(wfctx.signal);
-                const signal = AbortSignal.any(signals);
-                try {
-                    const response = await this.infer(wfctx, session, signal);
-                    const rejection = this.structuringValidator.validate(response);
-                    if (rejection) {
-                        session.chatMessages.push(response, rejection);
-                        throw new Recoverable();
-                    }
-                    session.chatMessages.push(response);
-                    return response;
-                } catch (e) {
-                    if (signalTimeout?.aborted) e = new InferenceTimeout(undefined, { cause: e });      // 推理超时
-                    else if (e instanceof SyntaxError) {}			                                // 模型抽风
-                    else if (e instanceof TypeError) {}         		                                // 网络故障
-                    else throw e;
-                    if (retry < this.inferenceParams.retry) {} else throw e;
-                    loggers.message.warn(e);
+            const middleware = this.compose(this.middlewares);
+            for (let retryProvider = 0, retryInference = 0;;) try {
+                const next = async () => {
+                    const aiMessage = await this.infer(wfctx, session);
+                    session.chatMessages.push(aiMessage);
+                    return aiMessage;
                 }
+                return await middleware(wfctx, session, next);
+            } catch (e) {
+                if (e instanceof InferenceTimeout) {    // 推理超时
+                    if (retryInference < this.inferenceParams.retry) {} else throw e;
+                    loggers.message.warn(e);
+                    retryInference++;
+                } else if (e instanceof SyntaxError) {  // 模型抽风
+                    if (retryInference < this.inferenceParams.retry) {} else throw e;
+                    loggers.message.warn(e);
+                    retryInference++;
+                } else if (e instanceof TypeError) {    // 网络故障
+                    if (retryProvider < this.providerSpec.retry) {} else throw e;
+                    loggers.message.warn(e);
+                    retryProvider++;
+                } else throw e;
             }
         }
 
@@ -176,6 +195,28 @@ export namespace Engine {
             session: session,
             message: userm,
         ): session;
+
+        protected middlewares: Middleware<userm, aim, devm, session>[] = [];
+        public use(middleware: Middleware<userm, aim, devm, session>): void {
+            this.middlewares.push(middleware);
+        }
+        protected compose(middlewares: Middleware<userm, aim, devm, session>[], i: number = 0): Middleware<userm, aim, devm, session> {
+            if (i < middlewares.length)
+                return async (wfctx, session, next) => {
+                    const middleware = middlewares[i]!;
+                    const nextMiddlewares = this.compose(middlewares, i+1);
+                    return middleware(wfctx, session, () => nextMiddlewares(wfctx, session, next));
+                };
+            else
+                return (wfctx, session, next) => next();
+        }
+    }
+
+    export interface Middleware<
+        userm, aim, devm,
+        session extends Engine.Session<userm, aim, devm>
+    > {
+        (wfctx: InferenceContext, session: session, next: () => Promise<aim>): Promise<aim>;
     }
 
     export interface Options<
@@ -191,13 +232,28 @@ export namespace Engine {
 
 
     export import Session = SessionModule.Session;
+    export import RoleMessage = SessionModule.RoleMessage;
     export import StructuringValidator = ValidationModule.StructuringValidator;
     export import PartsValidator = ValidationModule.PartsValidator;
     export import Transport = TransportModule.Transport;
 }
 
 export class InferenceTimeout extends Error {}
-export class Recoverable extends SyntaxError {}
+export class Recoverable<userm, aim> extends SyntaxError {
+    public constructor(
+        protected response: aim,
+        protected rejection: userm,
+        ...rest: ConstructorParameters<typeof SyntaxError>
+    ) {
+        super(...rest);
+    }
+    public resume(): aim {
+        return this.response;
+    }
+    public recover(): userm {
+        return this.rejection;
+    }
+}
 
 declare global {
     export namespace NodeJS {

@@ -129,7 +129,7 @@ export namespace StructuringValidator {
 export class PartsValidator<
     in out fdu extends Function.Decl.Proto,
     in out vdu extends Verbatim.Decl.Proto,
-> implements Engine.PartsValidator<RoleMessage.User<fdu>, RoleMessage.Ai<fdu, vdu>> {
+> implements Engine.PartsValidator<RoleMessage.Ai<fdu, vdu>> {
     protected compatiblePartsValidator: CompatiblePartsValidator<fdu, vdu>;
     public constructor() {
         this.compatiblePartsValidator = new CompatiblePartsValidator();

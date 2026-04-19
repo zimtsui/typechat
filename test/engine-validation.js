@@ -2,7 +2,7 @@ import test from 'ava';
 import { Type } from '@sinclair/typebox';
 import { MIMEType } from 'whatwg-mimetype';
 import { Throttle } from '../build/throttle.js';
-import { Engine } from '../build/engine.js';
+import { Engine, Recoverable } from '../build/engine.js';
 import * as VerbatimCodec from '../build/verbatim/codec.js';
 import { Structuring as CompatibleStructuring } from '../build/compatible-engine/structuring.js';
 import {
@@ -86,7 +86,7 @@ test('Google parts validator ignores executable code and code execution result',
     t.notThrows(() => validator.validate(aiMessage));
 });
 
-test('Engine stateful appends validator rejection message before retrying', async t => {
+test('Engine stateful retries validator rejection without mutating session by default', async t => {
     class FakeEngine extends Engine.Instance {
         constructor(responses, structuringValidator, partsValidator) {
             super({
@@ -135,6 +135,77 @@ test('Engine stateful appends validator rejection message before retrying', asyn
         },
     }, {
         validate() {},
+    });
+    const session = { chatMessages: [] };
+
+    const response = await engine.stateful({}, session);
+
+    t.is(response.kind, 'valid');
+    t.deepEqual(session.chatMessages, [
+        { kind: 'valid' },
+    ]);
+});
+
+test('Engine middleware can recover validator rejection into session history', async t => {
+    class FakeEngine extends Engine.Instance {
+        constructor(responses, structuringValidator, partsValidator) {
+            super({
+                name: 'Fake Engine',
+                baseUrl: 'https://example.invalid/fake',
+                apiKey: 'test-key',
+                model: 'test-model',
+                throttle: new Throttle(Number.POSITIVE_INFINITY),
+                functionDeclarationMap,
+                verbatimDeclarationMap,
+                retry: 1,
+            });
+            this.parallelToolCall = false;
+            this.structuringValidator = structuringValidator;
+            this.partsValidator = partsValidator;
+            this.transport = {
+                fetch: async () => responses.shift(),
+            };
+        }
+
+        appendUserMessage(session, message) {
+            return {
+                developerMessage: session.developerMessage,
+                chatMessages: [...session.chatMessages, message],
+            };
+        }
+
+        pushUserMessage(session, message) {
+            session.chatMessages.push(message);
+            return session;
+        }
+    }
+
+    const responses = [
+        { kind: 'invalid' },
+        { kind: 'valid' },
+    ];
+    const rejection = new CompatibleRoleMessage.User([
+        CompatibleRoleMessage.Part.Text.paragraph(
+            VerbatimCodec.Meta.encode('Error: No valid verbatim request found. Check your output format.'),
+        ),
+    ]);
+    const engine = new FakeEngine(responses, {
+        validate(message) {
+            if (message.kind === 'invalid') return rejection;
+        },
+    }, {
+        validate() {},
+    });
+    engine.use(async (wfctx, session, next) => {
+        try {
+            return await next();
+        } catch (e) {
+            if (e instanceof Recoverable) {
+                session.chatMessages.push(e.resume(), e.recover());
+                return next();
+            }
+            else throw e;
+        }
     });
     const session = { chatMessages: [] };
 
