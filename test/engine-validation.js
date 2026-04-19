@@ -42,10 +42,10 @@ function getOnlyText(message) {
     return parts[0].text;
 }
 
-test('Verbatim meta codec wraps escaped XML body text', t => {
-    const xml = VerbatimCodec.Meta.encode('a & b < c > d');
+test('Verbatim system codec wraps escaped XML body text', t => {
+    const xml = VerbatimCodec.System.encode('a & b < c > d');
 
-    t.is(xml.trim(), '<verbatim:meta>a &amp; b &lt; c &gt; d</verbatim:meta>');
+    t.is(xml.trim(), '<verbatim:system>a &amp; b &lt; c &gt; d</verbatim:system>');
 });
 
 test('Compatible validator returns verbatim meta feedback when request is missing', t => {
@@ -59,7 +59,7 @@ test('Compatible validator returns verbatim meta feedback when request is missin
     const rejection = validator.validate(aiMessage);
 
     t.truthy(rejection);
-    t.regex(getOnlyText(rejection), /<verbatim:meta>Error: No valid verbatim request found\. Check your output format\.<\/verbatim:meta>\n\n$/);
+    t.regex(getOnlyText(rejection), /<verbatim:system>Error: No valid verbatim request found\. Check your output format\.<\/verbatim:system>\n\n$/);
 });
 
 test('OpenAI Responses validator returns verbatim meta feedback when request is missing', t => {
@@ -73,7 +73,7 @@ test('OpenAI Responses validator returns verbatim meta feedback when request is 
     const rejection = validator.validate(aiMessage);
 
     t.truthy(rejection);
-    t.regex(getOnlyText(rejection), /<verbatim:meta>Error: No valid verbatim request found\. Check your output format\.<\/verbatim:meta>\n\n$/);
+    t.regex(getOnlyText(rejection), /<verbatim:system>Error: No valid verbatim request found\. Check your output format\.<\/verbatim:system>\n\n$/);
 });
 
 test('Google parts validator ignores executable code and code execution result', t => {
@@ -126,7 +126,7 @@ test('Engine stateful retries validator rejection without mutating session by de
     ];
     const rejection = new CompatibleRoleMessage.User([
         CompatibleRoleMessage.Part.Text.paragraph(
-            VerbatimCodec.Meta.encode('Error: No valid verbatim request found. Check your output format.'),
+            VerbatimCodec.System.encode('Error: No valid verbatim request found. Check your output format.'),
         ),
     ]);
     const engine = new FakeEngine(responses, {
@@ -186,7 +186,7 @@ test('Engine Recoverable middleware appends validator rejection into session his
     ];
     const rejection = new CompatibleRoleMessage.User([
         CompatibleRoleMessage.Part.Text.paragraph(
-            VerbatimCodec.Meta.encode('Error: No valid verbatim request found. Check your output format.'),
+            VerbatimCodec.System.encode('Error: No valid verbatim request found. Check your output format.'),
         ),
     ]);
     const engine = new FakeEngine(responses, {

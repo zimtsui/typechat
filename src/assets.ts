@@ -7,6 +7,6 @@ export default {
         declarations: loadtext(import.meta.resolve('../assets/verbatim/declarations.handlebars')),
         quotation: loadtext(import.meta.resolve('../assets/verbatim/quotation.handlebars')),
         response: loadtext(import.meta.resolve('../assets/verbatim/response.handlebars')),
-        meta: loadtext(import.meta.resolve('../assets/verbatim/meta.handlebars')),
+        system: loadtext(import.meta.resolve('../assets/verbatim/system.handlebars')),
     },
 } as const;

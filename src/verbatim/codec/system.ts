@@ -3,7 +3,7 @@ import Assets from '../../assets.ts';
 import './escape.ts';
 
 
-const template = Handlebars.compile<template.Input>(Assets.verbatim.meta);
+const template = Handlebars.compile<template.Input>(Assets.verbatim.system);
 namespace template {
     export interface Input {
         text: string;

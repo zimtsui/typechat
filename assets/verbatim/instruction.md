@@ -2,57 +2,59 @@
 
 ## Motivation
 
-When a LLM outputs structured data in JSON format, if there are too many special characters in the parameters (for example, a large Markdown document containing a lot of LaTeX math formulas), the LLM is prone to make mistakes in JSON escaping.
+When a LLM outputs structured data in JSON format (e.g., legacy LLM function calling), if there are too many special characters in a string property (e.g., a large LaTeX document, or a complex shell command), the LLM is prone to make mistakes in JSON escaping.
 
-XML Verbatim Channel is designed to avoid escaping in structured output of large text.
+XML Verbatim Channel is designed to avoid escaping in LLM messages.
 
-## Declaration
+## Declaration of Channels
 
 The LLM system/user message is expected to declare all available XML Verbatim Channels in the form of
 
-<verbatim:declaration name="NAME_OF_CHANNEL">
-    <verbatim:description>DESCRIPTION_OF_CHANNEL</verbatim:description>
-    <verbatim:parameter name="NAME_OF_PARAMETER_1">
-        <verbatim:description>DESCRIPTION_OF_PARAMETER</verbatim:description>
-        <verbatim:mime-type>MIME_TYPE_OF_PARAMETER</verbatim:mime-type>
-        <verbatim:required>WHETHER_PARAMETER_IS_REQUIRED</verbatim:required>
+<verbatim:declaration name="NAME OF CHANNEL">
+    <verbatim:description>DESCRIPTION OF CHANNEL</verbatim:description>
+    <verbatim:parameter name="NAME OF PARAMETER 1">
+        <verbatim:description>DESCRIPTION OF THIS PARAMETER</verbatim:description>
+        <verbatim:mime-type>MIME TYPE OF THIS PARAMETER</verbatim:mime-type>
+        <verbatim:required>WHETHER THIS PARAMETER IS REQUIRED</verbatim:required>
     </verbatim:parameter>
-    <verbatim:parameter name="NAME_OF_PARAMETER_2">
-        <verbatim:description>DESCRIPTION_OF_PARAMETER</verbatim:description>
-        <verbatim:mime-type>MIME_TYPE_OF_PARAMETER</verbatim:mime-type>
-        <verbatim:required>WHETHER_PARAMETER_IS_REQUIRED</verbatim:required>
+    <verbatim:parameter name="NAME OF PARAMETER 2">
+        <verbatim:description>DESCRIPTION OF THIS PARAMETER</verbatim:description>
+        <verbatim:mime-type>MIME TYPE OF THIS PARAMETER</verbatim:mime-type>
+        <verbatim:required>WHETHER THIS PARAMETER IS REQUIRED</verbatim:required>
     </verbatim:parameter>
 </verbatim:declaration>
 
-## Request
+## Request through Channels
 
 You can make a request through a channel in the form of
 
-<verbatim:request name="NAME_OF_CHANNEL">
-    <verbatim:parameter name="NAME_OF_PARAMETER_1"><![CDATA[ARGUMENT_OF_PARAMETER]]></verbatim:parameter>
-    <verbatim:parameter name="NAME_OF_PARAMETER_2"><![CDATA[ARGUMENT_OF_PARAMETER]]></verbatim:parameter>
+<verbatim:request name="NAME OF CHANNEL">
+    <verbatim:parameter name="NAME OF PARAMETER 1"><![CDATA[ARGUMENT OF THIS PARAMETER]]></verbatim:parameter>
+    <verbatim:parameter name="NAME OF PARAMETER 2"><![CDATA[ARGUMENT OF THIS PARAMETER]]></verbatim:parameter>
 </verbatim:request>
 
 -   The only attribute of <verbatim:request> is `name`. Additional attributes will be ignored.
 -   The only attribute of <verbatim:parameter> is `name`. Additional attributes will be ignored.
 -   All arguments must be wrapped in CDATA.
 
-## Response
+## Response from Channels
 
-The LLM system/user message may contain the responses of your request in the form of
+The LLM user message may contain the responses of your request in the form of
 
-<verbatim:response name="NAME_OF_CHANNEL"><![CDATA[RESPONSE]]></verbatim:response>
+<verbatim:response name="NAME OF CHANNEL"><![CDATA[RESPONSE]]></verbatim:response>
 
 Not all requests have a response.
 
-## Quotation
+## Verbatim Quotation
 
 The LLM system/user message may contain verbatim quotations in the form of
 
-<verbatim:quotation><![CDATA[QUOTATION]]></verbatim:quotation>
+<verbatim:quotation author="AUTHOR OF THIS QUOTATION"><![CDATA[QUOTATION]]></verbatim:quotation>
 
-## Meta Message
+The attribute `author` is optional.
 
-The LLM system/user message may contain meta messages from the agent loop infrastructure in the form of
+## System Information
 
-<verbatim:meta></verbatim:meta>
+The LLM system/user message may contain system information from the AI agent framework in the form of
+
+<verbatim:system></verbatim:system>
