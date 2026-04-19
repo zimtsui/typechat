@@ -12,6 +12,7 @@ import { Throttle } from '../../throttle.ts';
 import { type MessageCodec } from './message-codec.ts';
 import type { Structuring } from '../../compatible-engine/structuring.ts';
 import * as ChoiceCodec from './choice-codec.ts';
+import * as Undici from 'undici';
 
 
 
@@ -37,6 +38,7 @@ export class Transport<
         this.client = new OpenAI({
             baseURL: options.providerSpec.baseUrl,
             apiKey: options.providerSpec.apiKey,
+            fetch: Undici.fetch as typeof globalThis.fetch,
             fetchOptions: { dispatcher: options.providerSpec.dispatcher },
         });
         this.inferenceParams = options.inferenceParams;
@@ -121,19 +123,13 @@ export class Transport<
             loggers.message.debug(params);
 
             // Send request
-            const stream = await this.client.chat.completions.create(
-                params,
-                {
-                    signal,
-                    fetchOptions: {
-                        dispatcher: this.providerSpec.dispatcher,
-                    }
-                },
-            );
+            const stream = await this.client.chat.completions.create(params, { signal });
 
             // Get response
             let stock: OpenAI.ChatCompletionChunk | null = null;
             for await (const chunk of stream) {
+                loggers.stream.trace(chunk);
+
                 stock ??= {
                     id: chunk.id,
                     created: chunk.created,
@@ -187,6 +183,7 @@ export class Transport<
             // Validate response
             if (stock) {} else throw new Error();
             const completion = this.mergeCompletion(stock);
+            loggers.message.debug(completion);
 
             const choice = completion.choices[0];
             if (choice) {} else throw new SyntaxError('Content missing', { cause: completion });

@@ -12,6 +12,7 @@ import type { Verbatim } from '../../verbatim.ts';
 import * as ChoiceCodec from './choice-codec.ts';
 import type { Structuring } from '../../compatible-engine/structuring.ts';
 import type { Engine } from '../../engine.ts';
+import * as Undici from 'undici';
 
 
 export class Transport<
@@ -36,9 +37,8 @@ export class Transport<
         this.client = new OpenAI({
             baseURL: options.providerSpec.baseUrl,
             apiKey: options.providerSpec.apiKey,
-            fetchOptions: {
-                dispatcher: options.providerSpec.dispatcher,
-            },
+            fetch: Undici.fetch as typeof globalThis.fetch,
+            fetchOptions: { dispatcher: options.providerSpec.dispatcher },
         });
         this.inferenceParams = options.inferenceParams;
         this.providerSpec = options.providerSpec;
@@ -88,6 +88,10 @@ export class Transport<
                 response = event.response;
             else if (event.type === 'response.incomplete')
                 response = event.response;
+            else if (event.type === 'response.failed')
+                response = event.response;
+            else if (event.type === 'error')
+                throw new SyntaxError('Response stream error', { cause: event });
         }
 
         // Validate response

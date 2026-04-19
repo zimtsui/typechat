@@ -10,9 +10,9 @@ export namespace EndpointSpec {
         model: Type.String(),
         name: Type.String(),
         apiType: Type.Union([
+            Type.Literal('openai-chatcompletions'),
             Type.Literal('openai-responses'),
             Type.Literal('google'),
-            Type.Literal('volcengine'),
             Type.Literal('anthropic'),
         ]),
         inputPrice: Type.Optional(Type.Number()),

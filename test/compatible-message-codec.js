@@ -16,7 +16,6 @@ import { MessageCodec as OpenAIResponsesMessageCodec } from '../build/compatible
 import { Structuring as CompatibleStructuring } from '../build/compatible-engine/structuring.js';
 import { Transport as OpenAIChatCompletionsTransport } from '../build/compatible-engine.d/openai-chatcompletions/transport.js';
 import { Transport as OpenAIResponsesTransport } from '../build/compatible-engine.d/openai-responses/transport.js';
-import { Transport as VolcengineTransport } from '../build/compatible-engine.d/volcengine/transport.js';
 import { Transport as OpenAIResponsesNativeTransport } from '../build/native-engines.d/openai-responses/transport.js';
 
 
@@ -309,20 +308,20 @@ test('OpenAI Responses compatible transport reads parallelToolCall from inferenc
     t.is(params.parallel_tool_calls, true);
 });
 
-test('Volcengine transport omits encrypted reasoning include from params', t => {
+test('OpenAI Responses compatible transport throws on stream error event', async t => {
     const toolCodec = new OpenAIResponsesToolCodec({ fdm: functionDeclarationMap });
     const messageCodec = new OpenAIResponsesMessageCodec({
         toolCodec,
         vdm: verbatimDeclarationMap,
     });
-    const transport = new VolcengineTransport({
+    const transport = new OpenAIResponsesTransport({
         inferenceParams: {
             model: 'test-model',
             parallelToolCall: true,
             retry: 3,
         },
         providerSpec: {
-            baseUrl: 'https://example.invalid/volcengine',
+            baseUrl: 'https://example.invalid/openai',
             apiKey: 'test-key',
             dispatcher: undefined,
         },
@@ -333,17 +332,26 @@ test('Volcengine transport omits encrypted reasoning include from params', t => 
         toolCodec,
         billing: { charge: () => 0 },
     });
+    transport.client = {
+        responses: {
+            create: async function* () {
+                yield {
+                    type: 'error',
+                    code: 'test_error',
+                    message: 'stream failed',
+                };
+            },
+        },
+    };
     const session = {
         chatMessages: [new CompatibleRoleMessage.User([
             new CompatibleRoleMessage.Part.Text('Hello.\n', []),
         ])],
     };
 
-    const params = transport.makeParams(session);
+    const error = await t.throwsAsync(() => transport.fetch({}, session));
 
-    t.is(params.parallel_tool_calls, true);
-    t.is(params.include, undefined);
-    t.true(params.stream);
+    t.is(error?.message, 'Response stream error');
 });
 
 test('OpenAI Responses native transport reads parallelToolCall from inferenceParams', t => {

@@ -8,7 +8,6 @@ const fdm = {
         description: '获取指定城市的天气',
         parameters: Type.Object({
             city: Type.String(),
-            unit: Type.Optional(Type.Union([Type.Literal('C'), Type.Literal('F')]))
         }),
     },
     submit_result: {
@@ -27,8 +26,8 @@ export class Submission {
     public constructor(public weather: string, public advice: string) {}
 }
 const fnm: Function.Map<fdm> = {
-    async get_weather({ city, unit }) {
-        const data = { city, unit: unit ?? 'C', temperature: 26, sky: 'sunny' };
+    async get_weather({ city }) {
+        const data = { city, unit: 'C', temperature: 26, sky: 'sunny' };
         return JSON.stringify(data);
     },
     async submit_result({ weather, advice }) {

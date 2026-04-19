@@ -2,7 +2,6 @@ import { type InferenceParams, type ProviderSpec } from '../../engine.ts';
 import { RoleMessage, type Session } from './session.ts';
 import { Function } from '../../function.ts';
 import OpenAI from 'openai';
-import * as Undici from 'undici';
 import { type InferenceContext } from '../../inference-context.ts';
 import { Throttle } from '../../throttle.ts';
 import { loggers } from '../../telemetry.ts';
@@ -12,6 +11,7 @@ import type { Billing } from '../../api-types/openai-responses/billing.ts';
 import type { Verbatim } from '../../verbatim.ts';
 import * as ChoiceCodec from './choice-codec.ts';
 import { Structuring } from './structuring.ts';
+import * as Undici from 'undici';
 
 
 
@@ -34,9 +34,8 @@ export class Transport<
         this.client = new OpenAI({
             baseURL: options.providerSpec.baseUrl,
             apiKey: options.providerSpec.apiKey,
-            fetchOptions: {
-                dispatcher: options.providerSpec.dispatcher,
-            },
+            fetch: Undici.fetch as typeof globalThis.fetch,
+            fetchOptions: { dispatcher: options.providerSpec.dispatcher },
         });
         this.inferenceParams = options.inferenceParams;
         this.providerSpec = options.providerSpec;

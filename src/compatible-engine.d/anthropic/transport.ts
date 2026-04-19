@@ -12,6 +12,7 @@ import type { Verbatim } from '../../verbatim.ts';
 import * as ChoiceCodec from './choice-codec.ts';
 import type { Structuring } from '../../compatible-engine/structuring.ts';
 import type { Engine } from '../../engine.ts';
+import * as Undici from 'undici';
 
 
 export class Transport<
@@ -37,6 +38,7 @@ export class Transport<
         this.client = new Anthropic({
             baseURL: options.providerSpec.baseUrl,
             apiKey: options.providerSpec.apiKey,
+            fetch: Undici.fetch as typeof globalThis.fetch,
             fetchOptions: { dispatcher: options.providerSpec.dispatcher },
         });
         this.providerSpec = options.providerSpec;
@@ -88,13 +90,12 @@ export class Transport<
         // Get response
         let response: Anthropic.Message | null = null;
         for await (const event of stream) {
+            loggers.stream.trace(event);
             if (event.type === 'message_start') {
-                loggers.message.debug(event);
                 response = structuredClone(event.message);
             } else {
                 if (response) {} else throw new Error();
                 if (event.type === 'message_delta') {
-                    loggers.message.debug(event);
                     response.stop_sequence = event.delta.stop_sequence ?? response.stop_sequence;
                     response.stop_reason = event.delta.stop_reason ?? response.stop_reason;
                     response.usage.input_tokens = event.usage.input_tokens ?? response.usage.input_tokens;
@@ -103,9 +104,7 @@ export class Transport<
                     response.usage.cache_creation_input_tokens = event.usage.cache_creation_input_tokens ?? response.usage.cache_creation_input_tokens;
                     response.usage.server_tool_use = event.usage.server_tool_use ?? response.usage.server_tool_use;
                 } else if (event.type === 'message_stop') {
-                    loggers.message.debug(event);
                 } else if (event.type === 'content_block_start') {
-                    loggers.message.debug(event);
                     const contentBlock = structuredClone(event.content_block);
                     response.content.push(contentBlock);
                     if (contentBlock.type === 'tool_use') contentBlock.input = '';
@@ -129,7 +128,6 @@ export class Transport<
                     const contentBlock = response.content[event.index];
                     if (contentBlock?.type === 'text') loggers.inference.info(contentBlock.text);
                     else if (contentBlock?.type === 'thinking') loggers.inference.debug(contentBlock.thinking);
-                    loggers.message.debug(event);
                     if (contentBlock?.type === 'tool_use') {
                         if (typeof contentBlock.input === 'string') {} else throw new Error();
                         try {
