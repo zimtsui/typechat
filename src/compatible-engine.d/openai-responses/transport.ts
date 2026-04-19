@@ -23,33 +23,48 @@ export class Transport<
     RoleMessage.Developer,
     Session.From<fdm, vdm>
 > {
-    protected client: OpenAI;
+    protected client: OpenAI;inferenceParams: InferenceParams;
+    protected providerSpec: ProviderSpec;
+    protected fdm: fdm;
+    protected throttle: Throttle;
+    protected choice: Structuring.Choice.From<fdm, vdm>;
+    protected messageCodec: MessageCodec<fdm, vdm>;
+    protected toolCodec: ToolCodec<fdm>;
+    protected billing: Billing;
 
-    public constructor(protected options: Transport.Options<fdm, vdm>) {
+    public constructor(options: Transport.Options<fdm, vdm>) {
         this.client = new OpenAI({
-            baseURL: this.options.providerSpec.baseUrl,
-            apiKey: this.options.providerSpec.apiKey,
+            baseURL: options.providerSpec.baseUrl,
+            apiKey: options.providerSpec.apiKey,
             fetchOptions: {
-                dispatcher: this.options.providerSpec.dispatcher,
+                dispatcher: options.providerSpec.dispatcher,
             },
         });
+        this.inferenceParams = options.inferenceParams;
+        this.providerSpec = options.providerSpec;
+        this.fdm = options.fdm;
+        this.throttle = options.throttle;
+        this.choice = options.choice;
+        this.messageCodec = options.messageCodec;
+        this.toolCodec = options.toolCodec;
+        this.billing = options.billing;
     }
 
     protected makeParams(
         session: Session.From<fdm, vdm>,
     ): OpenAI.Responses.ResponseCreateParamsStreaming {
-        const tools = this.options.toolCodec.encodeFunctionDeclarationMap(this.options.fdm);
+        const tools = this.toolCodec.encodeFunctionDeclarationMap(this.fdm);
         return {
-            model: this.options.inferenceParams.model,
+            model: this.inferenceParams.model,
             include: ['reasoning.encrypted_content'],
             store: false,
             stream: true,
-            input: session.chatMessages.flatMap(chatMessage => this.options.messageCodec.encodeChatMessage(chatMessage)),
-            instructions: session.developerMessage && this.options.messageCodec.encodeDeveloperMessage(session.developerMessage),
+            input: session.chatMessages.flatMap(chatMessage => this.messageCodec.encodeChatMessage(chatMessage)),
+            instructions: session.developerMessage && this.messageCodec.encodeDeveloperMessage(session.developerMessage),
             tools: tools.length ? tools : undefined,
-            tool_choice: tools.length ? ChoiceCodec.encode(this.options.choice) : undefined,
-            parallel_tool_calls: tools.length ? this.options.inferenceParams.parallelToolCall : undefined,
-            ...this.options.inferenceParams.additionalOptions,
+            tool_choice: tools.length ? ChoiceCodec.encode(this.choice) : undefined,
+            parallel_tool_calls: tools.length ? this.inferenceParams.parallelToolCall : undefined,
+            ...this.inferenceParams.additionalOptions,
         };
     }
 
@@ -58,7 +73,7 @@ export class Transport<
         session: Session.From<fdm, vdm>,
         signal?: AbortSignal,
     ): Promise<RoleMessage.Ai.From<fdm, vdm>> {
-        await this.options.throttle.requests(wfctx);
+        await this.throttle.requests(wfctx);
 
         // Prepare request
         const params = this.makeParams(session);
@@ -92,9 +107,9 @@ export class Transport<
                         loggers.inference.warn(part.refusal);
             else loggers.message.info(item);
         loggers.message.info(response.usage);
-        wfctx.cost?.(this.options.billing.charge(response.usage));
+        wfctx.cost?.(this.billing.charge(response.usage));
 
-        return this.options.messageCodec.decodeAiMessage(response.output);
+        return this.messageCodec.decodeAiMessage(response.output);
     }
 }
 

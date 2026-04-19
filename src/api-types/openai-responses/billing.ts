@@ -3,16 +3,18 @@ import type { Pricing } from '../../engine.ts';
 
 
 export class Billing {
-    public constructor(protected options: Billing.Options) {}
-
+    protected pricing: Pricing;
+    public constructor(options: Billing.Options) {
+        this.pricing = options.pricing;
+    }
 
     public charge(usage: OpenAI.Responses.ResponseUsage): number {
         const cacheHitTokenCount = usage.input_tokens_details.cached_tokens;
         const cacheMissTokenCount = usage.input_tokens - cacheHitTokenCount;
         return (
-            this.options.pricing.inputPrice * cacheMissTokenCount / 1e6 +
-            this.options.pricing.cachePrice * cacheHitTokenCount / 1e6 +
-            this.options.pricing.outputPrice * usage.output_tokens / 1e6
+            this.pricing.inputPrice * cacheMissTokenCount / 1e6 +
+            this.pricing.cachePrice * cacheHitTokenCount / 1e6 +
+            this.pricing.outputPrice * usage.output_tokens / 1e6
         );
     }
 }

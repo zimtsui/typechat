@@ -29,9 +29,31 @@ export class GoogleNativeTransport<
     Session.From<fdm, vdm>
 > {
     protected apiURL: URL;
+    protected inferenceParams: InferenceParams;
+    protected providerSpec: ProviderSpec;
+    protected fdm: fdm;
+    protected throttle: Throttle;
+    protected choice: Structuring.Choice.From<fdm, vdm>;
+    protected codeExecution: boolean;
+    protected urlContext: boolean;
+    protected googleSearch: boolean;
+    protected messageCodec: MessageCodec<fdm, vdm>;
+    protected toolCodec: ToolCodec<fdm>;
+    protected billing: Billing;
 
-    public constructor(protected options: GoogleNativeTransport.Options<fdm, vdm>) {
-        this.apiURL = new URL(`${this.options.providerSpec.baseUrl}/v1beta/models/${this.options.inferenceParams.model}:generateContent`);
+    public constructor(options: GoogleNativeTransport.Options<fdm, vdm>) {
+        this.apiURL = new URL(`${options.providerSpec.baseUrl}/v1beta/models/${options.inferenceParams.model}:generateContent`);
+        this.inferenceParams = options.inferenceParams;
+        this.providerSpec = options.providerSpec;
+        this.fdm = options.fdm;
+        this.throttle = options.throttle;
+        this.choice = options.choice;
+        this.codeExecution = options.codeExecution;
+        this.urlContext = options.urlContext;
+        this.googleSearch = options.googleSearch;
+        this.messageCodec = options.messageCodec;
+        this.toolCodec = options.toolCodec;
+        this.billing = options.billing;
     }
 
     public async fetch(
@@ -39,25 +61,25 @@ export class GoogleNativeTransport<
         session: Session.From<fdm, vdm>,
         signal?: AbortSignal,
     ): Promise<RoleMessage.Ai.From<fdm, vdm>> {
-        const systemInstruction = session.developerMessage && this.options.messageCodec.encodeDeveloperMessage(session.developerMessage);
-        const contents = this.options.messageCodec.encodeChatMessages(session.chatMessages);
+        const systemInstruction = session.developerMessage && this.messageCodec.encodeDeveloperMessage(session.developerMessage);
+        const contents = this.messageCodec.encodeChatMessages(session.chatMessages);
 
-        await this.options.throttle.requests(wfctx);
+        await this.throttle.requests(wfctx);
 
-        const apifds = this.options.toolCodec.encodeFunctionDeclarationMap(this.options.fdm);
+        const apifds = this.toolCodec.encodeFunctionDeclarationMap(this.fdm);
         const apiTools: Google.Tool[] = [];
         if (apifds.length) apiTools.push({ functionDeclarations: apifds });
-        if (this.options.urlContext) apiTools.push({ urlContext: {} });
-        if (this.options.googleSearch) apiTools.push({ googleSearch: {} });
-        if (this.options.codeExecution) apiTools.push({ codeExecution: {} });
+        if (this.urlContext) apiTools.push({ urlContext: {} });
+        if (this.googleSearch) apiTools.push({ googleSearch: {} });
+        if (this.codeExecution) apiTools.push({ codeExecution: {} });
         const apiToolConfig: Google.ToolConfig = {};
-        if (apifds.length) apiToolConfig.functionCallingConfig = ChoiceCodec.encode(this.options.choice);
+        if (apifds.length) apiToolConfig.functionCallingConfig = ChoiceCodec.encode(this.choice);
         const reqbody: RestfulRequest = {
             contents,
             tools: apiTools.length ? apiTools : undefined,
             toolConfig: apiToolConfig,
             systemInstruction,
-            generationConfig: this.options.inferenceParams.additionalOptions,
+            generationConfig: this.inferenceParams.additionalOptions,
         };
 
         loggers.message.debug(reqbody);
@@ -68,10 +90,10 @@ export class GoogleNativeTransport<
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-goog-api-key': this.options.providerSpec.apiKey,
+                    'x-goog-api-key': this.providerSpec.apiKey,
                 } satisfies HeaderRecord,
                 body: JSON.stringify(reqbody),
-                dispatcher: this.options.providerSpec.dispatcher,
+                dispatcher: this.providerSpec.dispatcher,
                 signal,
             },
         );
@@ -101,9 +123,9 @@ export class GoogleNativeTransport<
         }
 
         if (response.usageMetadata) {} else throw new SyntaxError('Usage metadata missing', { cause: response });
-        wfctx.cost?.(this.options.billing.charge(response.usageMetadata));
+        wfctx.cost?.(this.billing.charge(response.usageMetadata));
 
-        return this.options.messageCodec.decodeAiMessage(response.candidates[0].content);
+        return this.messageCodec.decodeAiMessage(response.candidates[0].content);
     }
 }
 
@@ -120,7 +142,6 @@ export namespace GoogleNativeTransport {
         codeExecution: boolean;
         urlContext: boolean;
         googleSearch: boolean;
-
         messageCodec: MessageCodec<fdm, vdm>;
         toolCodec: ToolCodec<fdm>;
         billing: Billing;

@@ -11,6 +11,7 @@ import { GoogleNativeEngine } from './native-engines.d/google.ts';
 import type { Verbatim } from './verbatim.ts';
 import type { Structuring } from './compatible-engine/structuring.ts';
 import type { Structuring as OpenAIResponsesNativeStructuring } from './native-engines.d/openai-responses/structuring.ts';
+import { OpenAIChatCompletionsCompatibleEngine } from './compatible-engine.d/openai-chatcompletions.ts';
 
 
 export class Adaptor {
@@ -49,6 +50,8 @@ export class Adaptor {
             return new VolcengineCompatibleEngine.Instance<fdm, vdm>(options);
         else if (endpointSpec.apiType === 'anthropic')
             return new AnthropicCompatibleEngine.Instance<fdm, vdm>(options);
+        else if (endpointSpec.apiType === 'openai-chatcompletions')
+            return new OpenAIChatCompletionsCompatibleEngine.Instance<fdm, vdm>(options);
         else throw new Error();
     }
 

@@ -23,7 +23,7 @@ export namespace OpenAIResponsesCompatibleEngine {
         protected billing: Billing;
         protected override transport: OpenAIResponsesCompatibleEngine.Transport<fdm, vdm>;
 
-        public constructor(options: OpenAIResponsesCompatibleEngine.Options<fdm, vdm>) {
+        public constructor(protected options: OpenAIResponsesCompatibleEngine.Options<fdm, vdm>) {
             super(options);
             this.toolCodec = new ToolCodec({ fdm: this.fdm });
             this.messageCodec = new OpenAIResponsesCompatibleEngine.MessageCodec({
@@ -36,11 +36,18 @@ export namespace OpenAIResponsesCompatibleEngine {
                 providerSpec: this.providerSpec,
                 fdm: this.fdm,
                 throttle: this.throttle,
-                choice: this.choice,
+                choice: this.structuringChoice,
                 messageCodec: this.messageCodec,
                 toolCodec: this.toolCodec,
                 billing: this.billing,
             });
+        }
+
+        public override clone(): OpenAIResponsesCompatibleEngine<fdm, vdm> {
+            const engine = new OpenAIResponsesCompatibleEngine.Instance(this.options);
+            engine.middlewares = [...this.middlewares];
+            engine.statefulMiddlewares = [...this.statefulMiddlewares];
+            return engine;
         }
 
     }

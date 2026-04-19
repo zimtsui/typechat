@@ -23,7 +23,7 @@ export namespace AnthropicCompatibleEngine {
         protected billing: Billing;
         protected transport: AnthropicCompatibleEngine.Transport<fdm, vdm>;
 
-        public constructor(options: AnthropicCompatibleEngine.Options<fdm, vdm>) {
+        public constructor(protected options: AnthropicCompatibleEngine.Options<fdm, vdm>) {
             super(options);
             this.toolCodec = new ToolCodec({ fdm: this.fdm });
             this.messageCodec = new AnthropicCompatibleEngine.MessageCodec({
@@ -36,12 +36,20 @@ export namespace AnthropicCompatibleEngine {
                 inferenceSpec: this.inferenceParams,
                 fdm: this.fdm,
                 throttle: this.throttle,
-                choice: this.choice,
+                choice: this.structuringChoice,
                 messageCodec: this.messageCodec,
                 toolCodec: this.toolCodec,
                 billing: this.billing,
             });
         }
+
+        public override clone(): AnthropicCompatibleEngine<fdm, vdm> {
+            const engine = new AnthropicCompatibleEngine.Instance(this.options);
+            engine.middlewares = [...this.middlewares];
+            engine.statefulMiddlewares = [...this.statefulMiddlewares];
+            return engine;
+        }
+
     }
 
     export interface Options<

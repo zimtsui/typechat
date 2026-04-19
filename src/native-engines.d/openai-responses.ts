@@ -1,7 +1,6 @@
 import { Function } from '../function.ts';
 import * as SessionModule from './openai-responses/session.ts';
 import { Engine } from '../engine.ts';
-import { type InferenceContext } from '../inference-context.ts';
 import { ToolCodec } from '../api-types/openai-responses/tool-codec.ts';
 import { Billing } from '../api-types/openai-responses/billing.ts';
 import { MessageCodec as CompatibleMessageCodec } from '../compatible-engine.d/openai-responses/message-codec.ts';
@@ -41,7 +40,7 @@ export namespace OpenAIResponsesNativeEngine {
         protected override partsValidator: OpenAIResponsesNativeEngine.PartsValidator.From<fdm, vdm>;
         protected transport: OpenAIResponsesNativeEngine.Transport<fdm, vdm>;
 
-        public constructor(options: OpenAIResponsesNativeEngine.Options<fdm, vdm>) {
+        public constructor(protected options: OpenAIResponsesNativeEngine.Options<fdm, vdm>) {
             super(options);
             this.applyPatch = options.applyPatch ?? false;
             this.choice = options.structuringChoice ?? OpenAIResponsesNativeEngine.Structuring.Choice.AUTO;
@@ -57,7 +56,7 @@ export namespace OpenAIResponsesNativeEngine {
                 vdm: this.vdm,
             });
             this.billing = new Billing({ pricing: this.pricing });
-            this.structuringValidator = new OpenAIResponsesNativeEngine.StructuringValidator({ choice: this.choice });
+            this.structuringValidator = new OpenAIResponsesNativeEngine.StructuringValidator({ structuringChoice: this.choice });
             this.partsValidator = new OpenAIResponsesNativeEngine.PartsValidator();
             this.transport = new OpenAIResponsesNativeEngine.Transport({
                 inferenceParams: this.inferenceParams,
@@ -70,14 +69,6 @@ export namespace OpenAIResponsesNativeEngine {
                 toolCodec: this.toolCodec,
                 billing: this.billing,
             });
-        }
-
-        protected override infer(
-            wfctx: InferenceContext,
-            session: OpenAIResponsesNativeEngine.Session.From<fdm, vdm>,
-            signal?: AbortSignal,
-        ): Promise<OpenAIResponsesNativeEngine.RoleMessage.Ai.From<fdm, vdm>> {
-            return this.transport.fetch(wfctx, session, signal);
         }
 
         public override appendUserMessage(
@@ -96,6 +87,13 @@ export namespace OpenAIResponsesNativeEngine {
         ): OpenAIResponsesNativeEngine.Session.From<fdm, vdm> {
             session.chatMessages.push(message);
             return session;
+        }
+
+        public override clone(): OpenAIResponsesNativeEngine.Instance<fdm, vdm> {
+            const engine = new OpenAIResponsesNativeEngine.Instance(this.options);
+            engine.middlewares = [...this.middlewares];
+            engine.statefulMiddlewares = [...this.statefulMiddlewares];
+            return engine;
         }
     }
 

@@ -17,20 +17,26 @@ export namespace VolcengineCompatibleEngine {
     > extends OpenAIResponsesCompatibleEngine.Instance<fdm, vdm> {
         protected override transport: TransportModule.Transport<fdm, vdm>;
 
-        public constructor(options: VolcengineCompatibleEngine.Options<fdm, vdm>) {
+        public constructor(protected override options: VolcengineCompatibleEngine.Options<fdm, vdm>) {
             super(options);
             this.transport = new TransportModule.Transport({
                 inferenceParams: this.inferenceParams,
                 providerSpec: this.providerSpec,
                 fdm: this.fdm,
                 throttle: this.throttle,
-                choice: this.choice,
+                choice: this.structuringChoice,
                 messageCodec: this.messageCodec,
                 toolCodec: this.toolCodec,
                 billing: this.billing,
             });
         }
 
+        public override clone(): VolcengineCompatibleEngine<fdm, vdm> {
+            const engine = new VolcengineCompatibleEngine.Instance(this.options);
+            engine.middlewares = [...this.middlewares];
+            engine.statefulMiddlewares = [...this.statefulMiddlewares];
+            return engine;
+        }
     }
     export interface Options<
         in out fdm extends Function.Decl.Map.Proto,

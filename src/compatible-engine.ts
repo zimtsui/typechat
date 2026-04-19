@@ -22,14 +22,14 @@ export namespace CompatibleEngine {
         CompatibleEngine.RoleMessage.Developer,
         CompatibleEngine.Session.From<fdm, vdm>
     > {
-        protected choice: CompatibleEngine.Structuring.Choice.From<fdm, vdm>;
+        protected structuringChoice: CompatibleEngine.Structuring.Choice.From<fdm, vdm>;
         protected override structuringValidator: CompatibleEngine.StructuringValidator.From<fdm, vdm>;
         protected override partsValidator: CompatibleEngine.PartsValidator.From<fdm, vdm>;
 
         public constructor(options: CompatibleEngine.Options<fdm, vdm>) {
             super(options);
-            this.choice = options.structuringChoice ?? CompatibleEngine.Structuring.Choice.AUTO;
-            this.structuringValidator = new CompatibleEngine.StructuringValidator({ choice: this.choice });
+            this.structuringChoice = options.structuringChoice ?? CompatibleEngine.Structuring.Choice.AUTO;
+            this.structuringValidator = new CompatibleEngine.StructuringValidator({ structuringChoice: this.structuringChoice });
             this.partsValidator = new CompatibleEngine.PartsValidator();
         }
 

@@ -50,7 +50,7 @@ test('Verbatim system codec wraps escaped XML body text', t => {
 
 test('Compatible validator returns verbatim meta feedback when request is missing', t => {
     const validator = new CompatibleStructuringValidator({
-        choice: CompatibleStructuring.Choice.VRequest.REQUIRED,
+        structuringChoice: CompatibleStructuring.Choice.VRequest.REQUIRED,
     });
     const aiMessage = new CompatibleRoleMessage.Ai([
         CompatibleRoleMessage.Part.Text.paragraph('plain text'),
@@ -64,7 +64,7 @@ test('Compatible validator returns verbatim meta feedback when request is missin
 
 test('OpenAI Responses validator returns verbatim meta feedback when request is missing', t => {
     const validator = new OpenAIResponsesStructuringValidator({
-        choice: OpenAIStructuring.Choice.VRequest.REQUIRED,
+        structuringChoice: OpenAIStructuring.Choice.VRequest.REQUIRED,
     });
     const aiMessage = new OpenAIResponsesRoleMessage.Ai([
         OpenAIResponsesRoleMessage.Part.Text.paragraph('plain text'),
@@ -117,6 +117,13 @@ test('Engine stateful retries validator rejection without mutating session by de
         pushUserMessage(session, message) {
             session.chatMessages.push(message);
             return session;
+        }
+
+        clone() {
+            const engine = new FakeEngine(responses, this.structuringValidator, this.partsValidator);
+            engine.middlewares = [...this.middlewares];
+            engine.statefulMiddlewares = [...this.statefulMiddlewares];
+            return engine;
         }
     }
 
@@ -178,6 +185,13 @@ test('Engine Recoverable middleware appends validator rejection into session his
             session.chatMessages.push(message);
             return session;
         }
+
+        clone() {
+            const engine = new FakeEngine(responses, this.structuringValidator, this.partsValidator);
+            engine.middlewares = [...this.middlewares];
+            engine.statefulMiddlewares = [...this.statefulMiddlewares];
+            return engine;
+        }
     }
 
     const responses = [
@@ -196,10 +210,10 @@ test('Engine Recoverable middleware appends validator rejection into session his
     }, {
         validate() {},
     });
-    engine.use(Recoverable.recover);
+    const recoveringEngine = engine.use(Recoverable.recover);
     const session = { chatMessages: [] };
 
-    const response = await engine.stateful({}, session);
+    const response = await recoveringEngine.stateful({}, session);
 
     t.is(response.kind, 'valid');
     t.deepEqual(session.chatMessages, [

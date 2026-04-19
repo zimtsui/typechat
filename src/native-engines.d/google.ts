@@ -1,7 +1,6 @@
 import { Function } from '../function.ts';
 import * as SessionModule from './google/session.ts';
 import { Engine } from '../engine.ts';
-import { type InferenceContext } from '../inference-context.ts';
 import { ToolCodec } from '../api-types/google/tool-codec.ts';
 import { Billing } from '../api-types/google/billing.ts';
 import * as ValidationModule from './google/validation.ts';
@@ -41,7 +40,7 @@ export namespace GoogleNativeEngine {
         protected override partsValidator: GoogleNativeEngine.PartsValidator.From<fdm, vdm>;
         protected override transport: GoogleNativeTransport<fdm, vdm>;
 
-        public constructor(options: GoogleNativeEngine.Options<fdm, vdm>) {
+        public constructor(protected options: GoogleNativeEngine.Options<fdm, vdm>) {
             super(options);
             if (options.parallelToolCall === false) throw new Error('Parallel tool calling is required by Google engine.');
             this.choice = options.structuringChoice ?? Structuring.Choice.AUTO;
@@ -80,14 +79,6 @@ export namespace GoogleNativeEngine {
             });
         }
 
-        protected override infer(
-            wfctx: InferenceContext,
-            session: GoogleNativeEngine.Session.From<fdm, vdm>,
-            signal?: AbortSignal,
-        ): Promise<GoogleNativeEngine.RoleMessage.Ai.From<fdm, vdm>> {
-            return this.transport.fetch(wfctx, session, signal);
-        }
-
         public override appendUserMessage(
             session: GoogleNativeEngine.Session.From<fdm, vdm>,
             message: GoogleNativeEngine.RoleMessage.User.From<fdm>,
@@ -104,6 +95,13 @@ export namespace GoogleNativeEngine {
         ): GoogleNativeEngine.Session.From<fdm, vdm> {
             session.chatMessages.push(message);
             return session;
+        }
+
+        public override clone(): GoogleNativeEngine.Instance<fdm, vdm> {
+            const engine = new GoogleNativeEngine.Instance(this.options);
+            engine.middlewares = [...this.middlewares];
+            engine.statefulMiddlewares = [...this.statefulMiddlewares];
+            return engine;
         }
     }
 

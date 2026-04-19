@@ -11,7 +11,10 @@ export class StructuringValidator<
     in out fdu extends Function.Decl.Proto,
     in out vdu extends Verbatim.Decl.Proto,
 > implements Engine.StructuringValidator<RoleMessage.User<fdu>, RoleMessage.Ai<fdu, vdu>> {
-    public constructor(protected options: StructuringValidator.Options<fdu, vdu>) {}
+    protected structuringChoice: Structuring.Choice<fdu, vdu>;
+    public constructor(options: StructuringValidator.Options<fdu, vdu>) {
+        this.structuringChoice = options.structuringChoice;
+    }
 
     public validate(
         aiMessage: RoleMessage.Ai<fdu, vdu>,
@@ -25,20 +28,20 @@ export class StructuringValidator<
         fcs: Function.Call.Of<fdu>[],
         vrs: Verbatim.Request.Of<vdu>[],
     ): RoleMessage.User<fdu> | void {
-        if (this.options.choice === Structuring.Choice.FCall.REQUIRED) {
+        if (this.structuringChoice === Structuring.Choice.FCall.REQUIRED) {
             if (!fcs.length) throw new SyntaxError('Function call required.');
 
-        } else if (this.options.choice === Structuring.Choice.FCall.ANYONE) {
+        } else if (this.structuringChoice === Structuring.Choice.FCall.ANYONE) {
             if (!fcs.length) throw new SyntaxError('Function call required.');
             if (fcs.length > 1) throw new SyntaxError('Only one function call allowed.');
 
-        } else if (this.options.choice instanceof Structuring.Choice.FCall) {
-            if (!fcs.length) throw new SyntaxError(`Function call of ${this.options.choice.name} required.`);
+        } else if (this.structuringChoice instanceof Structuring.Choice.FCall) {
+            if (!fcs.length) throw new SyntaxError(`Function call of ${this.structuringChoice.name} required.`);
             if (fcs.length > 1) throw new SyntaxError('Only one function call allowed.');
-            if (fcs[0]!.name !== this.options.choice.name)
-                throw new SyntaxError(`Only function call of ${this.options.choice.name} allowed.`);
+            if (fcs[0]!.name !== this.structuringChoice.name)
+                throw new SyntaxError(`Only function call of ${this.structuringChoice.name} allowed.`);
 
-        } else if (this.options.choice === Structuring.Choice.VRequest.REQUIRED) {
+        } else if (this.structuringChoice === Structuring.Choice.VRequest.REQUIRED) {
             if (!vrs.length)
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
@@ -46,7 +49,7 @@ export class StructuringValidator<
                     ),
                 ]);
 
-        } else if (this.options.choice === Structuring.Choice.VRequest.ANYONE) {
+        } else if (this.structuringChoice === Structuring.Choice.VRequest.ANYONE) {
             if (!vrs.length)
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
@@ -60,27 +63,27 @@ export class StructuringValidator<
                     ),
                 ]);
 
-        } else if (this.options.choice instanceof Structuring.Choice.VRequest) {
+        } else if (this.structuringChoice instanceof Structuring.Choice.VRequest) {
             if (!vrs.length)
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
-                        VerbatimCodec.System.encode(`Error: No valid verbatim request through channel \`${this.options.choice.name}\` found. Check your output format.`),
+                        VerbatimCodec.System.encode(`Error: No valid verbatim request through channel \`${this.structuringChoice.name}\` found. Check your output format.`),
                     ),
                 ]);
             if (vrs.length > 1)
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
-                        VerbatimCodec.System.encode(`Error: Only 1 verbatim request through channel \`${this.options.choice.name}\` allowed.`),
+                        VerbatimCodec.System.encode(`Error: Only 1 verbatim request through channel \`${this.structuringChoice.name}\` allowed.`),
                     ),
                 ]);
-            if (vrs[0]!.name !== this.options.choice.name)
+            if (vrs[0]!.name !== this.structuringChoice.name)
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
-                        VerbatimCodec.System.encode(`Error: Only verbatim request through channel \`${this.options.choice.name}\` allowed.`),
+                        VerbatimCodec.System.encode(`Error: Only verbatim request through channel \`${this.structuringChoice.name}\` allowed.`),
                     ),
                 ]);
 
-        } else if (this.options.choice === Structuring.Choice.REQUIRED) {
+        } else if (this.structuringChoice === Structuring.Choice.REQUIRED) {
             if (fcs.length + vrs.length) {} else
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
@@ -88,7 +91,7 @@ export class StructuringValidator<
                     ),
                 ]);
 
-        } else if (this.options.choice === Structuring.Choice.ANYONE) {
+        } else if (this.structuringChoice === Structuring.Choice.ANYONE) {
             if (fcs.length + vrs.length) {} else
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
@@ -102,7 +105,7 @@ export class StructuringValidator<
                     ),
                 ]);
 
-        } else if (this.options.choice === Structuring.Choice.NONE) {
+        } else if (this.structuringChoice === Structuring.Choice.NONE) {
             if (fcs.length + vrs.length)
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
@@ -122,7 +125,7 @@ export namespace StructuringValidator {
         in out fdu extends Function.Decl.Proto,
         in out vdu extends Verbatim.Decl.Proto,
     > {
-        choice: Structuring.Choice<fdu, vdu>;
+        structuringChoice: Structuring.Choice<fdu, vdu>;
     }
     export namespace Options {
         export type From<

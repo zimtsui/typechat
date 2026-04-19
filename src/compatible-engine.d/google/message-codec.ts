@@ -12,7 +12,12 @@ export class MessageCodec<
     fdm extends Function.Decl.Map.Proto,
     vdm extends Verbatim.Decl.Map.Proto,
 > {
-    public constructor(protected options: MessageCodec.Options<fdm, vdm>) {}
+    protected toolCodec: ToolCodec<fdm>;
+    protected vdm: vdm;
+    public constructor(options: MessageCodec.Options<fdm, vdm>) {
+        this.toolCodec = options.toolCodec;
+        this.vdm = options.vdm;
+    }
 
     public encodeAiMessage(
         aiMessage: RoleMessage.Ai.From<fdm, vdm>,
@@ -49,7 +54,7 @@ export class MessageCodec<
             if (part instanceof RoleMessage.Part.Text)
                 return Google.createPartFromText(part.text);
             else if (part instanceof Function.Response)
-                return this.options.toolCodec.encodeFunctionResponse(part);
+                return this.toolCodec.encodeFunctionResponse(part);
             else if (part instanceof Media.Pdf)
                 return Google.createPartFromBase64(
                     part.base64, `${part.mimeType}`,
@@ -76,10 +81,10 @@ export class MessageCodec<
             if (part.functionCall || part.text) {} else
                 throw new SyntaxError('Unknown content part', { cause: content });
             if (part.text) {
-                const vrs = VerbatimCodec.Request.decode(part.text, this.options.vdm);
+                const vrs = VerbatimCodec.Request.decode(part.text, this.vdm);
                 parts.push(new RoleMessage.Part.Text(part.text, vrs));
             }
-            if (part.functionCall) parts.push(this.options.toolCodec.decodeFunctionCall(part.functionCall));
+            if (part.functionCall) parts.push(this.toolCodec.decodeFunctionCall(part.functionCall));
         }
         return new MessageCodec.Message.Ai(parts, content);
     }

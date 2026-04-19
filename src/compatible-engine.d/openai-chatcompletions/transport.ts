@@ -25,32 +25,48 @@ export class Transport<
     Session.From<fdm, vdm>
 > {
     protected client: OpenAI;
-    public constructor(protected options: Transport.Options<fdm, vdm>) {
+    protected inferenceParams: InferenceParams;
+    protected providerSpec: ProviderSpec;
+    protected fdm: fdm;
+    protected throttle: Throttle;
+    protected choice: Structuring.Choice.From<fdm, vdm>;
+    protected messageCodec: MessageCodec<fdm, vdm>;
+    protected toolCodec: ToolCodec<fdm>;
+    protected billing: Billing;
+    public constructor(options: Transport.Options<fdm, vdm>) {
         this.client = new OpenAI({
-            baseURL: this.options.providerSpec.baseUrl,
-            apiKey: this.options.providerSpec.apiKey,
-            fetchOptions: { dispatcher: this.options.providerSpec.dispatcher },
-        })
+            baseURL: options.providerSpec.baseUrl,
+            apiKey: options.providerSpec.apiKey,
+            fetchOptions: { dispatcher: options.providerSpec.dispatcher },
+        });
+        this.inferenceParams = options.inferenceParams;
+        this.providerSpec = options.providerSpec;
+        this.fdm = options.fdm;
+        this.throttle = options.throttle;
+        this.choice = options.choice;
+        this.messageCodec = options.messageCodec;
+        this.toolCodec = options.toolCodec;
+        this.billing = options.billing;
     }
 
     protected makeParams(
         session: Session.From<fdm, vdm>,
     ): OpenAI.ChatCompletionCreateParamsStreaming {
-        const tools = this.options.toolCodec.encodeFunctionDeclarationMap(this.options.fdm);
+        const tools = this.toolCodec.encodeFunctionDeclarationMap(this.fdm);
         const messages: OpenAI.ChatCompletionMessageParam[] = [];
-        if (session.developerMessage) messages.push(...this.options.messageCodec.encodeRoleMessage(session.developerMessage));
-        messages.push(...this.options.messageCodec.encodeRoleMessages(session.chatMessages));
+        if (session.developerMessage) messages.push(...this.messageCodec.encodeRoleMessage(session.developerMessage));
+        messages.push(...this.messageCodec.encodeRoleMessages(session.chatMessages));
         return {
-            model: this.options.inferenceParams.model,
+            model: this.inferenceParams.model,
             messages,
             tools: tools.length ? tools : undefined,
-            tool_choice: tools.length ? ChoiceCodec.encode(this.options.choice) : undefined,
-            parallel_tool_calls: tools.length ? this.options.inferenceParams.parallelToolCall : undefined,
+            tool_choice: tools.length ? ChoiceCodec.encode(this.choice) : undefined,
+            parallel_tool_calls: tools.length ? this.inferenceParams.parallelToolCall : undefined,
             stream: true,
             stream_options: {
                 include_usage: true,
             },
-            ...this.options.inferenceParams.additionalOptions,
+            ...this.inferenceParams.additionalOptions,
         };
     }
 
@@ -98,7 +114,7 @@ export class Transport<
         signal?: AbortSignal,
     ): Promise<RoleMessage.Ai.From<fdm, vdm>> {
         try {
-            await this.options.throttle.requests(wfctx);
+            await this.throttle.requests(wfctx);
 
             // Prepare request
             const params = this.makeParams(session);
@@ -110,7 +126,7 @@ export class Transport<
                 {
                     signal,
                     fetchOptions: {
-                        dispatcher: this.options.providerSpec.dispatcher,
+                        dispatcher: this.providerSpec.dispatcher,
                     }
                 },
             );
@@ -181,13 +197,13 @@ export class Transport<
             else throw new SyntaxError('Abnormal finish reason', { cause: choice.finish_reason });
 
             if (completion.usage) {} else throw new Error();
-            const cost = this.options.billing.charge(completion.usage);
+            const cost = this.billing.charge(completion.usage);
 
             if (choice.message.tool_calls) loggers.message.info(choice.message.tool_calls);
             loggers.message.info(completion.usage);
             wfctx.cost?.(cost);
 
-            return this.options.messageCodec.decodeAiMessage(choice.message);
+            return this.messageCodec.decodeAiMessage(choice.message);
         } catch (e) {
             if (e instanceof OpenAI.InternalServerError)
                 throw new TypeError('OpenAI internal server error', { cause: e });

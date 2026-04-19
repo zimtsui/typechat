@@ -23,7 +23,7 @@ export namespace GoogleCompatibleEngine {
         protected billing: Billing;
         protected override transport: GoogleCompatibleEngine.Transport<fdm, vdm>;
 
-        public constructor(options: GoogleCompatibleEngine.Options<fdm, vdm>) {
+        public constructor(protected options: GoogleCompatibleEngine.Options<fdm, vdm>) {
             super(options);
             if (options.parallelToolCall === false) throw new Error('Parallel tool calling is required by Google engine.');
             this.toolCodec = new ToolCodec({
@@ -39,13 +39,19 @@ export namespace GoogleCompatibleEngine {
                 providerSpec: this.providerSpec,
                 fdm: this.fdm,
                 throttle: this.throttle,
-                choice: this.choice,
+                choice: this.structuringChoice,
                 messageCodec: this.messageCodec,
                 toolCodec: this.toolCodec,
                 billing: this.billing,
             });
         }
 
+        public override clone(): GoogleCompatibleEngine<fdm, vdm> {
+            const engine = new GoogleCompatibleEngine.Instance(this.options);
+            engine.middlewares = [...this.middlewares];
+            engine.statefulMiddlewares = [...this.statefulMiddlewares];
+            return engine;
+        }
     }
 
     export interface Options<

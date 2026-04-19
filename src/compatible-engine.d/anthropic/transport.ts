@@ -24,28 +24,44 @@ export class Transport<
     Session.From<fdm, vdm>
 > {
     protected client: Anthropic;
+    protected providerSpec: ProviderSpec;
+    protected inferenceSpec: InferenceParams;
+    protected fdm: fdm;
+    protected throttle: Throttle;
+    protected structuringChoice: Structuring.Choice.From<fdm, vdm>;
+    protected messageCodec: MessageCodec<fdm, vdm>;
+    protected toolCodec: ToolCodec<fdm>;
+    protected billing: Billing;
 
-    public constructor(protected options: Transport.Options<fdm, vdm>) {
+    public constructor(options: Transport.Options<fdm, vdm>) {
         this.client = new Anthropic({
-            baseURL: this.options.providerSpec.baseUrl,
-            apiKey: this.options.providerSpec.apiKey,
-            fetchOptions: { dispatcher: this.options.providerSpec.dispatcher },
+            baseURL: options.providerSpec.baseUrl,
+            apiKey: options.providerSpec.apiKey,
+            fetchOptions: { dispatcher: options.providerSpec.dispatcher },
         });
+        this.providerSpec = options.providerSpec;
+        this.inferenceSpec = options.inferenceSpec;
+        this.fdm = options.fdm;
+        this.throttle = options.throttle;
+        this.structuringChoice = options.choice;
+        this.messageCodec = options.messageCodec;
+        this.toolCodec = options.toolCodec;
+        this.billing = options.billing;
     }
 
     protected makeParams(
         session: Session.From<fdm, vdm>,
     ): Anthropic.MessageCreateParamsStreaming {
-        const tools = this.options.toolCodec.encodeFunctionDeclarationMap(this.options.fdm);
+        const tools = this.toolCodec.encodeFunctionDeclarationMap(this.fdm);
         return {
-            model: this.options.inferenceSpec.model,
+            model: this.inferenceSpec.model,
             stream: true,
-            messages: session.chatMessages.map(chatMessage => this.options.messageCodec.encodeChatMessage(chatMessage)),
-            system: session.developerMessage && this.options.messageCodec.encodeDeveloperMessage(session.developerMessage),
+            messages: session.chatMessages.map(chatMessage => this.messageCodec.encodeChatMessage(chatMessage)),
+            system: session.developerMessage && this.messageCodec.encodeDeveloperMessage(session.developerMessage),
             tools: tools.length ? tools : undefined,
-            tool_choice: tools.length ? ChoiceCodec.encode(this.options.choice, this.options.inferenceSpec.parallelToolCall) : undefined,
+            tool_choice: tools.length ? ChoiceCodec.encode(this.structuringChoice, this.inferenceSpec.parallelToolCall) : undefined,
             max_tokens: 64 * 1024,
-            ...this.options.inferenceSpec.additionalOptions,
+            ...this.inferenceSpec.additionalOptions,
         };
     }
 
@@ -54,7 +70,7 @@ export class Transport<
         session: Session.From<fdm, vdm>,
         signal?: AbortSignal,
     ): Promise<RoleMessage.Ai.From<fdm, vdm>> {
-        await this.options.throttle.requests(wfctx);
+        await this.throttle.requests(wfctx);
 
         // Prepare request
         const params = this.makeParams(session);
@@ -65,7 +81,7 @@ export class Transport<
             params,
             {
                 signal,
-                fetchOptions: { dispatcher: this.options.providerSpec.dispatcher },
+                fetchOptions: { dispatcher: this.providerSpec.dispatcher },
             },
         );
 
@@ -134,9 +150,9 @@ export class Transport<
         if (response.stop_reason === 'end_turn' || response.stop_reason === 'tool_use') {} else
             throw new SyntaxError('Abnormal stop reason', { cause: response });
         loggers.message.info(response.usage);
-        wfctx.cost?.(this.options.billing.charge(response.usage));
+        wfctx.cost?.(this.billing.charge(response.usage));
 
-        return this.options.messageCodec.decodeAiMessage(response.content);
+        return this.messageCodec.decodeAiMessage(response.content);
     }
 }
 

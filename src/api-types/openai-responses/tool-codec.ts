@@ -9,7 +9,10 @@ const ajv = new Ajv();
 export class ToolCodec<
     in out fdm extends Function.Decl.Map.Proto,
 > {
-    public constructor(protected options: ToolCodec.Options<fdm>) {}
+    protected fdm: fdm;
+    public constructor(options: ToolCodec.Options<fdm>) {
+        this.fdm = options.fdm;
+    }
 
     public encodeFunctionResponse(
         fr: Function.Response.From<fdm>,
@@ -50,7 +53,7 @@ export class ToolCodec<
     public decodeFunctionCall(
         apifc: OpenAI.Responses.ResponseFunctionToolCall,
     ): Function.Call.From<fdm> {
-        const fditem = this.options.fdm[apifc.name];
+        const fditem = this.fdm[apifc.name];
         if (fditem) {} else throw new SyntaxError('Unknown function call', { cause: apifc });
         const args = (() => {
             try {

@@ -9,14 +9,12 @@ import { Billing } from '../api-types/openai-chatcompletions/billing.ts';
 
 
 
-
-
 export type OpenAIChatCompletionsCompatibleEngine<
     fdm extends Function.Decl.Map.Proto,
     vdm extends Verbatim.Decl.Map.Proto,
 > = OpenAIChatCompletionsCompatibleEngine.Instance<fdm, vdm>;
 export namespace OpenAIChatCompletionsCompatibleEngine {
-    export abstract class Instance<
+    export class Instance<
         in out fdm extends Function.Decl.Map.Proto,
         in out vdm extends Verbatim.Decl.Map.Proto,
     > extends CompatibleEngine.Instance<fdm, vdm> {
@@ -25,7 +23,7 @@ export namespace OpenAIChatCompletionsCompatibleEngine {
         protected billing: Billing;
         protected override transport: Transport<fdm, vdm>;
 
-        public constructor(options: OpenAIChatCompletionsCompatibleEngine.Options<fdm, vdm>) {
+        public constructor(protected options: OpenAIChatCompletionsCompatibleEngine.Options<fdm, vdm>) {
             super(options);
             this.toolCodec = new ToolCodec({
                 fdm: this.fdm,
@@ -40,12 +38,20 @@ export namespace OpenAIChatCompletionsCompatibleEngine {
                 providerSpec: this.providerSpec,
                 fdm: this.fdm,
                 throttle: this.throttle,
-                choice: this.choice,
+                choice: this.structuringChoice,
                 messageCodec: this.messageCodec,
                 toolCodec: this.toolCodec,
                 billing: this.billing,
             });
         }
+
+        public override clone(): OpenAIChatCompletionsCompatibleEngine<fdm, vdm> {
+            const engine = new OpenAIChatCompletionsCompatibleEngine.Instance(this.options);
+            engine.middlewares = [...this.middlewares];
+            engine.statefulMiddlewares = [...this.statefulMiddlewares];
+            return engine;
+        }
+
     }
 
     export interface Options<

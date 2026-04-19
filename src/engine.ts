@@ -71,7 +71,7 @@ export namespace Engine {
                 baseUrl: options.baseUrl,
                 apiKey: options.apiKey,
                 dispatcher,
-                retry: options.retry ?? 2,
+                retry: options.providerRetry ?? 2,
             };
 
             this.name = options.name;
@@ -80,7 +80,7 @@ export namespace Engine {
                 additionalOptions: options.additionalOptions,
                 timeout: options.timeout,
                 parallelToolCall: options.parallelToolCall,
-                retry: options.retry ?? 2,
+                retry: options.inferenceRetry ?? 2,
             };
 
             this.pricing = {
@@ -129,8 +129,10 @@ export namespace Engine {
             wfctx: InferenceContext,
             session: session,
         ): Promise<aim> {
+            const middleware = this.compose(this.middlewares);
             for (let retryProvider = 0, retryInference = 0;;) try {
-                return await this.infer(wfctx, session);
+                const next = () => this.infer(wfctx, session);
+                return await middleware(wfctx, session, next);
             } catch (e) {
                 if (e instanceof InferenceTimeout) {    // 推理超时
                     if (retryInference < this.inferenceParams.retry) {} else throw e;
@@ -159,13 +161,15 @@ export namespace Engine {
             session: session,
         ): Promise<aim> {
             const middleware = this.compose(this.middlewares);
+            const statefulMiddleware = this.compose(this.statefulMiddlewares);
             for (let retryProvider = 0, retryInference = 0;;) try {
-                const next = async () => {
-                    const aiMessage = await this.infer(wfctx, session);
+                const next = () => this.infer(wfctx, session);
+                const statefulNext = async () => {
+                    const aiMessage = await middleware(wfctx, session, next);
                     session.chatMessages.push(aiMessage);
                     return aiMessage;
                 }
-                return await middleware(wfctx, session, next);
+                return await statefulMiddleware(wfctx, session, statefulNext);
             } catch (e) {
                 if (e instanceof InferenceTimeout) {    // 推理超时
                     if (retryInference < this.inferenceParams.retry) {} else throw e;
@@ -196,9 +200,19 @@ export namespace Engine {
             message: userm,
         ): session;
 
+        public abstract clone(): Engine<fdm, vdm, userm, aim, devm, session>;
+
         protected middlewares: Middleware<userm, aim, devm, session>[] = [];
-        public use(middleware: Middleware<userm, aim, devm, session>): void {
-            this.middlewares.push(middleware);
+        public use(middleware: Middleware<userm, aim, devm, session>): Engine<fdm, vdm, userm, aim, devm, session> {
+            const engine = this.clone();
+            engine.middlewares.push(middleware);
+            return engine;
+        }
+        protected statefulMiddlewares: Middleware<userm, aim, devm, session>[] = [];
+        public statefulUse(middleware: Middleware<userm, aim, devm, session>): Engine<fdm, vdm, userm, aim, devm, session> {
+            const engine = this.clone();
+            engine.statefulMiddlewares.push(middleware);
+            return engine;
         }
         protected compose(middlewares: Middleware<userm, aim, devm, session>[], i: number = 0): Middleware<userm, aim, devm, session> {
             if (i < middlewares.length)
@@ -226,8 +240,8 @@ export namespace Engine {
         throttle: Throttle;
         functionDeclarationMap: fdm;
         verbatimDeclarationMap: vdm;
-        parallelToolCall?: boolean;
-        retry?: number;
+        providerRetry?: number;
+        inferenceRetry?: number;
     }
 
 

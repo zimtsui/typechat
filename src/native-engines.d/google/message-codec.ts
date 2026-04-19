@@ -12,7 +12,16 @@ export class MessageCodec<
     in out fdm extends Function.Decl.Map.Proto,
     in out vdm extends Verbatim.Decl.Map.Proto,
 > {
-    public constructor(protected options: MessageCodec.Options<fdm, vdm>) {}
+    protected toolCodec: ToolCodec<fdm>;
+    protected compatibleMessageCodec: CompatibleMessageCodec<fdm, vdm>;
+    protected codeExecution: boolean;
+    protected vdm: vdm;
+    public constructor(options: MessageCodec.Options<fdm, vdm>) {
+        this.toolCodec = options.toolCodec;
+        this.compatibleMessageCodec = options.compatibleMessageCodec;
+        this.codeExecution = options.codeExecution;
+        this.vdm = options.vdm;
+    }
 
 
     public encodeAiMessage(
@@ -24,13 +33,13 @@ export class MessageCodec<
     public encodeUserMessage(
         userMessage: RoleMessage.User.From<fdm>,
     ): Google.Content {
-        return this.options.compatibleMessageCodec.encodeUserMessage(userMessage);
+        return this.compatibleMessageCodec.encodeUserMessage(userMessage);
     }
 
     public encodeDeveloperMessage(
         developerMessage: RoleMessage.Developer,
     ): Google.Content {
-        return this.options.compatibleMessageCodec.encodeDeveloperMessage(developerMessage);
+        return this.compatibleMessageCodec.encodeDeveloperMessage(developerMessage);
     }
 
     public encodeChatMessages(
@@ -52,19 +61,19 @@ export class MessageCodec<
         const parts: RoleMessage.Ai.Part.From<fdm, vdm>[] = [];
         for (const part of content.parts) {
             if (part.text) {
-                const vrs = VerbatimCodec.Request.decode(part.text, this.options.vdm);
+                const vrs = VerbatimCodec.Request.decode(part.text, this.vdm);
                 parts.push(new RoleMessage.Part.Text(part.text, vrs));
             }
             if (part.functionCall)
-                parts.push(this.options.toolCodec.decodeFunctionCall(part.functionCall));
+                parts.push(this.toolCodec.decodeFunctionCall(part.functionCall));
             if (part.executableCode) {
-                if (this.options.codeExecution) {} else throw new SyntaxError('Unexpected code execution', { cause: content });
+                if (this.codeExecution) {} else throw new SyntaxError('Unexpected code execution', { cause: content });
                 if (part.executableCode.code) {} else throw new Error();
                 if (part.executableCode.language) {} else throw new Error();
                 parts.push(new RoleMessage.Ai.Part.ExecutableCode(part.executableCode.code, part.executableCode.language));
             }
             if (part.codeExecutionResult) {
-                if (this.options.codeExecution) {} else throw new SyntaxError('Unexpected code execution result', { cause: content });
+                if (this.codeExecution) {} else throw new SyntaxError('Unexpected code execution result', { cause: content });
                 if (part.codeExecutionResult.outcome) {} else throw new Error();
                 parts.push(new RoleMessage.Ai.Part.CodeExecutionResult(part.codeExecutionResult.outcome, part.codeExecutionResult.output));
             }

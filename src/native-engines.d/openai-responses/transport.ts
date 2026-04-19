@@ -20,33 +20,51 @@ export class Transport<
     vdm extends Verbatim.Decl.Map.Proto,
 > {
     protected client: OpenAI;
+    protected inferenceParams: InferenceParams;
+    protected providerSpec: ProviderSpec;
+    protected fdm: fdm;
+    protected throttle: Throttle;
+    protected choice: Structuring.Choice.From<fdm, vdm>;
+    protected applyPatch: boolean;
+    protected messageCodec: MessageCodec<fdm, vdm>;
+    protected toolCodec: ToolCodec<fdm>;
+    protected billing: Billing;
 
-    public constructor(protected options: Transport.Options<fdm, vdm>) {
+    public constructor(options: Transport.Options<fdm, vdm>) {
         this.client = new OpenAI({
-            baseURL: this.options.providerSpec.baseUrl,
-            apiKey: this.options.providerSpec.apiKey,
+            baseURL: options.providerSpec.baseUrl,
+            apiKey: options.providerSpec.apiKey,
             fetchOptions: {
-                dispatcher: this.options.providerSpec.dispatcher,
+                dispatcher: options.providerSpec.dispatcher,
             },
         });
+        this.inferenceParams = options.inferenceParams;
+        this.providerSpec = options.providerSpec;
+        this.fdm = options.fdm;
+        this.throttle = options.throttle;
+        this.choice = options.choice;
+        this.applyPatch = options.applyPatch;
+        this.messageCodec = options.messageCodec;
+        this.toolCodec = options.toolCodec;
+        this.billing = options.billing;
     }
 
     protected makeParams(
         session: Session.From<fdm, vdm>,
     ): OpenAI.Responses.ResponseCreateParamsStreaming {
-        const tools: OpenAI.Responses.Tool[] = this.options.toolCodec.encodeFunctionDeclarationMap(this.options.fdm);
-        if (this.options.applyPatch) tools.push({ type: 'apply_patch' });
+        const tools: OpenAI.Responses.Tool[] = this.toolCodec.encodeFunctionDeclarationMap(this.fdm);
+        if (this.applyPatch) tools.push({ type: 'apply_patch' });
         return {
-            model: this.options.inferenceParams.model,
+            model: this.inferenceParams.model,
             include: ['reasoning.encrypted_content'],
             store: false,
             stream: true,
-            input: session.chatMessages.flatMap(chatMessage => this.options.messageCodec.encodeChatMessage(chatMessage)),
-            instructions: session.developerMessage && this.options.messageCodec.encodeDeveloperMessage(session.developerMessage),
+            input: session.chatMessages.flatMap(chatMessage => this.messageCodec.encodeChatMessage(chatMessage)),
+            instructions: session.developerMessage && this.messageCodec.encodeDeveloperMessage(session.developerMessage),
             tools: tools.length ? tools : undefined,
-            tool_choice: tools.length ? ChoiceCodec.encode(this.options.choice) : undefined,
-            parallel_tool_calls: tools.length ? this.options.inferenceParams.parallelToolCall : undefined,
-            ...this.options.inferenceParams.additionalOptions,
+            tool_choice: tools.length ? ChoiceCodec.encode(this.choice) : undefined,
+            parallel_tool_calls: tools.length ? this.inferenceParams.parallelToolCall : undefined,
+            ...this.inferenceParams.additionalOptions,
         };
     }
 
@@ -67,7 +85,7 @@ export class Transport<
         session: Session.From<fdm, vdm>,
         signal?: AbortSignal,
     ): Promise<RoleMessage.Ai.From<fdm, vdm>> {
-        await this.options.throttle.requests(wfctx);
+        await this.throttle.requests(wfctx);
 
         // Prepare request
         const params = this.makeParams(session);
@@ -94,10 +112,10 @@ export class Transport<
         if (response.usage) {} else throw new Error();
 
         this.logAiMessage(response.output);
-        wfctx.cost?.(this.options.billing.charge(response.usage));
+        wfctx.cost?.(this.billing.charge(response.usage));
         loggers.message.info(response.usage);
 
-        return this.options.messageCodec.decodeAiMessage(response.output);
+        return this.messageCodec.decodeAiMessage(response.output);
     }
 }
 
@@ -112,7 +130,6 @@ export namespace Transport {
         throttle: Throttle;
         choice: Structuring.Choice.From<fdm, vdm>;
         applyPatch: boolean;
-
         messageCodec: MessageCodec<fdm, vdm>;
         toolCodec: ToolCodec<fdm>;
         billing: Billing;

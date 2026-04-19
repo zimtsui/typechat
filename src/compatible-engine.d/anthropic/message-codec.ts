@@ -12,7 +12,12 @@ export class MessageCodec<
     in out fdm extends Function.Decl.Map.Proto,
     in out vdm extends Verbatim.Decl.Map.Proto,
 > {
-    public constructor(protected options: MessageCodec.Options<fdm, vdm>) {}
+    protected toolCodec: ToolCodec<fdm>;
+    protected vdm: vdm;
+    public constructor(options: MessageCodec.Options<fdm, vdm>) {
+        this.toolCodec = options.toolCodec;
+        this.vdm = options.vdm;
+    }
 
     public encodeUserMessage(
         userMessage: RoleMessage.User.From<fdm>,
@@ -24,7 +29,7 @@ export class MessageCodec<
                     text: part.text,
                 } satisfies Anthropic.TextBlockParam;
             else if (part instanceof Function.Response)
-                return this.options.toolCodec.encodeFunctionResponse(part);
+                return this.toolCodec.encodeFunctionResponse(part);
             else throw new Error();
         });
     }
@@ -42,7 +47,7 @@ export class MessageCodec<
                         text: part.text,
                     } satisfies Anthropic.TextBlockParam;
                 else if (part instanceof Function.Call)
-                    return this.options.toolCodec.encodeFunctionCall(part);
+                    return this.toolCodec.encodeFunctionCall(part);
                 else throw new Error();
             });
         }
@@ -70,10 +75,10 @@ export class MessageCodec<
         const parts: RoleMessage.Ai.Part.From<fdm, vdm>[] = [];
         for (const item of raw) {
             if (item.type === 'text') {
-                const vrs = VerbatimCodec.Request.decode(item.text, this.options.vdm);
+                const vrs = VerbatimCodec.Request.decode(item.text, this.vdm);
                 parts.push(new RoleMessage.Part.Text(item.text, vrs));
             } else if (item.type === 'tool_use')
-                parts.push(this.options.toolCodec.decodeFunctionCall(item));
+                parts.push(this.toolCodec.decodeFunctionCall(item));
             else if (item.type === 'thinking') {}
             else throw new Error();
         }

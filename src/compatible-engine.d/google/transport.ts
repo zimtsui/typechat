@@ -27,8 +27,25 @@ export class Transport<
     Session.From<fdm, vdm>
 > {
     protected apiURL: URL;
-    public constructor(protected options: Transport.Options<fdm, vdm>) {
-        this.apiURL = new URL(`${this.options.providerSpec.baseUrl}/v1beta/models/${this.options.inferenceParams.model}:generateContent`)
+    protected inferenceParams: InferenceParams;
+    protected providerSpec: ProviderSpec;
+    protected fdm: fdm;
+    protected throttle: Throttle;
+    protected structuringChoice: Structuring.Choice.From<fdm, vdm>;
+    protected messageCodec: MessageCodec<fdm, vdm>;
+    protected toolCodec: ToolCodec<fdm>;
+    protected billing: Billing;
+
+    public constructor(options: Transport.Options<fdm, vdm>) {
+        this.apiURL = new URL(`${options.providerSpec.baseUrl}/v1beta/models/${options.inferenceParams.model}:generateContent`)
+        this.inferenceParams = options.inferenceParams;
+        this.providerSpec = options.providerSpec;
+        this.fdm = options.fdm;
+        this.throttle = options.throttle;
+        this.structuringChoice = options.choice;
+        this.messageCodec = options.messageCodec;
+        this.toolCodec = options.toolCodec;
+        this.billing = options.billing;
     }
 
     public async fetch(
@@ -36,22 +53,22 @@ export class Transport<
         session: Session.From<fdm, vdm>,
         signal?: AbortSignal,
     ): Promise<RoleMessage.Ai.From<fdm, vdm>> {
-        await this.options.throttle.requests(wfctx);
+        await this.throttle.requests(wfctx);
 
         // Prepare request body
-        const systemInstruction = session.developerMessage && this.options.messageCodec.encodeDeveloperMessage(session.developerMessage);
-        const contents = this.options.messageCodec.encodeChatMessages(session.chatMessages);
-        const apiFds = this.options.toolCodec.encodeFunctionDeclarationMap(this.options.fdm);
+        const systemInstruction = session.developerMessage && this.messageCodec.encodeDeveloperMessage(session.developerMessage);
+        const contents = this.messageCodec.encodeChatMessages(session.chatMessages);
+        const apiFds = this.toolCodec.encodeFunctionDeclarationMap(this.fdm);
         const apiTools: Google.Tool[] = [];
         if (apiFds.length) apiTools.push({ functionDeclarations: apiFds });
         const apiToolConfig: Google.ToolConfig = {};
-        if (apiFds.length) apiToolConfig.functionCallingConfig = ChoiceCodec.encode(this.options.choice);
+        if (apiFds.length) apiToolConfig.functionCallingConfig = ChoiceCodec.encode(this.structuringChoice);
         const reqbody: RestfulRequest = {
             contents,
             tools: apiTools,
             toolConfig: apiToolConfig,
             systemInstruction,
-            generationConfig: this.options.inferenceParams.additionalOptions,
+            generationConfig: this.inferenceParams.additionalOptions,
         };
         loggers.message.debug(reqbody);
 
@@ -62,10 +79,10 @@ export class Transport<
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-goog-api-key': this.options.providerSpec.apiKey,
+                    'x-goog-api-key': this.providerSpec.apiKey,
                 },
                 body: JSON.stringify(reqbody),
-                dispatcher: this.options.providerSpec.dispatcher,
+                dispatcher: this.providerSpec.dispatcher,
                 signal,
             },
         );
@@ -97,9 +114,9 @@ export class Transport<
             if (part.text) loggers.inference.info(part.text);
             if (part.functionCall) loggers.message.info(part.functionCall);
         }
-        wfctx.cost?.(this.options.billing.charge(response.usageMetadata));
+        wfctx.cost?.(this.billing.charge(response.usageMetadata));
 
-        return this.options.messageCodec.decodeAiMessage(response.candidates[0].content);
+        return this.messageCodec.decodeAiMessage(response.candidates[0].content);
     }
 
 }

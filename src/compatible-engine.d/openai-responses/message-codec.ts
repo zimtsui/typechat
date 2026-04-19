@@ -13,7 +13,12 @@ export class MessageCodec<
     in out fdm extends Function.Decl.Map.Proto,
     in out vdm extends Verbatim.Decl.Map.Proto,
 > {
-    public constructor(protected options: MessageCodec.Options<fdm, vdm>) {}
+    protected toolCodec: ToolCodec<fdm>;
+    protected vdm: vdm;
+    public constructor(options: MessageCodec.Options<fdm, vdm>) {
+        this.toolCodec = options.toolCodec;
+        this.vdm = options.vdm;
+    }
 
     public decodeAiMessage(
         output: OpenAI.Responses.ResponseOutputItem[],
@@ -23,13 +28,13 @@ export class MessageCodec<
             if (item.type === 'message')
                 for (const part of item.content)
                     if (part.type === 'output_text') {
-                        const vrs = VerbatimCodec.Request.decode(part.text, this.options.vdm);
+                        const vrs = VerbatimCodec.Request.decode(part.text, this.vdm);
                         parts.push(new RoleMessage.Part.Text(part.text, vrs));
                     } else if (part.type === 'refusal')
                         throw new SyntaxError('Refusal', { cause: output });
                     else throw new Error();
             else if (item.type === 'function_call')
-                parts.push(this.options.toolCodec.decodeFunctionCall(item));
+                parts.push(this.toolCodec.decodeFunctionCall(item));
             else if (item.type === 'reasoning') {}
             else throw new Error();
         return new MessageCodec.Message.Ai(parts, output);
@@ -79,7 +84,7 @@ export class MessageCodec<
                 });
             else if (part instanceof Function.Response) {
                 flush();
-                responseInput.push(this.options.toolCodec.encodeFunctionResponse(part));
+                responseInput.push(this.toolCodec.encodeFunctionResponse(part));
             } else throw new Error();
         }
         flush();
@@ -103,7 +108,7 @@ export class MessageCodec<
                     content: part.text,
                 });
             else if (part instanceof Function.Call)
-                responseInput.push(this.options.toolCodec.encodeFunctionCall(part));
+                responseInput.push(this.toolCodec.encodeFunctionCall(part));
             else throw new Error();
         };
         return responseInput;

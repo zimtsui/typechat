@@ -15,8 +15,8 @@ export class StructuringValidator<
     in out vdu extends Verbatim.Decl.Proto,
 > implements Engine.StructuringValidator<RoleMessage.User<fdu>, RoleMessage.Ai<fdu, vdu>> {
     protected compatibleStructuringValidator: CompatibleStructuringValidator<fdu, vdu>;
-    public constructor(protected options: StructuringValidator.Options<fdu, vdu>) {
-        this.compatibleStructuringValidator = new CompatibleStructuringValidator({ choice: this.options.choice });
+    public constructor(options: StructuringValidator.Options<fdu, vdu>) {
+        this.compatibleStructuringValidator = new CompatibleStructuringValidator({ structuringChoice: options.choice });
     }
 
     public validate(

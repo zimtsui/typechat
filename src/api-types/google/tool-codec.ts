@@ -7,7 +7,10 @@ const ajv = new Ajv();
 
 
 export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
-    public constructor(protected options: ToolCodec.Options<fdm>) {}
+    protected fdm: fdm;
+    public constructor(options: ToolCodec.Options<fdm>) {
+        this.fdm = options.fdm;
+    }
 
     public encodeFunctionCall(
         fc: Function.Call.From<fdm>,
@@ -51,7 +54,7 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
         googlefc: Google.FunctionCall,
     ): Function.Call.From<fdm> {
         if (googlefc.name) {} else throw new Error();
-        const fditem = this.options.fdm[googlefc.name];
+        const fditem = this.fdm[googlefc.name];
         if (fditem) {} else throw new SyntaxError('Unknown function call', { cause: googlefc });
         if (ajv.validate(fditem.parameters, googlefc.args)) {}
         else throw new SyntaxError('Function call not conforming to schema', { cause: googlefc });

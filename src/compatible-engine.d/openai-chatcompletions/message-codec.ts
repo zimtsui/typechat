@@ -11,20 +11,25 @@ export class MessageCodec<
     in out fdm extends Function.Decl.Map.Proto,
     in out vdm extends Verbatim.Decl.Map.Proto,
 > {
-    public constructor(protected options: MessageCodec.Options<fdm, vdm>) {}
+    protected toolCodec: ToolCodec<fdm>;
+    protected vdm: vdm;
+    public constructor(options: MessageCodec.Options<fdm, vdm>) {
+        this.toolCodec = options.toolCodec;
+        this.vdm = options.vdm;
+    }
 
     public decodeAiMessage(
         message: OpenAI.ChatCompletionMessage,
     ): RoleMessage.Ai.From<fdm, vdm> {
         const parts: RoleMessage.Ai.Part.From<fdm, vdm>[] = [];
         if (message.content) {
-            const vrs = VerbatimCodec.Request.decode(message.content, this.options.vdm);
+            const vrs = VerbatimCodec.Request.decode(message.content, this.vdm);
             parts.push(new RoleMessage.Part.Text(message.content, vrs));
         }
         if (message.tool_calls)
             for (const apifc of message.tool_calls)
                 if (apifc.type === 'function')
-                    parts.push(this.options.toolCodec.decodeFunctionCall(apifc));
+                    parts.push(this.toolCodec.decodeFunctionCall(apifc));
                 else throw new Error();
         if (parts.length) return new RoleMessage.Ai(parts);
         else throw new SyntaxError('Content or tool calls not found in Response', { cause: message });
@@ -45,7 +50,7 @@ export class MessageCodec<
         if (textParts.length && !frs.length)
             return [{ role: 'user', content: textParts.map(part => ({ type: 'text', text: part.text })) }];
         else if (!textParts.length && frs.length)
-            return frs.map(fr => this.options.toolCodec.encodeFunctionResponse(fr));
+            return frs.map(fr => this.toolCodec.encodeFunctionResponse(fr));
         else throw new Error('Unsupported user message type.');
     }
 
@@ -58,7 +63,7 @@ export class MessageCodec<
         return {
             role: 'assistant',
             content: textParts.length ? textParts.map(part => part.text).join('') : undefined,
-            tool_calls: fcParts.length ? fcParts.map(fc => this.options.toolCodec.encodeFunctionCall(fc)) : undefined,
+            tool_calls: fcParts.length ? fcParts.map(fc => this.toolCodec.encodeFunctionCall(fc)) : undefined,
         };
     }
 
