@@ -1,1 +1,1 @@
-<verbatim:quotation mime-type="{{XmlAttr this.mimeType}}"><![CDATA[{{{this.text}}}]]></verbatim:quotation>
+<verbatim:quotation {{#if (isDefined this.author)}}author="{{XmlAttr this.author}}"{{/if}} mime-type="{{XmlAttr this.mimeType}}"><![CDATA[{{{this.text}}}]]></verbatim:quotation>

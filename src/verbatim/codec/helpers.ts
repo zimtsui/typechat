@@ -38,3 +38,10 @@ Handlebars.registerHelper('XmlBody', (value: unknown) => {
     assert(typeof value === 'string');
     return new Handlebars.SafeString(escapeXmlBody(value));
 });
+
+Handlebars.registerHelper('isDefined', function (value) {
+    return value !== undefined;
+});
+
+
+export default Handlebars;

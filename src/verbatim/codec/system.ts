@@ -1,6 +1,5 @@
-import Handlebars from 'handlebars';
 import Assets from '../../assets.ts';
-import './escape.ts';
+import Handlebars from './helpers.ts';
 
 
 const template = Handlebars.compile<template.Input>(Assets.verbatim.system);
