@@ -7,7 +7,7 @@ const ajv = new Ajv();
 
 
 export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
-    public constructor(protected comps: ToolCodec.Components<fdm>) {}
+    public constructor(protected options: ToolCodec.Options<fdm>) {}
 
     public encodeFunctionCall(
         fc: Function.Call.From<fdm>,
@@ -18,7 +18,7 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
     public decodeFunctionCall(
         apifc: Anthropic.ToolUseBlock,
     ): Function.Call.From<fdm> {
-        const fditem = this.comps.fdm[apifc.name];
+        const fditem = this.options.fdm[apifc.name];
         if (fditem) {} else throw new SyntaxError('Unknown function call', { cause: apifc });
         if (ajv.validate(fditem.parameters, apifc.input)) {}
         else throw new SyntaxError('Function call not conforming to schema', { cause: apifc });
@@ -69,7 +69,7 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
 }
 
 export namespace ToolCodec {
-    export interface Components<in out fdm extends Function.Decl.Map.Proto> {
+    export interface Options<in out fdm extends Function.Decl.Map.Proto> {
         fdm: fdm;
     }
 }

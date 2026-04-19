@@ -27,8 +27,8 @@ export class Transport<
     Session.From<fdm, vdm>
 > {
     protected apiURL: URL;
-    public constructor(protected comps: Transport.Components<fdm, vdm>) {
-        this.apiURL = new URL(`${this.comps.providerSpec.baseUrl}/v1beta/models/${this.comps.inferenceParams.model}:generateContent`)
+    public constructor(protected options: Transport.Options<fdm, vdm>) {
+        this.apiURL = new URL(`${this.options.providerSpec.baseUrl}/v1beta/models/${this.options.inferenceParams.model}:generateContent`)
     }
 
     public async fetch(
@@ -36,22 +36,22 @@ export class Transport<
         session: Session.From<fdm, vdm>,
         signal?: AbortSignal,
     ): Promise<RoleMessage.Ai.From<fdm, vdm>> {
-        await this.comps.throttle.requests(wfctx);
+        await this.options.throttle.requests(wfctx);
 
         // Prepare request body
-        const systemInstruction = session.developerMessage && this.comps.messageCodec.encodeDeveloperMessage(session.developerMessage);
-        const contents = this.comps.messageCodec.encodeChatMessages(session.chatMessages);
-        const apiFds = this.comps.toolCodec.encodeFunctionDeclarationMap(this.comps.fdm);
+        const systemInstruction = session.developerMessage && this.options.messageCodec.encodeDeveloperMessage(session.developerMessage);
+        const contents = this.options.messageCodec.encodeChatMessages(session.chatMessages);
+        const apiFds = this.options.toolCodec.encodeFunctionDeclarationMap(this.options.fdm);
         const apiTools: Google.Tool[] = [];
         if (apiFds.length) apiTools.push({ functionDeclarations: apiFds });
         const apiToolConfig: Google.ToolConfig = {};
-        if (apiFds.length) apiToolConfig.functionCallingConfig = ChoiceCodec.encode(this.comps.choice);
+        if (apiFds.length) apiToolConfig.functionCallingConfig = ChoiceCodec.encode(this.options.choice);
         const reqbody: RestfulRequest = {
             contents,
             tools: apiTools,
             toolConfig: apiToolConfig,
             systemInstruction,
-            generationConfig: this.comps.inferenceParams.additionalOptions,
+            generationConfig: this.options.inferenceParams.additionalOptions,
         };
         loggers.message.debug(reqbody);
 
@@ -62,10 +62,10 @@ export class Transport<
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-goog-api-key': this.comps.providerSpec.apiKey,
+                    'x-goog-api-key': this.options.providerSpec.apiKey,
                 },
                 body: JSON.stringify(reqbody),
-                dispatcher: this.comps.providerSpec.dispatcher,
+                dispatcher: this.options.providerSpec.dispatcher,
                 signal,
             },
         );
@@ -97,15 +97,15 @@ export class Transport<
             if (part.text) loggers.inference.info(part.text);
             if (part.functionCall) loggers.message.info(part.functionCall);
         }
-        wfctx.cost?.(this.comps.billing.charge(response.usageMetadata));
+        wfctx.cost?.(this.options.billing.charge(response.usageMetadata));
 
-        return this.comps.messageCodec.decodeAiMessage(response.candidates[0].content);
+        return this.options.messageCodec.decodeAiMessage(response.candidates[0].content);
     }
 
 }
 
 export namespace Transport {
-    export interface Components<
+    export interface Options<
         in out fdm extends Function.Decl.Map.Proto,
         in out vdm extends Verbatim.Decl.Map.Proto,
     > {

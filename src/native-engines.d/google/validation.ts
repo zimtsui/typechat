@@ -15,8 +15,8 @@ export class StructuringValidator<
     in out vdu extends Verbatim.Decl.Proto,
 > implements Engine.StructuringValidator<RoleMessage.User<fdu>, RoleMessage.Ai<fdu, vdu>> {
     protected compatibleStructuringValidator: CompatibleStructuringValidator<fdu, vdu>;
-    public constructor(protected comps: StructuringValidator.Components<fdu, vdu>) {
-        this.compatibleStructuringValidator = new CompatibleStructuringValidator({ choice: this.comps.choice });
+    public constructor(protected options: StructuringValidator.Options<fdu, vdu>) {
+        this.compatibleStructuringValidator = new CompatibleStructuringValidator({ choice: this.options.choice });
     }
 
     public validate(
@@ -34,17 +34,17 @@ export namespace StructuringValidator {
         vdm extends Verbatim.Decl.Map.Proto,
     > = StructuringValidator<Function.Decl.From<fdm>, Verbatim.Decl.From<vdm>>;
 
-    export interface Components<
+    export interface Options<
         in out fdu extends Function.Decl.Proto,
         in out vdu extends Verbatim.Decl.Proto,
     > {
         choice: Structuring.Choice<fdu, vdu>;
     }
-    export namespace Components {
+    export namespace Options {
         export type From<
             fdm extends Function.Decl.Map.Proto,
             vdm extends Verbatim.Decl.Map.Proto,
-        > = Components<Function.Decl.From<fdm>, Verbatim.Decl.From<vdm>>;
+        > = Options<Function.Decl.From<fdm>, Verbatim.Decl.From<vdm>>;
     }
 }
 

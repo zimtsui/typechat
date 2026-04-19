@@ -12,7 +12,7 @@ export class MessageCodec<
     fdm extends Function.Decl.Map.Proto,
     vdm extends Verbatim.Decl.Map.Proto,
 > {
-    public constructor(protected comps: MessageCodec.Components<fdm, vdm>) {}
+    public constructor(protected options: MessageCodec.Options<fdm, vdm>) {}
 
     public encodeAiMessage(
         aiMessage: RoleMessage.Ai.From<fdm, vdm>,
@@ -49,7 +49,7 @@ export class MessageCodec<
             if (part instanceof RoleMessage.Part.Text)
                 return Google.createPartFromText(part.text);
             else if (part instanceof Function.Response)
-                return this.comps.toolCodec.encodeFunctionResponse(part);
+                return this.options.toolCodec.encodeFunctionResponse(part);
             else if (part instanceof Media.Pdf)
                 return Google.createPartFromBase64(
                     part.base64, `${part.mimeType}`,
@@ -76,10 +76,10 @@ export class MessageCodec<
             if (part.functionCall || part.text) {} else
                 throw new SyntaxError('Unknown content part', { cause: content });
             if (part.text) {
-                const vrs = VerbatimCodec.Request.decode(part.text, this.comps.vdm);
+                const vrs = VerbatimCodec.Request.decode(part.text, this.options.vdm);
                 parts.push(new RoleMessage.Part.Text(part.text, vrs));
             }
-            if (part.functionCall) parts.push(this.comps.toolCodec.decodeFunctionCall(part.functionCall));
+            if (part.functionCall) parts.push(this.options.toolCodec.decodeFunctionCall(part.functionCall));
         }
         return new MessageCodec.Message.Ai(parts, content);
     }
@@ -87,7 +87,7 @@ export class MessageCodec<
 
 
 export namespace MessageCodec {
-    export interface Components<
+    export interface Options<
         in out fdm extends Function.Decl.Map.Proto,
         in out vdm extends Verbatim.Decl.Map.Proto,
     > {

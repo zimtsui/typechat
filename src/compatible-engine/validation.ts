@@ -11,7 +11,7 @@ export class StructuringValidator<
     in out fdu extends Function.Decl.Proto,
     in out vdu extends Verbatim.Decl.Proto,
 > implements Engine.StructuringValidator<RoleMessage.User<fdu>, RoleMessage.Ai<fdu, vdu>> {
-    public constructor(protected comps: StructuringValidator.Components<fdu, vdu>) {}
+    public constructor(protected options: StructuringValidator.Options<fdu, vdu>) {}
 
     public validate(
         aiMessage: RoleMessage.Ai<fdu, vdu>,
@@ -25,20 +25,20 @@ export class StructuringValidator<
         fcs: Function.Call.Of<fdu>[],
         vrs: Verbatim.Request.Of<vdu>[],
     ): RoleMessage.User<fdu> | void {
-        if (this.comps.choice === Structuring.Choice.FCall.REQUIRED) {
+        if (this.options.choice === Structuring.Choice.FCall.REQUIRED) {
             if (!fcs.length) throw new SyntaxError('Function call required.');
 
-        } else if (this.comps.choice === Structuring.Choice.FCall.ANYONE) {
+        } else if (this.options.choice === Structuring.Choice.FCall.ANYONE) {
             if (!fcs.length) throw new SyntaxError('Function call required.');
             if (fcs.length > 1) throw new SyntaxError('Only one function call allowed.');
 
-        } else if (this.comps.choice instanceof Structuring.Choice.FCall) {
-            if (!fcs.length) throw new SyntaxError(`Function call of ${this.comps.choice.name} required.`);
+        } else if (this.options.choice instanceof Structuring.Choice.FCall) {
+            if (!fcs.length) throw new SyntaxError(`Function call of ${this.options.choice.name} required.`);
             if (fcs.length > 1) throw new SyntaxError('Only one function call allowed.');
-            if (fcs[0]!.name !== this.comps.choice.name)
-                throw new SyntaxError(`Only function call of ${this.comps.choice.name} allowed.`);
+            if (fcs[0]!.name !== this.options.choice.name)
+                throw new SyntaxError(`Only function call of ${this.options.choice.name} allowed.`);
 
-        } else if (this.comps.choice === Structuring.Choice.VRequest.REQUIRED) {
+        } else if (this.options.choice === Structuring.Choice.VRequest.REQUIRED) {
             if (!vrs.length)
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
@@ -46,7 +46,7 @@ export class StructuringValidator<
                     ),
                 ]);
 
-        } else if (this.comps.choice === Structuring.Choice.VRequest.ANYONE) {
+        } else if (this.options.choice === Structuring.Choice.VRequest.ANYONE) {
             if (!vrs.length)
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
@@ -60,27 +60,27 @@ export class StructuringValidator<
                     ),
                 ]);
 
-        } else if (this.comps.choice instanceof Structuring.Choice.VRequest) {
+        } else if (this.options.choice instanceof Structuring.Choice.VRequest) {
             if (!vrs.length)
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
-                        VerbatimCodec.Meta.encode(`Error: No valid verbatim request through channel \`${this.comps.choice.name}\` found. Check your output format.`),
+                        VerbatimCodec.Meta.encode(`Error: No valid verbatim request through channel \`${this.options.choice.name}\` found. Check your output format.`),
                     ),
                 ]);
             if (vrs.length > 1)
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
-                        VerbatimCodec.Meta.encode(`Error: Only 1 verbatim request through channel \`${this.comps.choice.name}\` allowed.`),
+                        VerbatimCodec.Meta.encode(`Error: Only 1 verbatim request through channel \`${this.options.choice.name}\` allowed.`),
                     ),
                 ]);
-            if (vrs[0]!.name !== this.comps.choice.name)
+            if (vrs[0]!.name !== this.options.choice.name)
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
-                        VerbatimCodec.Meta.encode(`Error: Only verbatim request through channel \`${this.comps.choice.name}\` allowed.`),
+                        VerbatimCodec.Meta.encode(`Error: Only verbatim request through channel \`${this.options.choice.name}\` allowed.`),
                     ),
                 ]);
 
-        } else if (this.comps.choice === Structuring.Choice.REQUIRED) {
+        } else if (this.options.choice === Structuring.Choice.REQUIRED) {
             if (fcs.length + vrs.length) {} else
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
@@ -88,7 +88,7 @@ export class StructuringValidator<
                     ),
                 ]);
 
-        } else if (this.comps.choice === Structuring.Choice.ANYONE) {
+        } else if (this.options.choice === Structuring.Choice.ANYONE) {
             if (fcs.length + vrs.length) {} else
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
@@ -102,7 +102,7 @@ export class StructuringValidator<
                     ),
                 ]);
 
-        } else if (this.comps.choice === Structuring.Choice.NONE) {
+        } else if (this.options.choice === Structuring.Choice.NONE) {
             if (fcs.length + vrs.length)
                 return new RoleMessage.User<fdu>([
                     RoleMessage.Part.Text.paragraph(
@@ -118,17 +118,17 @@ export namespace StructuringValidator {
         vdm extends Verbatim.Decl.Map.Proto,
     > = StructuringValidator<Function.Decl.From<fdm>, Verbatim.Decl.From<vdm>>;
 
-    export interface Components<
+    export interface Options<
         in out fdu extends Function.Decl.Proto,
         in out vdu extends Verbatim.Decl.Proto,
     > {
         choice: Structuring.Choice<fdu, vdu>;
     }
-    export namespace Components {
+    export namespace Options {
         export type From<
             fdm extends Function.Decl.Map.Proto,
             vdm extends Verbatim.Decl.Map.Proto,
-        > = Components<Function.Decl.From<fdm>, Verbatim.Decl.From<vdm>>;
+        > = Options<Function.Decl.From<fdm>, Verbatim.Decl.From<vdm>>;
     }
 }
 

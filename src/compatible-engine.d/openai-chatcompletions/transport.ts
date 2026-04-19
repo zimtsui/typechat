@@ -25,32 +25,32 @@ export class Transport<
     Session.From<fdm, vdm>
 > {
     protected client: OpenAI;
-    public constructor(protected comps: Transport.Components<fdm, vdm>) {
+    public constructor(protected options: Transport.Options<fdm, vdm>) {
         this.client = new OpenAI({
-            baseURL: this.comps.providerSpec.baseUrl,
-            apiKey: this.comps.providerSpec.apiKey,
-            fetchOptions: { dispatcher: this.comps.providerSpec.dispatcher },
+            baseURL: this.options.providerSpec.baseUrl,
+            apiKey: this.options.providerSpec.apiKey,
+            fetchOptions: { dispatcher: this.options.providerSpec.dispatcher },
         })
     }
 
     protected makeParams(
         session: Session.From<fdm, vdm>,
     ): OpenAI.ChatCompletionCreateParamsStreaming {
-        const tools = this.comps.toolCodec.encodeFunctionDeclarationMap(this.comps.fdm);
+        const tools = this.options.toolCodec.encodeFunctionDeclarationMap(this.options.fdm);
         const messages: OpenAI.ChatCompletionMessageParam[] = [];
-        if (session.developerMessage) messages.push(...this.comps.messageCodec.encodeRoleMessage(session.developerMessage));
-        messages.push(...this.comps.messageCodec.encodeRoleMessages(session.chatMessages));
+        if (session.developerMessage) messages.push(...this.options.messageCodec.encodeRoleMessage(session.developerMessage));
+        messages.push(...this.options.messageCodec.encodeRoleMessages(session.chatMessages));
         return {
-            model: this.comps.inferenceParams.model,
+            model: this.options.inferenceParams.model,
             messages,
             tools: tools.length ? tools : undefined,
-            tool_choice: tools.length ? ChoiceCodec.encode(this.comps.choice) : undefined,
-            parallel_tool_calls: tools.length ? this.comps.inferenceParams.parallelToolCall : undefined,
+            tool_choice: tools.length ? ChoiceCodec.encode(this.options.choice) : undefined,
+            parallel_tool_calls: tools.length ? this.options.inferenceParams.parallelToolCall : undefined,
             stream: true,
             stream_options: {
                 include_usage: true,
             },
-            ...this.comps.inferenceParams.additionalOptions,
+            ...this.options.inferenceParams.additionalOptions,
         };
     }
 
@@ -98,7 +98,7 @@ export class Transport<
         signal?: AbortSignal,
     ): Promise<RoleMessage.Ai.From<fdm, vdm>> {
         try {
-            await this.comps.throttle.requests(wfctx);
+            await this.options.throttle.requests(wfctx);
 
             // Prepare request
             const params = this.makeParams(session);
@@ -110,7 +110,7 @@ export class Transport<
                 {
                     signal,
                     fetchOptions: {
-                        dispatcher: this.comps.providerSpec.dispatcher,
+                        dispatcher: this.options.providerSpec.dispatcher,
                     }
                 },
             );
@@ -181,13 +181,13 @@ export class Transport<
             else throw new SyntaxError('Abnormal finish reason', { cause: choice.finish_reason });
 
             if (completion.usage) {} else throw new Error();
-            const cost = this.comps.billing.charge(completion.usage);
+            const cost = this.options.billing.charge(completion.usage);
 
             if (choice.message.tool_calls) loggers.message.info(choice.message.tool_calls);
             loggers.message.info(completion.usage);
             wfctx.cost?.(cost);
 
-            return this.comps.messageCodec.decodeAiMessage(choice.message);
+            return this.options.messageCodec.decodeAiMessage(choice.message);
         } catch (e) {
             if (e instanceof OpenAI.InternalServerError)
                 throw new TypeError('OpenAI internal server error', { cause: e });
@@ -201,7 +201,7 @@ export class Transport<
 
 
 export namespace Transport {
-    export interface Components<
+    export interface Options<
         in out fdm extends Function.Decl.Map.Proto,
         in out vdm extends Verbatim.Decl.Map.Proto,
     > {

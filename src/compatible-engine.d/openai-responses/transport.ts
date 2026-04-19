@@ -25,12 +25,12 @@ export class Transport<
 > {
     protected client: OpenAI;
 
-    public constructor(protected comps: Transport.Components<fdm, vdm>) {
+    public constructor(protected options: Transport.Options<fdm, vdm>) {
         this.client = new OpenAI({
-            baseURL: this.comps.providerSpec.baseUrl,
-            apiKey: this.comps.providerSpec.apiKey,
+            baseURL: this.options.providerSpec.baseUrl,
+            apiKey: this.options.providerSpec.apiKey,
             fetchOptions: {
-                dispatcher: this.comps.providerSpec.dispatcher,
+                dispatcher: this.options.providerSpec.dispatcher,
             },
         });
     }
@@ -38,18 +38,18 @@ export class Transport<
     protected makeParams(
         session: Session.From<fdm, vdm>,
     ): OpenAI.Responses.ResponseCreateParamsStreaming {
-        const tools = this.comps.toolCodec.encodeFunctionDeclarationMap(this.comps.fdm);
+        const tools = this.options.toolCodec.encodeFunctionDeclarationMap(this.options.fdm);
         return {
-            model: this.comps.inferenceParams.model,
+            model: this.options.inferenceParams.model,
             include: ['reasoning.encrypted_content'],
             store: false,
             stream: true,
-            input: session.chatMessages.flatMap(chatMessage => this.comps.messageCodec.encodeChatMessage(chatMessage)),
-            instructions: session.developerMessage && this.comps.messageCodec.encodeDeveloperMessage(session.developerMessage),
+            input: session.chatMessages.flatMap(chatMessage => this.options.messageCodec.encodeChatMessage(chatMessage)),
+            instructions: session.developerMessage && this.options.messageCodec.encodeDeveloperMessage(session.developerMessage),
             tools: tools.length ? tools : undefined,
-            tool_choice: tools.length ? ChoiceCodec.encode(this.comps.choice) : undefined,
-            parallel_tool_calls: tools.length ? this.comps.inferenceParams.parallelToolCall : undefined,
-            ...this.comps.inferenceParams.additionalOptions,
+            tool_choice: tools.length ? ChoiceCodec.encode(this.options.choice) : undefined,
+            parallel_tool_calls: tools.length ? this.options.inferenceParams.parallelToolCall : undefined,
+            ...this.options.inferenceParams.additionalOptions,
         };
     }
 
@@ -58,7 +58,7 @@ export class Transport<
         session: Session.From<fdm, vdm>,
         signal?: AbortSignal,
     ): Promise<RoleMessage.Ai.From<fdm, vdm>> {
-        await this.comps.throttle.requests(wfctx);
+        await this.options.throttle.requests(wfctx);
 
         // Prepare request
         const params = this.makeParams(session);
@@ -92,14 +92,14 @@ export class Transport<
                         loggers.inference.warn(part.refusal);
             else loggers.message.info(item);
         loggers.message.info(response.usage);
-        wfctx.cost?.(this.comps.billing.charge(response.usage));
+        wfctx.cost?.(this.options.billing.charge(response.usage));
 
-        return this.comps.messageCodec.decodeAiMessage(response.output);
+        return this.options.messageCodec.decodeAiMessage(response.output);
     }
 }
 
 export namespace Transport {
-    export interface Components<
+    export interface Options<
         in out fdm extends Function.Decl.Map.Proto,
         in out vdm extends Verbatim.Decl.Map.Proto,
     > {

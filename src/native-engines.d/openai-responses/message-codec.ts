@@ -13,12 +13,12 @@ export class MessageCodec<
     in out fdm extends Function.Decl.Map.Proto,
     in out vdm extends Verbatim.Decl.Map.Proto,
 > {
-    public constructor(protected comps: MessageCodec.Components<fdm, vdm>) {}
+    public constructor(protected options: MessageCodec.Options<fdm, vdm>) {}
 
     public encodeFunctionResponse(
         fr: Function.Response.From<fdm>,
     ): OpenAI.Responses.ResponseInputItem.FunctionCallOutput {
-        return this.comps.toolCodec.encodeFunctionResponse(fr);
+        return this.options.toolCodec.encodeFunctionResponse(fr);
     }
 
     public decodeAiMessage(
@@ -29,13 +29,13 @@ export class MessageCodec<
             if (item.type === 'message')
                 for (const part of item.content)
                     if (part.type === 'output_text') {
-                        const vrs = VerbatimCodec.Request.decode(part.text, this.comps.vdm);
+                        const vrs = VerbatimCodec.Request.decode(part.text, this.options.vdm);
                         parts.push(new RoleMessage.Part.Text(part.text, vrs));
                     } else if (part.type === 'refusal')
                         throw new SyntaxError('Refusal', { cause: output });
                     else throw new Error();
             else if (item.type === 'function_call')
-                parts.push(this.comps.toolCodec.decodeFunctionCall(item));
+                parts.push(this.options.toolCodec.decodeFunctionCall(item));
             else if (item.type === 'reasoning') {}
             else if (item.type === 'apply_patch_call')
                 parts.push(new Tool.ApplyPatch.Call(item));
@@ -94,7 +94,7 @@ export class MessageCodec<
     public encodeDeveloperMessage(
         developerMessage: RoleMessage.Developer,
     ): string {
-        return this.comps.compatibleMessageCodec.encodeDeveloperMessage(developerMessage);
+        return this.options.compatibleMessageCodec.encodeDeveloperMessage(developerMessage);
     }
 
     public encodeChatMessage(
@@ -109,7 +109,7 @@ export class MessageCodec<
 }
 
 export namespace MessageCodec {
-    export interface Components<
+    export interface Options<
         in out fdm extends Function.Decl.Map.Proto,
         in out vdm extends Verbatim.Decl.Map.Proto,
     > {

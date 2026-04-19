@@ -6,7 +6,7 @@ const ajv = new Ajv();
 
 
 export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
-    public constructor(protected comps: ToolCodec.Components<fdm>) {}
+    public constructor(protected options: ToolCodec.Options<fdm>) {}
 
 
     public encodeFunctionCall(
@@ -26,7 +26,7 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
     public decodeFunctionCall(
         apifc: OpenAI.ChatCompletionMessageFunctionToolCall,
     ): Function.Call.From<fdm> {
-        const fditem = this.comps.fdm[apifc.function.name];
+        const fditem = this.options.fdm[apifc.function.name];
         if (fditem) {} else throw new SyntaxError('Unknown function call', { cause: apifc });
         const args = (() => {
             try {
@@ -87,7 +87,7 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
 }
 
 export namespace ToolCodec {
-    export interface Components<in out fdm extends Function.Decl.Map.Proto> {
+    export interface Options<in out fdm extends Function.Decl.Map.Proto> {
         fdm: fdm;
     }
 }

@@ -30,8 +30,8 @@ export class GoogleNativeTransport<
 > {
     protected apiURL: URL;
 
-    public constructor(protected comps: GoogleNativeTransport.Components<fdm, vdm>) {
-        this.apiURL = new URL(`${this.comps.providerSpec.baseUrl}/v1beta/models/${this.comps.inferenceParams.model}:generateContent`);
+    public constructor(protected options: GoogleNativeTransport.Options<fdm, vdm>) {
+        this.apiURL = new URL(`${this.options.providerSpec.baseUrl}/v1beta/models/${this.options.inferenceParams.model}:generateContent`);
     }
 
     public async fetch(
@@ -39,25 +39,25 @@ export class GoogleNativeTransport<
         session: Session.From<fdm, vdm>,
         signal?: AbortSignal,
     ): Promise<RoleMessage.Ai.From<fdm, vdm>> {
-        const systemInstruction = session.developerMessage && this.comps.messageCodec.encodeDeveloperMessage(session.developerMessage);
-        const contents = this.comps.messageCodec.encodeChatMessages(session.chatMessages);
+        const systemInstruction = session.developerMessage && this.options.messageCodec.encodeDeveloperMessage(session.developerMessage);
+        const contents = this.options.messageCodec.encodeChatMessages(session.chatMessages);
 
-        await this.comps.throttle.requests(wfctx);
+        await this.options.throttle.requests(wfctx);
 
-        const apifds = this.comps.toolCodec.encodeFunctionDeclarationMap(this.comps.fdm);
+        const apifds = this.options.toolCodec.encodeFunctionDeclarationMap(this.options.fdm);
         const apiTools: Google.Tool[] = [];
         if (apifds.length) apiTools.push({ functionDeclarations: apifds });
-        if (this.comps.urlContext) apiTools.push({ urlContext: {} });
-        if (this.comps.googleSearch) apiTools.push({ googleSearch: {} });
-        if (this.comps.codeExecution) apiTools.push({ codeExecution: {} });
+        if (this.options.urlContext) apiTools.push({ urlContext: {} });
+        if (this.options.googleSearch) apiTools.push({ googleSearch: {} });
+        if (this.options.codeExecution) apiTools.push({ codeExecution: {} });
         const apiToolConfig: Google.ToolConfig = {};
-        if (apifds.length) apiToolConfig.functionCallingConfig = ChoiceCodec.encode(this.comps.choice);
+        if (apifds.length) apiToolConfig.functionCallingConfig = ChoiceCodec.encode(this.options.choice);
         const reqbody: RestfulRequest = {
             contents,
             tools: apiTools.length ? apiTools : undefined,
             toolConfig: apiToolConfig,
             systemInstruction,
-            generationConfig: this.comps.inferenceParams.additionalOptions,
+            generationConfig: this.options.inferenceParams.additionalOptions,
         };
 
         loggers.message.debug(reqbody);
@@ -68,10 +68,10 @@ export class GoogleNativeTransport<
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-goog-api-key': this.comps.providerSpec.apiKey,
+                    'x-goog-api-key': this.options.providerSpec.apiKey,
                 } satisfies HeaderRecord,
                 body: JSON.stringify(reqbody),
-                dispatcher: this.comps.providerSpec.dispatcher,
+                dispatcher: this.options.providerSpec.dispatcher,
                 signal,
             },
         );
@@ -101,14 +101,14 @@ export class GoogleNativeTransport<
         }
 
         if (response.usageMetadata) {} else throw new SyntaxError('Usage metadata missing', { cause: response });
-        wfctx.cost?.(this.comps.billing.charge(response.usageMetadata));
+        wfctx.cost?.(this.options.billing.charge(response.usageMetadata));
 
-        return this.comps.messageCodec.decodeAiMessage(response.candidates[0].content);
+        return this.options.messageCodec.decodeAiMessage(response.candidates[0].content);
     }
 }
 
 export namespace GoogleNativeTransport {
-    export interface Components<
+    export interface Options<
         in out fdm extends Function.Decl.Map.Proto,
         in out vdm extends Verbatim.Decl.Map.Proto,
     > {

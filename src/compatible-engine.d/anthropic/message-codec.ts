@@ -12,7 +12,7 @@ export class MessageCodec<
     in out fdm extends Function.Decl.Map.Proto,
     in out vdm extends Verbatim.Decl.Map.Proto,
 > {
-    public constructor(protected comps: MessageCodec.Components<fdm, vdm>) {}
+    public constructor(protected options: MessageCodec.Options<fdm, vdm>) {}
 
     public encodeUserMessage(
         userMessage: RoleMessage.User.From<fdm>,
@@ -24,7 +24,7 @@ export class MessageCodec<
                     text: part.text,
                 } satisfies Anthropic.TextBlockParam;
             else if (part instanceof Function.Response)
-                return this.comps.toolCodec.encodeFunctionResponse(part);
+                return this.options.toolCodec.encodeFunctionResponse(part);
             else throw new Error();
         });
     }
@@ -42,7 +42,7 @@ export class MessageCodec<
                         text: part.text,
                     } satisfies Anthropic.TextBlockParam;
                 else if (part instanceof Function.Call)
-                    return this.comps.toolCodec.encodeFunctionCall(part);
+                    return this.options.toolCodec.encodeFunctionCall(part);
                 else throw new Error();
             });
         }
@@ -70,10 +70,10 @@ export class MessageCodec<
         const parts: RoleMessage.Ai.Part.From<fdm, vdm>[] = [];
         for (const item of raw) {
             if (item.type === 'text') {
-                const vrs = VerbatimCodec.Request.decode(item.text, this.comps.vdm);
+                const vrs = VerbatimCodec.Request.decode(item.text, this.options.vdm);
                 parts.push(new RoleMessage.Part.Text(item.text, vrs));
             } else if (item.type === 'tool_use')
-                parts.push(this.comps.toolCodec.decodeFunctionCall(item));
+                parts.push(this.options.toolCodec.decodeFunctionCall(item));
             else if (item.type === 'thinking') {}
             else throw new Error();
         }
@@ -82,7 +82,7 @@ export class MessageCodec<
 }
 
 export namespace MessageCodec {
-    export interface Components<
+    export interface Options<
         in out fdm extends Function.Decl.Map.Proto,
         in out vdm extends Verbatim.Decl.Map.Proto,
     > {

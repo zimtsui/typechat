@@ -14,17 +14,17 @@ export class Transport<
     protected override makeParams(
         session: Session.From<fdm, vdm>,
     ): OpenAI.Responses.ResponseCreateParamsStreaming {
-        const tools = this.comps.toolCodec.encodeFunctionDeclarationMap(this.comps.fdm);
+        const tools = this.options.toolCodec.encodeFunctionDeclarationMap(this.options.fdm);
         return {
-            model: this.comps.inferenceParams.model,
+            model: this.options.inferenceParams.model,
             store: false,
             stream: true,
-            input: session.chatMessages.flatMap(chatMessage => this.comps.messageCodec.encodeChatMessage(chatMessage)),
-            instructions: session.developerMessage && this.comps.messageCodec.encodeDeveloperMessage(session.developerMessage),
+            input: session.chatMessages.flatMap(chatMessage => this.options.messageCodec.encodeChatMessage(chatMessage)),
+            instructions: session.developerMessage && this.options.messageCodec.encodeDeveloperMessage(session.developerMessage),
             tools: tools.length ? tools : undefined,
-            tool_choice: tools.length ? ChoiceCodec.encode(this.comps.choice) : undefined,
-            parallel_tool_calls: tools.length ? this.comps.inferenceParams.parallelToolCall : undefined,
-            ...this.comps.inferenceParams.additionalOptions,
+            tool_choice: tools.length ? ChoiceCodec.encode(this.options.choice) : undefined,
+            parallel_tool_calls: tools.length ? this.options.inferenceParams.parallelToolCall : undefined,
+            ...this.options.inferenceParams.additionalOptions,
         };
     }
 

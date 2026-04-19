@@ -25,27 +25,27 @@ export class Transport<
 > {
     protected client: Anthropic;
 
-    public constructor(protected comps: Transport.Components<fdm, vdm>) {
+    public constructor(protected options: Transport.Options<fdm, vdm>) {
         this.client = new Anthropic({
-            baseURL: this.comps.providerSpec.baseUrl,
-            apiKey: this.comps.providerSpec.apiKey,
-            fetchOptions: { dispatcher: this.comps.providerSpec.dispatcher },
+            baseURL: this.options.providerSpec.baseUrl,
+            apiKey: this.options.providerSpec.apiKey,
+            fetchOptions: { dispatcher: this.options.providerSpec.dispatcher },
         });
     }
 
     protected makeParams(
         session: Session.From<fdm, vdm>,
     ): Anthropic.MessageCreateParamsStreaming {
-        const tools = this.comps.toolCodec.encodeFunctionDeclarationMap(this.comps.fdm);
+        const tools = this.options.toolCodec.encodeFunctionDeclarationMap(this.options.fdm);
         return {
-            model: this.comps.inferenceSpec.model,
+            model: this.options.inferenceSpec.model,
             stream: true,
-            messages: session.chatMessages.map(chatMessage => this.comps.messageCodec.encodeChatMessage(chatMessage)),
-            system: session.developerMessage && this.comps.messageCodec.encodeDeveloperMessage(session.developerMessage),
+            messages: session.chatMessages.map(chatMessage => this.options.messageCodec.encodeChatMessage(chatMessage)),
+            system: session.developerMessage && this.options.messageCodec.encodeDeveloperMessage(session.developerMessage),
             tools: tools.length ? tools : undefined,
-            tool_choice: tools.length ? ChoiceCodec.encode(this.comps.choice, this.comps.inferenceSpec.parallelToolCall) : undefined,
+            tool_choice: tools.length ? ChoiceCodec.encode(this.options.choice, this.options.inferenceSpec.parallelToolCall) : undefined,
             max_tokens: 64 * 1024,
-            ...this.comps.inferenceSpec.additionalOptions,
+            ...this.options.inferenceSpec.additionalOptions,
         };
     }
 
@@ -54,7 +54,7 @@ export class Transport<
         session: Session.From<fdm, vdm>,
         signal?: AbortSignal,
     ): Promise<RoleMessage.Ai.From<fdm, vdm>> {
-        await this.comps.throttle.requests(wfctx);
+        await this.options.throttle.requests(wfctx);
 
         // Prepare request
         const params = this.makeParams(session);
@@ -65,7 +65,7 @@ export class Transport<
             params,
             {
                 signal,
-                fetchOptions: { dispatcher: this.comps.providerSpec.dispatcher },
+                fetchOptions: { dispatcher: this.options.providerSpec.dispatcher },
             },
         );
 
@@ -134,14 +134,14 @@ export class Transport<
         if (response.stop_reason === 'end_turn' || response.stop_reason === 'tool_use') {} else
             throw new SyntaxError('Abnormal stop reason', { cause: response });
         loggers.message.info(response.usage);
-        wfctx.cost?.(this.comps.billing.charge(response.usage));
+        wfctx.cost?.(this.options.billing.charge(response.usage));
 
-        return this.comps.messageCodec.decodeAiMessage(response.content);
+        return this.options.messageCodec.decodeAiMessage(response.content);
     }
 }
 
 export namespace Transport {
-    export interface Components<
+    export interface Options<
         in out fdm extends Function.Decl.Map.Proto,
         in out vdm extends Verbatim.Decl.Map.Proto,
     > {

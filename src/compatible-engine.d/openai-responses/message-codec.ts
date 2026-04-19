@@ -13,7 +13,7 @@ export class MessageCodec<
     in out fdm extends Function.Decl.Map.Proto,
     in out vdm extends Verbatim.Decl.Map.Proto,
 > {
-    public constructor(protected comps: MessageCodec.Components<fdm, vdm>) {}
+    public constructor(protected options: MessageCodec.Options<fdm, vdm>) {}
 
     public decodeAiMessage(
         output: OpenAI.Responses.ResponseOutputItem[],
@@ -23,13 +23,13 @@ export class MessageCodec<
             if (item.type === 'message')
                 for (const part of item.content)
                     if (part.type === 'output_text') {
-                        const vrs = VerbatimCodec.Request.decode(part.text, this.comps.vdm);
+                        const vrs = VerbatimCodec.Request.decode(part.text, this.options.vdm);
                         parts.push(new RoleMessage.Part.Text(part.text, vrs));
                     } else if (part.type === 'refusal')
                         throw new SyntaxError('Refusal', { cause: output });
                     else throw new Error();
             else if (item.type === 'function_call')
-                parts.push(this.comps.toolCodec.decodeFunctionCall(item));
+                parts.push(this.options.toolCodec.decodeFunctionCall(item));
             else if (item.type === 'reasoning') {}
             else throw new Error();
         return new MessageCodec.Message.Ai(parts, output);
@@ -79,7 +79,7 @@ export class MessageCodec<
                 });
             else if (part instanceof Function.Response) {
                 flush();
-                responseInput.push(this.comps.toolCodec.encodeFunctionResponse(part));
+                responseInput.push(this.options.toolCodec.encodeFunctionResponse(part));
             } else throw new Error();
         }
         flush();
@@ -103,7 +103,7 @@ export class MessageCodec<
                     content: part.text,
                 });
             else if (part instanceof Function.Call)
-                responseInput.push(this.comps.toolCodec.encodeFunctionCall(part));
+                responseInput.push(this.options.toolCodec.encodeFunctionCall(part));
             else throw new Error();
         };
         return responseInput;
@@ -125,7 +125,7 @@ export class MessageCodec<
 }
 
 export namespace MessageCodec {
-    export interface Components<
+    export interface Options<
         in out fdm extends Function.Decl.Map.Proto,
         in out vdm extends Verbatim.Decl.Map.Proto,
     > {
