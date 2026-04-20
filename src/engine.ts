@@ -60,11 +60,11 @@ export namespace Engine {
             const dispatcher = proxyUrl
                 ? new ProxyAgent({
                     uri: proxyUrl,
-                    headersTimeout: 0,
+                    headersTimeout: 10000,
                     bodyTimeout: 0,
                 })
                 : new Agent({
-                    headersTimeout: 0,
+                    headersTimeout: 10000,
                     bodyTimeout: 0,
                 });
             this.providerSpec = {

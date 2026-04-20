@@ -9,6 +9,8 @@ import * as MessageCodecModule from './google/message-codec.ts';
 import { GoogleNativeTransport } from './google/transport.ts';
 import type { Verbatim } from '../verbatim.ts';
 import { Structuring } from '../compatible-engine/structuring.ts';
+import { env } from 'node:process';
+import { Agent, ProxyAgent } from 'undici';
 
 
 
@@ -42,6 +44,19 @@ export namespace GoogleNativeEngine {
 
         public constructor(protected options: GoogleNativeEngine.Options<fdm, vdm>) {
             super(options);
+
+            const proxyUrl = options.endpointSpec.proxy || env.https_proxy || env.HTTPS_PROXY;
+            this.providerSpec.dispatcher = proxyUrl
+                ? new ProxyAgent({
+                    uri: proxyUrl,
+                    headersTimeout: 0,
+                    bodyTimeout: 0,
+                })
+                : new Agent({
+                    headersTimeout: 0,
+                    bodyTimeout: 0,
+                });
+
             if (options.endpointSpec.parallelToolCall === false) throw new Error('Parallel tool calling is required by Google engine.');
             this.choice = options.structuringChoice ?? Structuring.Choice.AUTO;
             this.codeExecution = options.codeExecution ?? false;

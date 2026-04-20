@@ -6,6 +6,8 @@ import { Billing } from '../api-types/google/billing.ts';
 import * as TransportModule from './google/transport.ts';
 import type { Verbatim } from '../verbatim.ts';
 import * as ChoiceCodecModule from './google/choice-codec.ts';
+import { env } from 'node:process';
+import { Agent, ProxyAgent } from 'undici';
 
 
 
@@ -25,6 +27,19 @@ export namespace GoogleCompatibleEngine {
 
         public constructor(protected options: GoogleCompatibleEngine.Options<fdm, vdm>) {
             super(options);
+
+            const proxyUrl = options.endpointSpec.proxy || env.https_proxy || env.HTTPS_PROXY;
+            this.providerSpec.dispatcher = proxyUrl
+                ? new ProxyAgent({
+                    uri: proxyUrl,
+                    headersTimeout: 0,
+                    bodyTimeout: 0,
+                })
+                : new Agent({
+                    headersTimeout: 0,
+                    bodyTimeout: 0,
+                });
+
             if (options.endpointSpec.parallelToolCall === false) throw new Error('Parallel tool calling is required by Google engine.');
             this.toolCodec = new ToolCodec({
                 fdm: this.fdm,
