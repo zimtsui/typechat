@@ -50,7 +50,10 @@ export namespace CompatibleEngine {
             session.chatMessages.push(message);
             return session;
         }
+
+        public abstract override clone(): CompatibleEngine<fdm, vdm>;
     }
+
 
     export interface Options<
         in out fdm extends Function.Decl.Map.Proto,

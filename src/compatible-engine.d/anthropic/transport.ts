@@ -143,6 +143,7 @@ export class Transport<
 
         // Validate response
         if (response) {} else throw new Error();
+        loggers.message.debug(response);
         if (response.stop_reason === 'max_tokens')
             throw new SyntaxError('Token limit exceeded.', { cause: response });
         if (response.stop_reason === 'end_turn' || response.stop_reason === 'tool_use') {} else

@@ -181,6 +181,7 @@ test('Google native engine rejects disabling parallel tool calls', t => {
                     apiKey: 'test-key',
                     model: 'test-model',
                     name: 'Google Native',
+                    parallelToolCall: false,
                 },
             },
         },
@@ -190,7 +191,6 @@ test('Google native engine rejects disabling parallel tool calls', t => {
         endpoint: 'google',
         functionDeclarationMap,
         verbatimDeclarationMap,
-        parallelToolCall: false,
     }));
 
     t.regex(error.message, /Parallel tool calling is required by Google engine\./);

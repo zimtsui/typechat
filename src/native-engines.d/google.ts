@@ -42,7 +42,7 @@ export namespace GoogleNativeEngine {
 
         public constructor(protected options: GoogleNativeEngine.Options<fdm, vdm>) {
             super(options);
-            if (options.parallelToolCall === false) throw new Error('Parallel tool calling is required by Google engine.');
+            if (options.endpointSpec.parallelToolCall === false) throw new Error('Parallel tool calling is required by Google engine.');
             this.choice = options.structuringChoice ?? Structuring.Choice.AUTO;
             this.codeExecution = options.codeExecution ?? false;
             this.urlContext = options.urlContext ?? false;

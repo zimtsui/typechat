@@ -30,7 +30,7 @@ export class MessageCodec<
                     return Google.createPartFromText(part.text);
                 else if (part instanceof Function.Call) {
                     if (part.args instanceof Object) {} else throw new Error();
-                    return Google.createPartFromFunctionCall(part.name, part.args as Record<string, unknown>);
+                    return Google.createPartFromFunctionCall(part.name, part.args satisfies Record<string, unknown>);
                 } else throw new Error();
             });
             return Google.createModelContent(parts);

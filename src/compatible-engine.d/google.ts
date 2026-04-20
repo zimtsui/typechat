@@ -25,7 +25,7 @@ export namespace GoogleCompatibleEngine {
 
         public constructor(protected options: GoogleCompatibleEngine.Options<fdm, vdm>) {
             super(options);
-            if (options.parallelToolCall === false) throw new Error('Parallel tool calling is required by Google engine.');
+            if (options.endpointSpec.parallelToolCall === false) throw new Error('Parallel tool calling is required by Google engine.');
             this.toolCodec = new ToolCodec({
                 fdm: this.fdm,
             });

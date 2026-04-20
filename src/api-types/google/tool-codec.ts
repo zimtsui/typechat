@@ -18,7 +18,7 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
         return {
             id: fc.id,
             name: fc.name,
-            args: fc.args as Record<string, unknown>,
+            args: fc.args satisfies Record<string, unknown>,
         };
     }
 
@@ -31,7 +31,7 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
         fdentry: Function.Decl.Entry.From<fdm>,
     ): Google.FunctionDeclaration {
         const json = JSON.stringify(fdentry[1].parameters);
-        const parsed = JSON.parse(json, (key, value) => {
+        const parsed: Google.Schema = JSON.parse(json, (key, value) => {
             if (key === 'type' && typeof value === 'string') {
                 if (value === 'string') return Google.Type.STRING;
                 else if (value === 'number') return Google.Type.NUMBER;
@@ -42,7 +42,7 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
             } else if (key === 'additionalProperties' && typeof value === 'boolean')
                 return;
             else return value;
-        }) as Google.Schema;
+        });
         return {
             name: fdentry[0],
             description: fdentry[1].description,

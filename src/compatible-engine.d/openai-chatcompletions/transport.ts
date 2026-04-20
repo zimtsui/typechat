@@ -74,11 +74,18 @@ export class Transport<
 
     public mergeToolCall(
         apifc: OpenAI.ChatCompletionChunk.Choice.Delta.ToolCall,
-    ) {
+    ): OpenAI.ChatCompletionMessageToolCall {
         if (apifc.id) {} else throw new Error();
         if (apifc.function?.name) {} else throw new Error();
         if (apifc.function?.arguments) {} else throw new Error();
-        return apifc as OpenAI.ChatCompletionMessageFunctionToolCall;
+        return {
+            id: apifc.id,
+            type: 'function',
+            function: {
+                name: apifc.function.name,
+                arguments: apifc.function.arguments,
+            },
+        };
     }
 
     public mergeCompletion(

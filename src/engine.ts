@@ -55,7 +55,7 @@ export namespace Engine {
         protected abstract transport: Engine.Transport<userm, aim, devm, session>;
 
         public constructor(options: Engine.Options<fdm, vdm>) {
-            const proxyUrl = options.proxy || env.https_proxy || env.HTTPS_PROXY;
+            const proxyUrl = options.endpointSpec.proxy || env.https_proxy || env.HTTPS_PROXY;
 
             const dispatcher = proxyUrl
                 ? new ProxyAgent({
@@ -68,25 +68,25 @@ export namespace Engine {
                     bodyTimeout: 0,
                 });
             this.providerSpec = {
-                baseUrl: options.baseUrl,
-                apiKey: options.apiKey,
+                baseUrl: options.endpointSpec.baseUrl,
+                apiKey: options.endpointSpec.apiKey,
                 dispatcher,
                 retry: options.providerRetry ?? 2,
             };
 
-            this.name = options.name;
+            this.name = options.endpointSpec.name;
             this.inferenceParams = {
-                model: options.model,
-                additionalOptions: options.additionalOptions,
-                timeout: options.timeout,
-                parallelToolCall: options.parallelToolCall,
+                model: options.endpointSpec.model,
+                additionalOptions: options.endpointSpec.additionalOptions,
+                timeout: options.endpointSpec.timeout,
+                parallelToolCall: options.endpointSpec.parallelToolCall,
                 retry: options.inferenceRetry ?? 2,
             };
 
             this.pricing = {
-                inputPrice: options.inputPrice ?? 0,
-                outputPrice: options.outputPrice ?? 0,
-                cachePrice: options.cachePrice ?? options.inputPrice ?? 0,
+                inputPrice: options.endpointSpec.inputPrice ?? 0,
+                outputPrice: options.endpointSpec.outputPrice ?? 0,
+                cachePrice: options.endpointSpec.cachePrice ?? options.endpointSpec.inputPrice ?? 0,
             };
             this.fdm = options.functionDeclarationMap;
             this.vdm = options.verbatimDeclarationMap;
@@ -236,8 +236,9 @@ export namespace Engine {
     export interface Options<
         in out fdm extends Function.Decl.Map.Proto,
         in out vdm extends Verbatim.Decl.Map.Proto,
-    > extends EndpointSpec {
+    > {
         throttle: Throttle;
+        endpointSpec: EndpointSpec;
         functionDeclarationMap: fdm;
         verbatimDeclarationMap: vdm;
         providerRetry?: number;

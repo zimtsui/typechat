@@ -57,7 +57,7 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
         return {
             name: fdentry[0],
             description: fdentry[1].description,
-            input_schema: fdentry[1].parameters as TObject,
+            input_schema: fdentry[1].parameters satisfies TObject,
         };
     }
 

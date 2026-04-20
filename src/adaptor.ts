@@ -9,7 +9,6 @@ import { OpenAIResponsesNativeEngine } from './native-engines.d/openai-responses
 import { GoogleNativeEngine } from './native-engines.d/google.ts';
 import type { Verbatim } from './verbatim.ts';
 import { OpenAIChatCompletionsCompatibleEngine } from './compatible-engine.d/openai-chatcompletions.ts';
-import { EndpointSpec } from './endpoint-spec.ts';
 
 
 export class Adaptor {
@@ -35,7 +34,7 @@ export class Adaptor {
         if (throttle) {} else throw new Error();
         const options: CompatibleEngine.Options<fdm, vdm> = {
             ...adaptorOptions,
-            ...endpointSpec,
+            endpointSpec,
             throttle,
         };
         if (endpointSpec.apiType === 'openai-responses')
@@ -59,7 +58,7 @@ export class Adaptor {
         if (throttle) {} else throw new Error();
         const options: OpenAIResponsesNativeEngine.Options<fdm, vdm> = {
             ...adaptorOptions,
-            ...endpointSpec,
+            endpointSpec,
             throttle,
         };
         return new OpenAIResponsesNativeEngine.Instance(options);
@@ -75,7 +74,7 @@ export class Adaptor {
         if (throttle) {} else throw new Error();
         const options: GoogleNativeEngine.Options<fdm, vdm> = {
             ...adaptorOptions,
-            ...endpointSpec,
+            endpointSpec,
             throttle,
         };
         return new GoogleNativeEngine.Instance(options);
@@ -86,21 +85,21 @@ export namespace Adaptor {
     export interface CompatibleEngineOptions<
         in out fdm extends Function.Decl.Map.Proto,
         in out vdm extends Verbatim.Decl.Map.Proto,
-    > extends Omit<CompatibleEngine.Options<fdm, vdm>, 'throttle' | keyof EndpointSpec> {
+    > extends Omit<CompatibleEngine.Options<fdm, vdm>, 'endpointSpec' | 'throttle'> {
         endpoint: string;
     }
 
     export interface OpenAIResponsesNativeEngineOptions<
         in out fdm extends Function.Decl.Map.Proto,
         in out vdm extends Verbatim.Decl.Map.Proto,
-     > extends Omit<OpenAIResponsesNativeEngine.Options<fdm, vdm>, 'throttle' | keyof EndpointSpec> {
+     > extends Omit<OpenAIResponsesNativeEngine.Options<fdm, vdm>, 'endpointSpec' | 'throttle'> {
         endpoint: string;
     }
 
     export interface GoogleNativeEngineOptions<
         in out fdm extends Function.Decl.Map.Proto,
         in out vdm extends Verbatim.Decl.Map.Proto,
-    > extends Omit<GoogleNativeEngine.Options<fdm, vdm>, 'throttle' | keyof EndpointSpec> {
+    > extends Omit<GoogleNativeEngine.Options<fdm, vdm>, 'endpointSpec' | 'throttle'> {
         endpoint: string;
     }
 }

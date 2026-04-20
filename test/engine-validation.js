@@ -90,16 +90,19 @@ test('Engine stateful retries validator rejection without mutating session by de
     class FakeEngine extends Engine.Instance {
         constructor(responses, structuringValidator, partsValidator) {
             super({
-                name: 'Fake Engine',
-                baseUrl: 'https://example.invalid/fake',
-                apiKey: 'test-key',
-                model: 'test-model',
                 throttle: new Throttle(Number.POSITIVE_INFINITY),
+                endpointSpec: {
+                    name: 'Fake Engine',
+                    baseUrl: 'https://example.invalid/fake',
+                    apiKey: 'test-key',
+                    model: 'test-model',
+                    apiType: 'openai-responses',
+                    parallelToolCall: false,
+                },
                 functionDeclarationMap,
                 verbatimDeclarationMap,
-                retry: 1,
+                inferenceRetry: 1,
             });
-            this.parallelToolCall = false;
             this.structuringValidator = structuringValidator;
             this.partsValidator = partsValidator;
             this.transport = {
@@ -157,16 +160,19 @@ test('Engine Recoverable middleware appends validator rejection into session his
     class FakeEngine extends Engine.Instance {
         constructor(responses, structuringValidator, partsValidator) {
             super({
-                name: 'Fake Engine',
-                baseUrl: 'https://example.invalid/fake',
-                apiKey: 'test-key',
-                model: 'test-model',
                 throttle: new Throttle(Number.POSITIVE_INFINITY),
+                endpointSpec: {
+                    name: 'Fake Engine',
+                    baseUrl: 'https://example.invalid/fake',
+                    apiKey: 'test-key',
+                    model: 'test-model',
+                    apiType: 'openai-responses',
+                    parallelToolCall: false,
+                },
                 functionDeclarationMap,
                 verbatimDeclarationMap,
-                retry: 1,
+                inferenceRetry: 1,
             });
-            this.parallelToolCall = false;
             this.structuringValidator = structuringValidator;
             this.partsValidator = partsValidator;
             this.transport = {
