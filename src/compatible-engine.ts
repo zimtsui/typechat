@@ -67,4 +67,14 @@ export namespace CompatibleEngine {
     export import StructuringValidator = ValidationModule.StructuringValidator;
     export import PartsValidator = ValidationModule.PartsValidator;
     export import Structuring = StructuringModule.Structuring;
+    export type Middleware<
+        fdm extends Function.Decl.Map.Proto,
+        vdm extends Verbatim.Decl.Map.Proto,
+    > = Engine.Middleware<
+        CompatibleEngine.RoleMessage.User.From<fdm>,
+        CompatibleEngine.RoleMessage.Ai.From<fdm, vdm>,
+        CompatibleEngine.RoleMessage.Developer,
+        CompatibleEngine.Session.From<fdm, vdm>
+    >;
+
 }

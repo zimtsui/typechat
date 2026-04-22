@@ -114,4 +114,13 @@ export namespace OpenAIResponsesNativeEngine {
     export import Transport = TransportModule.Transport;
     export import StructuringValidator = ValidationModule.StructuringValidator;
     export import PartsValidator = ValidationModule.PartsValidator;
+    export type Middleware<
+        fdm extends Function.Decl.Map.Proto,
+        vdm extends Verbatim.Decl.Map.Proto,
+    > = Engine.Middleware<
+        OpenAIResponsesNativeEngine.RoleMessage.User.From<fdm>,
+        OpenAIResponsesNativeEngine.RoleMessage.Ai.From<fdm, vdm>,
+        OpenAIResponsesNativeEngine.RoleMessage.Developer,
+        OpenAIResponsesNativeEngine.Session.From<fdm, vdm>
+    >;
 }

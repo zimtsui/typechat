@@ -204,13 +204,13 @@ export namespace Engine {
 
         protected middlewares: Middleware<userm, aim, devm, session>[] = [];
         public use(middleware: Middleware<userm, aim, devm, session>): Engine<fdm, vdm, userm, aim, devm, session> {
-            const engine = this.clone();
+            const engine = this.clone() as ReturnType<typeof this['clone']>;
             engine.middlewares.push(middleware);
             return engine;
         }
         protected statefulMiddlewares: Middleware<userm, aim, devm, session>[] = [];
-        public statefulUse(middleware: Middleware<userm, aim, devm, session>): Engine<fdm, vdm, userm, aim, devm, session> {
-            const engine = this.clone();
+        public statefulUse(middleware: Middleware<userm, aim, devm, session>): ReturnType<typeof this['clone']> {
+            const engine = this.clone() as ReturnType<typeof this['clone']>;
             engine.statefulMiddlewares.push(middleware);
             return engine;
         }

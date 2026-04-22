@@ -135,4 +135,13 @@ export namespace GoogleNativeEngine {
     export import StructuringValidator = ValidationModule.StructuringValidator;
     export import PartsValidator = ValidationModule.PartsValidator;
     export import MessageCodec = MessageCodecModule.MessageCodec;
+    export type Middleware<
+        fdm extends Function.Decl.Map.Proto,
+        vdm extends Verbatim.Decl.Map.Proto,
+    > = Engine.Middleware<
+        GoogleNativeEngine.RoleMessage.User.From<fdm>,
+        GoogleNativeEngine.RoleMessage.Ai.From<fdm, vdm>,
+        GoogleNativeEngine.RoleMessage.Developer,
+        GoogleNativeEngine.Session.From<fdm, vdm>
+    >;
 }
