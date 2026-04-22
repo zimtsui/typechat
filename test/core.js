@@ -70,29 +70,27 @@ test('Throttle acquires and releases busy lock when rpm is finite', async t => {
 
 test('Adaptor creates compatible engines matching endpoint apiType', t => {
     const adaptor = Adaptor.create({
-        typechat: {
-            endpoints: {
-                openai: {
-                    apiType: 'openai-responses',
-                    baseUrl: 'https://example.invalid/openai',
-                    apiKey: 'test-key',
-                    model: 'test-model',
-                    name: 'OpenAI Compatible',
-                },
-                google: {
-                    apiType: 'google',
-                    baseUrl: 'https://example.invalid/google',
-                    apiKey: 'test-key',
-                    model: 'test-model',
-                    name: 'Google Compatible',
-                },
-                openaiChatCompletions: {
-                    apiType: 'openai-chatcompletions',
-                    baseUrl: 'https://example.invalid/openai-chatcompletions',
-                    apiKey: 'test-key',
-                    model: 'test-model',
-                    name: 'OpenAI Chat Completions Compatible',
-                },
+        endpoints: {
+            openai: {
+                apiType: 'openai-responses',
+                baseUrl: 'https://example.invalid/openai',
+                apiKey: 'test-key',
+                model: 'test-model',
+                name: 'OpenAI Compatible',
+            },
+            google: {
+                apiType: 'google',
+                baseUrl: 'https://example.invalid/google',
+                apiKey: 'test-key',
+                model: 'test-model',
+                name: 'Google Compatible',
+            },
+            openaiChatCompletions: {
+                apiType: 'openai-chatcompletions',
+                baseUrl: 'https://example.invalid/openai-chatcompletions',
+                apiKey: 'test-key',
+                model: 'test-model',
+                name: 'OpenAI Chat Completions Compatible',
             },
         },
     });
@@ -120,22 +118,20 @@ test('Adaptor creates compatible engines matching endpoint apiType', t => {
 
 test('Adaptor creates native engines matching endpoint apiType', t => {
     const adaptor = Adaptor.create({
-        typechat: {
-            endpoints: {
-                openai: {
-                    apiType: 'openai-responses',
-                    baseUrl: 'https://example.invalid/openai',
-                    apiKey: 'test-key',
-                    model: 'test-model',
-                    name: 'OpenAI Native',
-                },
-                google: {
-                    apiType: 'google',
-                    baseUrl: 'https://example.invalid/google',
-                    apiKey: 'test-key',
-                    model: 'test-model',
-                    name: 'Google Native',
-                },
+        endpoints: {
+            openai: {
+                apiType: 'openai-responses',
+                baseUrl: 'https://example.invalid/openai',
+                apiKey: 'test-key',
+                model: 'test-model',
+                name: 'OpenAI Native',
+            },
+            google: {
+                apiType: 'google',
+                baseUrl: 'https://example.invalid/google',
+                apiKey: 'test-key',
+                model: 'test-model',
+                name: 'Google Native',
             },
         },
     });
@@ -157,9 +153,7 @@ test('Adaptor creates native engines matching endpoint apiType', t => {
 
 test('Adaptor rejects unknown endpoint ids', t => {
     const adaptor = Adaptor.create({
-        typechat: {
-            endpoints: {},
-        },
+        endpoints: {},
     });
 
     const error = t.throws(() => adaptor.makeCompatibleEngine({
@@ -173,16 +167,14 @@ test('Adaptor rejects unknown endpoint ids', t => {
 
 test('Google native engine rejects disabling parallel tool calls', t => {
     const adaptor = Adaptor.create({
-        typechat: {
-            endpoints: {
-                google: {
-                    apiType: 'google',
-                    baseUrl: 'https://example.invalid/google',
-                    apiKey: 'test-key',
-                    model: 'test-model',
-                    name: 'Google Native',
-                    parallelToolCall: false,
-                },
+        endpoints: {
+            google: {
+                apiType: 'google',
+                baseUrl: 'https://example.invalid/google',
+                apiKey: 'test-key',
+                model: 'test-model',
+                name: 'Google Native',
+                parallelToolCall: false,
             },
         },
     });
@@ -198,15 +190,13 @@ test('Google native engine rejects disabling parallel tool calls', t => {
 
 test('Google compatible engine allows omitted parallel tool call option', t => {
     const adaptor = Adaptor.create({
-        typechat: {
-            endpoints: {
-                google: {
-                    apiType: 'google',
-                    baseUrl: 'https://example.invalid/google',
-                    apiKey: 'test-key',
-                    model: 'test-model',
-                    name: 'Google Compatible',
-                },
+        endpoints: {
+            google: {
+                apiType: 'google',
+                baseUrl: 'https://example.invalid/google',
+                apiKey: 'test-key',
+                model: 'test-model',
+                name: 'Google Compatible',
             },
         },
     });
@@ -222,15 +212,13 @@ test('Google compatible engine allows omitted parallel tool call option', t => {
 
 test('Google native engine allows omitted parallel tool call option', t => {
     const adaptor = Adaptor.create({
-        typechat: {
-            endpoints: {
-                google: {
-                    apiType: 'google',
-                    baseUrl: 'https://example.invalid/google',
-                    apiKey: 'test-key',
-                    model: 'test-model',
-                    name: 'Google Native',
-                },
+        endpoints: {
+            google: {
+                apiType: 'google',
+                baseUrl: 'https://example.invalid/google',
+                apiKey: 'test-key',
+                model: 'test-model',
+                name: 'Google Native',
             },
         },
     });
