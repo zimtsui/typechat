@@ -1,8 +1,7 @@
+import { Parse, ParseError } from 'typebox/schema';
 import { Function } from '../../function.ts';
 import OpenAI from 'openai';
-import Ajv from 'ajv';
 
-const ajv = new Ajv();
 
 
 export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
@@ -37,8 +36,13 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
                 throw new SyntaxError('Invalid JSON of function call', { cause: apifc });
             }
         })();
-        if (ajv.validate(fditem.parameters, args)) {}
-        else throw new SyntaxError('Invalid function arguments', { cause: apifc });
+        try {
+            Parse(fditem.parameters, args);
+        } catch (e) {
+            if (e instanceof ParseError)
+                throw new SyntaxError('Invalid arguments of function call.', { cause: e });
+            else throw e;
+        }
         return Function.Call.of({
             id: apifc.id,
             name: apifc.function.name,
@@ -75,7 +79,7 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
                 name: fdentry[0],
                 description: fdentry[1].description,
                 strict: true,
-                parameters: fdentry[1].parameters,
+                parameters: fdentry[1].parameters as unknown as OpenAI.FunctionParameters,
             },
         };
     }

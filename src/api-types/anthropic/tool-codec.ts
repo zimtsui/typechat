@@ -1,9 +1,8 @@
 import { Function } from '../../function.ts';
 import Anthropic from '@anthropic-ai/sdk';
-import Ajv from 'ajv';
-import { type TObject } from '@sinclair/typebox';
+import { type TObject } from 'typebox';
+import { Parse, ParseError } from 'typebox/schema';
 
-const ajv = new Ajv();
 
 
 export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
@@ -23,8 +22,13 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
     ): Function.Call.From<fdm> {
         const fditem = this.fdm[apifc.name];
         if (fditem) {} else throw new SyntaxError('Unknown function call', { cause: apifc });
-        if (ajv.validate(fditem.parameters, apifc.input)) {}
-        else throw new SyntaxError('Function call not conforming to schema', { cause: apifc });
+        try {
+            Parse(fditem.parameters, apifc.input);
+        } catch (e) {
+            if (e instanceof ParseError)
+                throw new SyntaxError('Invalid arguments of function call.', { cause: e });
+            else throw e;
+        }
         return Function.Call.of({
             id: apifc.id,
             name: apifc.name,
@@ -57,7 +61,7 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
         return {
             name: fdentry[0],
             description: fdentry[1].description,
-            input_schema: fdentry[1].parameters satisfies TObject,
+            input_schema: fdentry[1].parameters as unknown as Anthropic.Tool.InputSchema,
         };
     }
 

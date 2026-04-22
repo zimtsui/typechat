@@ -1,5 +1,5 @@
 import test from 'ava';
-import { Type } from '@sinclair/typebox';
+import { Type } from 'typebox';
 import { MIMEType } from 'whatwg-mimetype';
 import { Function } from '../build/function.js';
 import { Media } from '../build/media.js';

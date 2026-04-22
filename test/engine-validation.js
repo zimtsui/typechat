@@ -1,5 +1,5 @@
 import test from 'ava';
-import { Type } from '@sinclair/typebox';
+import { Type } from 'typebox';
 import { MIMEType } from 'whatwg-mimetype';
 import { Throttle } from '../build/throttle.js';
 import { Engine, Recoverable } from '../build/engine.js';

@@ -1,6 +1,5 @@
-import { Type } from '@sinclair/typebox';
+import { Type, type Static } from 'typebox';
 import { EndpointSpec } from './endpoint-spec.ts';
-import { type Static } from '@sinclair/typebox';
 
 
 export type Config = Static<typeof Config.schema>;

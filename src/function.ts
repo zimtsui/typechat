@@ -1,4 +1,4 @@
-import { type Static, type TObject, type TSchema } from '@sinclair/typebox';
+import { type Static, type TObject, type TSchema } from 'typebox';
 
 const NOMINAL = Symbol();
 

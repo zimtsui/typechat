@@ -1,5 +1,5 @@
 import test from 'ava';
-import { Type } from '@sinclair/typebox';
+import { Type } from 'typebox';
 import { Adaptor } from '../build/adaptor.js';
 import { Throttle } from '../build/throttle.js';
 import { OpenAIResponsesCompatibleEngine } from '../build/compatible-engine.d/openai-responses.js';

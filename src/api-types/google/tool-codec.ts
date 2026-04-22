@@ -1,8 +1,6 @@
 import { Function } from '../../function.ts';
 import * as Google from '@google/genai';
-import Ajv from 'ajv';
-
-const ajv = new Ajv();
+import { Parse, ParseError } from 'typebox/schema';
 
 
 
@@ -30,23 +28,10 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
     protected encodeFunctionDeclarationEntry(
         fdentry: Function.Decl.Entry.From<fdm>,
     ): Google.FunctionDeclaration {
-        const json = JSON.stringify(fdentry[1].parameters);
-        const parsed: Google.Schema = JSON.parse(json, (key, value) => {
-            if (key === 'type' && typeof value === 'string') {
-                if (value === 'string') return Google.Type.STRING;
-                else if (value === 'number') return Google.Type.NUMBER;
-                else if (value === 'boolean') return Google.Type.BOOLEAN;
-                else if (value === 'object') return Google.Type.OBJECT;
-                else if (value === 'array') return Google.Type.ARRAY;
-                else throw new Error();
-            } else if (key === 'additionalProperties' && typeof value === 'boolean')
-                return;
-            else return value;
-        });
         return {
             name: fdentry[0],
             description: fdentry[1].description,
-            parameters: parsed,
+            parameters: fdentry[1].parameters as unknown as Google.Schema,
         };
     }
 
@@ -56,8 +41,13 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
         if (googlefc.name) {} else throw new Error();
         const fditem = this.fdm[googlefc.name];
         if (fditem) {} else throw new SyntaxError('Unknown function call', { cause: googlefc });
-        if (ajv.validate(fditem.parameters, googlefc.args)) {}
-        else throw new SyntaxError('Function call not conforming to schema', { cause: googlefc });
+        try {
+            Parse(fditem.parameters, googlefc.args);
+        } catch (e) {
+            if (e instanceof ParseError)
+                throw new SyntaxError('Invalid arguments of function call.', { cause: e });
+            else throw e;
+        }
         return Function.Call.of({
             id: googlefc.id,
             name: googlefc.name,
