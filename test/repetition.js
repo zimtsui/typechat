@@ -7,13 +7,18 @@ const synthetic = fs.readFileSync(new URL('./repetition/synthetic.txt', import.m
 const diverse = Array.from({ length: 256 }, (_, i) => String.fromCharCode(i + 1)).join('');
 
 test('isRepeating detects strong literal repetition', t => {
-    t.true(isRepeating('a'.repeat(256)));
-    t.true(isRepeating('ab'.repeat(128)));
+    t.true(isRepeating('a'.repeat(1024)));
+    t.true(isRepeating('ab'.repeat(512)));
 });
 
 test('isRepeating rejects diverse text', t => {
     t.false(isRepeating(diverse));
-    t.true(isRepeating('0123456789abcdef'.repeat(16)));
+    t.false(isRepeating('0123456789abcdef'.repeat(16)));
+});
+
+test('isRepeating requires sufficiently long text', t => {
+    t.false(isRepeating('a'.repeat(1023)));
+    t.false(isRepeating('ab'.repeat(128)));
 });
 
 test('isRepeating uses default threshold', t => {

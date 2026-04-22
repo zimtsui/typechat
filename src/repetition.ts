@@ -1,5 +1,7 @@
 
-export function isRepeating(str: string, threshold = .9): boolean { return diversity(str) < threshold; }
+export function isRepeating(str: string, threshold = .9): boolean {
+    return str.length >= 1024 && diversity(str) < threshold;
+}
 
 export function diversity(str: string): number {
     const sa = makeSuffixArray(str);
