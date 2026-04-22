@@ -18,8 +18,8 @@ export class Adaptor {
 
     protected throttles = new Map<string, Throttle>();
     protected constructor(public config: Config) {
-        for (const endpointId in this.config.typechat.endpoints) {
-            const rpm = this.config.typechat.endpoints[endpointId]!.rpm ?? Number.POSITIVE_INFINITY;
+        for (const endpointId in this.config.endpoints) {
+            const rpm = this.config.endpoints[endpointId]!.rpm ?? Number.POSITIVE_INFINITY;
             this.throttles.set(endpointId, new Throttle(rpm));
         }
     }
@@ -28,7 +28,7 @@ export class Adaptor {
         fdm extends Function.Decl.Map.Proto,
         vdm extends Verbatim.Decl.Map.Proto,
     >(adaptorOptions: Adaptor.CompatibleEngineOptions<fdm, vdm>): CompatibleEngine<fdm, vdm> {
-        const endpointSpec = this.config.typechat.endpoints[adaptorOptions.endpoint];
+        const endpointSpec = this.config.endpoints[adaptorOptions.endpoint];
         if (endpointSpec) {} else throw new Error();
         const throttle = this.throttles.get(adaptorOptions.endpoint);
         if (throttle) {} else throw new Error();
@@ -52,7 +52,7 @@ export class Adaptor {
         fdm extends Function.Decl.Map.Proto,
         vdm extends Verbatim.Decl.Map.Proto,
     >(adaptorOptions: Adaptor.OpenAIResponsesNativeEngineOptions<fdm, vdm>): OpenAIResponsesNativeEngine<fdm, vdm> {
-        const endpointSpec = this.config.typechat.endpoints[adaptorOptions.endpoint];
+        const endpointSpec = this.config.endpoints[adaptorOptions.endpoint];
         if (endpointSpec?.apiType === 'openai-responses') {} else throw new Error();
         const throttle = this.throttles.get(adaptorOptions.endpoint);
         if (throttle) {} else throw new Error();
@@ -68,7 +68,7 @@ export class Adaptor {
         fdm extends Function.Decl.Map.Proto,
         vdm extends Verbatim.Decl.Map.Proto,
     >(adaptorOptions: Adaptor.GoogleNativeEngineOptions<fdm, vdm>): GoogleNativeEngine<fdm, vdm> {
-        const endpointSpec = this.config.typechat.endpoints[adaptorOptions.endpoint];
+        const endpointSpec = this.config.endpoints[adaptorOptions.endpoint];
         if (endpointSpec?.apiType === 'google') {} else throw new Error();
         const throttle = this.throttles.get(adaptorOptions.endpoint);
         if (throttle) {} else throw new Error();

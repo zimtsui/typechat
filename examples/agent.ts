@@ -1,5 +1,5 @@
 import { Adaptor, agentloop, RoleMessage, Function, type Session, Structuring } from '@zimtsui/typechat';
-import { Type } from '@sinclair/typebox';
+import { Type } from 'typebox';
 import { config } from './config.ts';
 
 // 声明函数工具
