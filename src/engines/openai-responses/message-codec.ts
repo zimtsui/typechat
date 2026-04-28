@@ -39,8 +39,8 @@ export class MessageCodec<
             if (item.type === 'message')
                 for (const part of item.content)
                     if (part.type === 'output_text') {
-                        const vrs = VerbatimCodec.Request.decode(part.text, this.vdm);
-                        parts.push(new RoleMessage.Ai.Part.Text(part.text, vrs));
+                        const vreqs = VerbatimCodec.Request.decode(part.text, this.vdm);
+                        parts.push(new RoleMessage.Ai.Part.Text(part.text, vreqs));
                     } else if (part.type === 'refusal')
                         throw new SyntaxError('Refusal', { cause: output });
                     else throw new Error();
@@ -87,9 +87,9 @@ export class MessageCodec<
                     file_data: `data:${part.mimeType};base64,${part.base64}`,
                 });
             else if (part instanceof Function.Response) {
-                const fr = part as Function.Response.From<fdm>;
+                const fres = part as Function.Response.From<fdm>;
                 flush();
-                responseInput.push(this.toolCodec.encodeFunctionResponse(fr));
+                responseInput.push(this.toolCodec.encodeFunctionResponse(fres));
             } else if (part instanceof Tool.ApplyPatch.Response) {
                 flush();
                 responseInput.push({
@@ -122,8 +122,8 @@ export class MessageCodec<
                     content: part.text,
                 });
             else if (part instanceof Function.Call) {
-                const fc = part as Function.Call.From<fdm>;
-                responseInput.push(this.toolCodec.encodeFunctionCall(fc));
+                const fcall = part as Function.Call.From<fdm>;
+                responseInput.push(this.toolCodec.encodeFunctionCall(fcall));
             }
             else throw new Error('Unknown AI message part type', { cause: part });
         }

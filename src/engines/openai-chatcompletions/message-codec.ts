@@ -23,8 +23,8 @@ export class MessageCodec<
     ): RoleMessage.Ai.From<fdm, vdm> {
         const parts: unknown[] = [];
         if (message.content) {
-            const vrs = VerbatimCodec.Request.decode(message.content, this.vdm);
-            parts.push(new RoleMessage.Ai.Part.Text(message.content, vrs));
+            const vreqs = VerbatimCodec.Request.decode(message.content, this.vdm);
+            parts.push(new RoleMessage.Ai.Part.Text(message.content, vreqs));
         }
         if (message.tool_calls)
             for (const apifc of message.tool_calls)
@@ -51,11 +51,11 @@ export class MessageCodec<
                 const textPart = part;
                 textParts.push(textPart);
             }
-        const frs = userMessage.getFunctionResponses();
-        if (textParts.length && !frs.length)
+        const fress = userMessage.getFunctionResponses();
+        if (textParts.length && !fress.length)
             return [{ role: 'user', content: textParts.map(part => ({ type: 'text', text: part.text })) }];
-        else if (!textParts.length && frs.length)
-            return frs.map(fr => this.toolCodec.encodeFunctionResponse(fr));
+        else if (!textParts.length && fress.length)
+            return fress.map(fres => this.toolCodec.encodeFunctionResponse(fres));
         else throw new Error('Unsupported user message type.');
     }
 
@@ -70,14 +70,14 @@ export class MessageCodec<
                 const textPart = part as RoleMessage.Ai.Part.Text.From<vdm>;
                 textParts.push(textPart);
             } else if (part instanceof Function.Call) {
-                const fc = part as Function.Call.From<fdm>;
-                fcParts.push(fc);
+                const fcall = part as Function.Call.From<fdm>;
+                fcParts.push(fcall);
             }
         }
         return {
             role: 'assistant',
             content: textParts.length ? textParts.map(part => part.text).join('') : undefined,
-            tool_calls: fcParts.length ? fcParts.map(fc => this.toolCodec.encodeFunctionCall(fc)) : undefined,
+            tool_calls: fcParts.length ? fcParts.map(fcall => this.toolCodec.encodeFunctionCall(fcall)) : undefined,
         };
     }
 

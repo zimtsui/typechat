@@ -74,26 +74,26 @@ export namespace RoleMessage {
             return this.getTextParts().map(part => part.text).join('');
         }
         public getFunctionCalls(): Function.Call.Of<fdu>[] {
-            const fcs: Function.Call.Of<fdu>[] = [];
+            const fcalls: Function.Call.Of<fdu>[] = [];
             for (const part of this.parts)
                 if (part instanceof Function.Call) {
-                    const fc = part as Function.Call.Of<fdu>;
-                    fcs.push(fc);
+                    const fcall = part as Function.Call.Of<fdu>;
+                    fcalls.push(fcall);
                 }
-            return fcs;
+            return fcalls;
         }
         public getVerbatimRequests(): Verbatim.Request.Of<vdu>[] {
-            return this.getTextParts().flatMap(part => part.vrs);
+            return this.getTextParts().flatMap(part => part.vreqs);
         }
         public getOnlyFunctionCall(): Function.Call.Of<fdu> {
-            const fcs = this.getFunctionCalls();
-            if (fcs.length === 1) {} else throw new Error();
-            return fcs[0]!;
+            const fcalls = this.getFunctionCalls();
+            if (fcalls.length === 1) {} else throw new Error();
+            return fcalls[0]!;
         }
         public getOnlyVerbatimRequest(): Verbatim.Request.Of<vdu> {
-            const vrs = this.getVerbatimRequests();
-            if (vrs.length === 1) {} else throw new Error();
-            return vrs[0]!;
+            const vreqs = this.getVerbatimRequests();
+            if (vreqs.length === 1) {} else throw new Error();
+            return vreqs[0]!;
         }
     }
     export namespace Ai {
@@ -112,7 +112,7 @@ export namespace RoleMessage {
                 }
                 public constructor(
                     public text: string,
-                    public vrs: Verbatim.Request.Of<vdu>[],
+                    public vreqs: Verbatim.Request.Of<vdu>[],
                 ) {}
             }
             export namespace Text {
@@ -133,20 +133,20 @@ export namespace RoleMessage {
             return this.parts;
         }
         public getFunctionResponses(): Function.Response.Of<fdu>[] {
-            const frs: Function.Response.Of<fdu>[] = [];
+            const fress: Function.Response.Of<fdu>[] = [];
             for (const part of this.parts)
                 if (part instanceof Function.Response) {
-                    const fr = part as Function.Response.Of<fdu>;
-                    frs.push(fr);
+                    const fres = part as Function.Response.Of<fdu>;
+                    fress.push(fres);
                 }
-            return frs;
+            return fress;
         }
         public getOnlyFunctionResponse(): Function.Response.Of<fdu> {
             if (this.parts.length === 1) {} else throw new Error();
             const part = this.parts[0]!;
             if (part instanceof Function.Response) {} else throw new Error();
-            const fr = part as Function.Response.Of<fdu>;
-            return fr;
+            const fres = part as Function.Response.Of<fdu>;
+            return fres;
         }
     }
     export namespace User {

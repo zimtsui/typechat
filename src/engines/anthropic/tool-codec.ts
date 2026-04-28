@@ -13,7 +13,7 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
     }
 
     public encodeFunctionCall(
-        fc: Function.Call.From<fdm>,
+        fcall: Function.Call.From<fdm>,
     ): Anthropic.ToolUseBlock {
         throw new Error('Anthropic engine requires native function calls.');
     }
@@ -38,20 +38,20 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
     }
 
     public encodeFunctionResponse(
-        fr: Function.Response.From<fdm>,
+        fres: Function.Response.From<fdm>,
     ): Anthropic.ToolResultBlockParam {
-        if (fr.id) {} else throw new Error();
-        if (fr instanceof Function.Response.Successful)
+        if (fres.id) {} else throw new Error();
+        if (fres instanceof Function.Response.Successful)
             return {
                 type: 'tool_result',
-                tool_use_id: fr.id,
-                content: fr.text,
+                tool_use_id: fres.id,
+                content: fres.text,
             };
-        else if (fr instanceof Function.Response.Failed)
+        else if (fres instanceof Function.Response.Failed)
             return {
                 type: 'tool_result',
-                tool_use_id: fr.id,
-                content: fr.error,
+                tool_use_id: fres.id,
+                content: fres.error,
             };
         else throw new Error();
     }
@@ -76,4 +76,3 @@ export namespace ToolCodec {
         fdm: fdm;
     }
 }
-

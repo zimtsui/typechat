@@ -18,30 +18,30 @@ export class StructuringValidator<
     public validate(
         aiMessage: RoleMessage.Ai<fdu, vdu>,
     ): RoleMessage.User<never> | void {
-        const fcs = aiMessage.getFunctionCalls();
-        const vrs = aiMessage.getVerbatimRequests();
-        return this.validateStructuring(fcs, vrs);
+        const fcalls = aiMessage.getFunctionCalls();
+        const vreqs = aiMessage.getVerbatimRequests();
+        return this.validateStructuring(fcalls, vreqs);
     }
 
     public validateStructuring(
-        fcs: Function.Call.Of<fdu>[],
-        vrs: Verbatim.Request.Of<vdu>[],
+        fcalls: Function.Call.Of<fdu>[],
+        vreqs: Verbatim.Request.Of<vdu>[],
     ): RoleMessage.User<never> | void {
         if (this.structuringChoice === StructuringChoice.FCall.REQUIRED) {
-            if (!fcs.length) throw new SyntaxError('Function call required.');
+            if (!fcalls.length) throw new SyntaxError('Function call required.');
 
         } else if (this.structuringChoice === StructuringChoice.FCall.ANYONE) {
-            if (!fcs.length) throw new SyntaxError('Function call required.');
-            if (fcs.length > 1) throw new SyntaxError('Only one function call allowed.');
+            if (!fcalls.length) throw new SyntaxError('Function call required.');
+            if (fcalls.length > 1) throw new SyntaxError('Only one function call allowed.');
 
         } else if (this.structuringChoice instanceof StructuringChoice.FCall) {
-            if (!fcs.length) throw new SyntaxError(`Function call of ${this.structuringChoice.name} required.`);
-            if (fcs.length > 1) throw new SyntaxError('Only one function call allowed.');
-            if (fcs[0]!.name !== this.structuringChoice.name)
+            if (!fcalls.length) throw new SyntaxError(`Function call of ${this.structuringChoice.name} required.`);
+            if (fcalls.length > 1) throw new SyntaxError('Only one function call allowed.');
+            if (fcalls[0]!.name !== this.structuringChoice.name)
                 throw new SyntaxError(`Only function call of ${this.structuringChoice.name} allowed.`);
 
         } else if (this.structuringChoice === StructuringChoice.VRequest.REQUIRED) {
-            if (!vrs.length)
+            if (!vreqs.length)
                 return new RoleMessage.User<never>([
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: No valid verbatim request found. Check your output format.`),
@@ -49,13 +49,13 @@ export class StructuringValidator<
                 ]);
 
         } else if (this.structuringChoice === StructuringChoice.VRequest.ANYONE) {
-            if (!vrs.length)
+            if (!vreqs.length)
                 return new RoleMessage.User<never>([
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: No valid verbatim request found. Check your output format.`),
                     ),
                 ]);
-            if (vrs.length > 1)
+            if (vreqs.length > 1)
                 return new RoleMessage.User<never>([
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: Only 1 verbatim request allowed, but multiple found.`),
@@ -63,19 +63,19 @@ export class StructuringValidator<
                 ]);
 
         } else if (this.structuringChoice instanceof StructuringChoice.VRequest) {
-            if (!vrs.length)
+            if (!vreqs.length)
                 return new RoleMessage.User<never>([
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: No valid verbatim request through channel \`${this.structuringChoice.name}\` found. Check your output format.`),
                     ),
                 ]);
-            if (vrs.length > 1)
+            if (vreqs.length > 1)
                 return new RoleMessage.User<never>([
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: Only 1 verbatim request through channel \`${this.structuringChoice.name}\` allowed.`),
                     ),
                 ]);
-            if (vrs[0]!.name !== this.structuringChoice.name)
+            if (vreqs[0]!.name !== this.structuringChoice.name)
                 return new RoleMessage.User<never>([
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: Only verbatim request through channel \`${this.structuringChoice.name}\` allowed.`),
@@ -83,7 +83,7 @@ export class StructuringValidator<
                 ]);
 
         } else if (this.structuringChoice === StructuringChoice.REQUIRED) {
-            if (fcs.length + vrs.length) {} else
+            if (fcalls.length + vreqs.length) {} else
                 return new RoleMessage.User<never>([
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: No function call or valid verbatim request found. Check your output format.`),
@@ -91,13 +91,13 @@ export class StructuringValidator<
                 ]);
 
         } else if (this.structuringChoice === StructuringChoice.ANYONE) {
-            if (fcs.length + vrs.length) {} else
+            if (fcalls.length + vreqs.length) {} else
                 return new RoleMessage.User<never>([
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: No function call or valid verbatim request found. Check your output format.`),
                     ),
                 ]);
-            if (fcs.length + vrs.length > 1)
+            if (fcalls.length + vreqs.length > 1)
                 return new RoleMessage.User<never>([
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: Only 1 function call or verbatim request allowed, but multiple found.`),
@@ -105,7 +105,7 @@ export class StructuringValidator<
                 ]);
 
         } else if (this.structuringChoice === StructuringChoice.NONE) {
-            if (fcs.length + vrs.length)
+            if (fcalls.length + vreqs.length)
                 return new RoleMessage.User<never>([
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: Neither function call nor verbatim request allowed.`),

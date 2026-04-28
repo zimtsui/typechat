@@ -14,12 +14,12 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
     }
 
     public encodeFunctionCall(
-        fc: Function.Call.From<fdm>,
+        fcall: Function.Call.From<fdm>,
     ): Google.FunctionCall {
         return {
-            id: fc.id,
-            name: fc.name,
-            args: fc.args satisfies Record<string, unknown>,
+            id: fcall.id,
+            name: fcall.name,
+            args: fcall.args satisfies Record<string, unknown>,
         };
     }
 
@@ -58,12 +58,12 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
     }
 
     public encodeFunctionResponse(
-        fr: Function.Response.From<fdm>,
+        fres: Function.Response.From<fdm>,
     ): Google.Part {
-        if (fr instanceof Function.Response.Successful) return {
-            functionResponse: { id: fr.id, name: fr.name, response: { output: fr.text } },
-        }; else if (fr instanceof Function.Response.Failed) return {
-            functionResponse: { id: fr.id, name: fr.name, response: { error: fr.error } },
+        if (fres instanceof Function.Response.Successful) return {
+            functionResponse: { id: fres.id, name: fres.name, response: { output: fres.text } },
+        }; else if (fres instanceof Function.Response.Failed) return {
+            functionResponse: { id: fres.id, name: fres.name, response: { error: fres.error } },
         }; else throw new Error();
     }
 

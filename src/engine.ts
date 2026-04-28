@@ -253,37 +253,37 @@ export namespace Engine {
                     if (part instanceof RoleMessage.Ai.Part.Text) {
                         yield part.text;
                     } else if (part instanceof Function.Call) {
-                        const fc = part as Function.Call.From<fdm>;
-                        const f = fnm[fc.name];
+                        const fcall = part as Function.Call.From<fdm>;
+                        const f = fnm[fcall.name];
                         pfrs.push((async () => {
                             try {
                                 return Function.Response.Successful.of({
-                                    id: fc.id,
-                                    name: fc.name,
-                                    text: await f.call(fnm, fc.args),
+                                    id: fcall.id,
+                                    name: fcall.name,
+                                    text: await f.call(fnm, fcall.args),
                                 } as Function.Response.Successful.Options.From<fdm>);
                             } catch (e) {
                                 if (e instanceof Function.Error) {} else throw e;
                                 return Function.Response.Failed.of({
-                                    id: fc.id,
-                                    name: fc.name,
+                                    id: fcall.id,
+                                    name: fcall.name,
                                     error: e.message,
                                 } as Function.Response.Failed.Options.From<fdm>);
                             }
                         })());
                     } else if (part instanceof Verbatim.Request) {
-                        const vr = part as Verbatim.Request.From<vdm>;
-                        const vh = vhm[vr.name];
+                        const vreq = part as Verbatim.Request.From<vdm>;
+                        const vh = vhm[vreq.name];
                         pvss.push((async () => {
                             return new RoleMessage.User.Part.Text(
-                                await vh.call(vhm, vr.args),
+                                await vh.call(vhm, vreq.args),
                             );
                         })());
                     } else throw new Error();
                 }
-                const frs: Function.Response.From<fdm>[] = await Promise.all(pfrs);
-                const vss: RoleMessage.User.Part.Text[] = await Promise.all(pvss);
-                this.pushUserMessage(session, new RoleMessage.User([...frs, ...vss]));
+                const fress: Function.Response.From<fdm>[] = await Promise.all(pfrs);
+                const vress: RoleMessage.User.Part.Text[] = await Promise.all(pvss);
+                this.pushUserMessage(session, new RoleMessage.User([...fress, ...vress]));
             }
             throw new Engine.FunctionCallLimitExceeded('Function call limit exceeded.');
         }

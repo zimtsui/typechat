@@ -96,28 +96,28 @@ export namespace OpenAIResponsesEngine {
                     if (part instanceof NativeRoleMessage.Ai.Part.Text) {
                         yield part.text;
                     } else if (part instanceof Function.Call) {
-                        const fc = part as Function.Call.From<fdm>;
-                        const f = fnm[fc.name];
+                        const fcall = part as Function.Call.From<fdm>;
+                        const f = fnm[fcall.name];
                         pfrs.push((async () => {
                             try {
                                 return Function.Response.Successful.of({
-                                    id: fc.id,
-                                    name: fc.name,
-                                    text: await f.call(fnm, fc.args),
+                                    id: fcall.id,
+                                    name: fcall.name,
+                                    text: await f.call(fnm, fcall.args),
                                 } as Function.Response.Successful.Options.From<fdm>);
                             } catch (e) {
                                 if (e instanceof Function.Error) {} else throw e;
                                 return Function.Response.Failed.of({
-                                    id: fc.id,
-                                    name: fc.name,
+                                    id: fcall.id,
+                                    name: fcall.name,
                                     error: e.message,
                                 } as Function.Response.Failed.Options.From<fdm>);
                             }
                         })());
                     } else if (part instanceof Verbatim.Request) {
-                        const vr = part as Verbatim.Request.From<vdm>;
-                        const vh = vhm[vr.name];
-                        pvss.push((async () => new NativeRoleMessage.User.Part.Text(await vh.call(vhm, vr.args)))());
+                        const vreq = part as Verbatim.Request.From<vdm>;
+                        const vh = vhm[vreq.name];
+                        pvss.push((async () => new NativeRoleMessage.User.Part.Text(await vh.call(vhm, vreq.args)))());
                     } else if (part instanceof Tool.ApplyPatch.Call) {
                         if (applyPatch) {} else throw new Error('Apply patch handler missing.');
                         paprs.push((async () => new Tool.ApplyPatch.Response({
@@ -126,10 +126,10 @@ export namespace OpenAIResponsesEngine {
                         }))());
                     } else throw new Error();
                 }
-                const frs = await Promise.all(pfrs);
-                const vss = await Promise.all(pvss);
+                const fress = await Promise.all(pfrs);
+                const vress = await Promise.all(pvss);
                 const aprs = await Promise.all(paprs);
-                this.pushUserMessage(session, new RoleMessage.User([...frs, ...vss, ...aprs]));
+                this.pushUserMessage(session, new RoleMessage.User([...fress, ...vress, ...aprs]));
             }
             throw new Engine.FunctionCallLimitExceeded('Function call limit exceeded.');
         }

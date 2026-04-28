@@ -26,7 +26,7 @@ export class StructuringValidator<
             const roleMessage = message as RoleMessage.Ai<fdu, vdu>;
             tcs = roleMessage.getFunctionCalls();
         }
-        const vrs = message.getVerbatimRequests();
+        const vreqs = message.getVerbatimRequests();
 
         if (this.structuringChoice === OpenAIResponsesStructuringChoice.TCall.REQUIRED) {
             if (!tcs.length) throw new SyntaxError('Tool call required.');
@@ -40,13 +40,13 @@ export class StructuringValidator<
             if (tcs.length > 1) throw new SyntaxError('Only one function call allowed.');
             const tc = tcs[0]!;
             if (tc instanceof Function.Call) {
-                const fc = tc as Function.Call.Of<fdu>;
-                if (fc.name === this.structuringChoice.name) {} else
+                const fcall = tc as Function.Call.Of<fdu>;
+                if (fcall.name === this.structuringChoice.name) {} else
                     throw new SyntaxError(`Only function call of ${this.structuringChoice.name} allowed.`);
             } else throw new SyntaxError(`Only function call of ${this.structuringChoice.name} allowed.`);
 
         } else if (this.structuringChoice === OpenAIResponsesStructuringChoice.VRequest.REQUIRED) {
-            if (!vrs.length)
+            if (!vreqs.length)
                 return new RoleMessage.User<never>([
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: No valid verbatim request found. Check your output format.`),
@@ -54,13 +54,13 @@ export class StructuringValidator<
                 ]);
 
         } else if (this.structuringChoice === OpenAIResponsesStructuringChoice.VRequest.ANYONE) {
-            if (!vrs.length)
+            if (!vreqs.length)
                 return new RoleMessage.User<never>([
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: No valid verbatim request found. Check your output format.`),
                     ),
                 ]);
-            if (vrs.length > 1)
+            if (vreqs.length > 1)
                 return new RoleMessage.User<never>([
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: Only 1 verbatim request allowed, but multiple found.`),
@@ -68,19 +68,19 @@ export class StructuringValidator<
                 ]);
 
         } else if (this.structuringChoice instanceof OpenAIResponsesStructuringChoice.VRequest) {
-            if (!vrs.length)
+            if (!vreqs.length)
                 return new RoleMessage.User<never>([
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: No valid verbatim request through channel \`${this.structuringChoice.name}\` found. Check your output format.`),
                     ),
                 ]);
-            if (vrs.length > 1)
+            if (vreqs.length > 1)
                 return new RoleMessage.User<never>([
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: Only 1 verbatim request through channel \`${this.structuringChoice.name}\` allowed.`),
                     ),
                 ]);
-            if (vrs[0]!.name !== this.structuringChoice.name)
+            if (vreqs[0]!.name !== this.structuringChoice.name)
                 return new RoleMessage.User<never>([
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: Only verbatim request through channel \`${this.structuringChoice.name}\` allowed.`),
@@ -88,7 +88,7 @@ export class StructuringValidator<
                 ]);
 
         } else if (this.structuringChoice === OpenAIResponsesStructuringChoice.REQUIRED) {
-            if (tcs.length + vrs.length) {} else
+            if (tcs.length + vreqs.length) {} else
                 return new RoleMessage.User<never>([
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: No function call or valid verbatim request found. Check your output format.`),
@@ -96,13 +96,13 @@ export class StructuringValidator<
                 ]);
 
         } else if (this.structuringChoice === OpenAIResponsesStructuringChoice.ANYONE) {
-            if (tcs.length + vrs.length) {} else
+            if (tcs.length + vreqs.length) {} else
                 return new RoleMessage.User<never>([
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: No function call or valid verbatim request found. Check your output format.`),
                     ),
                 ]);
-            if (tcs.length + vrs.length > 1)
+            if (tcs.length + vreqs.length > 1)
                 return new RoleMessage.User<never>([
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: Only 1 function call or verbatim request allowed, but multiple found.`),
@@ -110,7 +110,7 @@ export class StructuringValidator<
                 ]);
 
         } else if (this.structuringChoice === OpenAIResponsesStructuringChoice.NONE) {
-            if (tcs.length + vrs.length)
+            if (tcs.length + vreqs.length)
                 return new RoleMessage.User<never>([
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: Neither function call nor verbatim request allowed.`),

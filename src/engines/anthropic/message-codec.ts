@@ -29,8 +29,8 @@ export class MessageCodec<
                     text: part.text,
                 } satisfies Anthropic.TextBlockParam;
             else if (part instanceof Function.Response) {
-                const fr = part as Function.Response.From<fdm>;
-                return this.toolCodec.encodeFunctionResponse(fr);
+                const fres = part as Function.Response.From<fdm>;
+                return this.toolCodec.encodeFunctionResponse(fres);
             }
             else throw new Error('Unknown user message part type', { cause: part });
         });
@@ -50,8 +50,8 @@ export class MessageCodec<
                     text: part.text,
                 } satisfies Anthropic.TextBlockParam;
             else if (part instanceof Function.Call) {
-                const fc = part as Function.Call.From<fdm>;
-                return this.toolCodec.encodeFunctionCall(fc);
+                const fcall = part as Function.Call.From<fdm>;
+                return this.toolCodec.encodeFunctionCall(fcall);
             }
             else throw new Error('Unknown AI message part type', { cause: part });
         });
@@ -82,8 +82,8 @@ export class MessageCodec<
         const parts: unknown[] = [];
         for (const item of raw) {
             if (item.type === 'text') {
-                const vrs = VerbatimCodec.Request.decode(item.text, this.vdm);
-                parts.push(new RoleMessage.Ai.Part.Text(item.text, vrs));
+                const vreqs = VerbatimCodec.Request.decode(item.text, this.vdm);
+                parts.push(new RoleMessage.Ai.Part.Text(item.text, vreqs));
             } else if (item.type === 'tool_use')
                 parts.push(this.toolCodec.decodeFunctionCall(item));
             else if (item.type === 'thinking') {}

@@ -13,15 +13,15 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
     }
 
     public encodeFunctionCall(
-        fc: Function.Call.From<fdm>,
+        fcall: Function.Call.From<fdm>,
     ): OpenAI.ChatCompletionMessageToolCall {
-        if (fc.id) {} else throw new Error();
+        if (fcall.id) {} else throw new Error();
         return {
-            id: fc.id,
+            id: fcall.id,
             type: 'function',
             function: {
-                name: fc.name,
-                arguments: JSON.stringify(fc.args),
+                name: fcall.name,
+                arguments: JSON.stringify(fcall.args),
             },
         };
     }
@@ -53,20 +53,20 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
     }
 
     public encodeFunctionResponse(
-        fr: Function.Response.From<fdm>,
+        fres: Function.Response.From<fdm>,
     ): OpenAI.ChatCompletionToolMessageParam {
-        if (fr.id) {} else throw new Error();
-        if (fr instanceof Function.Response.Successful)
+        if (fres.id) {} else throw new Error();
+        if (fres instanceof Function.Response.Successful)
             return {
                 role: 'tool',
-                tool_call_id: fr.id,
-                content: fr.text,
+                tool_call_id: fres.id,
+                content: fres.text,
             };
-        else if (fr instanceof Function.Response.Failed)
+        else if (fres instanceof Function.Response.Failed)
             return {
                 role: 'tool',
-                tool_call_id: fr.id,
-                content: fr.error,
+                tool_call_id: fres.id,
+                content: fres.error,
             };
         else throw new Error();
     }
@@ -95,4 +95,3 @@ export namespace ToolCodec {
         fdm: fdm;
     }
 }
-

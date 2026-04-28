@@ -39,12 +39,12 @@ export class MessageCodec<
                         Google.createPartFromText(textPart.text),
                     );
                 } else if (part instanceof Function.Call) {
-                    const fc = part as Function.Call.From<fdm>;
-                    if (fc.args instanceof Object) {} else throw new Error();
+                    const fcall = part as Function.Call.From<fdm>;
+                    if (fcall.args instanceof Object) {} else throw new Error();
                     apiParts.push(
                         Google.createPartFromFunctionCall(
-                            fc.name,
-                            fc.args satisfies Record<string, unknown>,
+                            fcall.name,
+                            fcall.args satisfies Record<string, unknown>,
                         ),
                     );
                 } else throw new Error('Unknown AI message part type', { cause: part });
@@ -76,8 +76,8 @@ export class MessageCodec<
             if (part instanceof RoleMessage.User.Part.Text)
                 apiParts.push(Google.createPartFromText(part.text));
             else if (part instanceof Function.Response) {
-                const fr = part as Function.Response.From<fdm>;
-                apiParts.push(this.toolCodec.encodeFunctionResponse(fr));
+                const fres = part as Function.Response.From<fdm>;
+                apiParts.push(this.toolCodec.encodeFunctionResponse(fres));
             }
             else if (part instanceof Media.Pdf)
                 apiParts.push(
@@ -105,8 +105,8 @@ export class MessageCodec<
         const parts: unknown[] = [];
         for (const part of content.parts) {
             if (part.text) {
-                const vrs = VerbatimCodec.Request.decode(part.text, this.vdm);
-                parts.push(new RoleMessage.Ai.Part.Text(part.text, vrs));
+                const vreqs = VerbatimCodec.Request.decode(part.text, this.vdm);
+                parts.push(new RoleMessage.Ai.Part.Text(part.text, vreqs));
             }
             if (part.functionCall)
                 parts.push(this.toolCodec.decodeFunctionCall(part.functionCall));
