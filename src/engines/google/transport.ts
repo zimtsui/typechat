@@ -13,7 +13,7 @@ import type { ToolCodec } from './tool-codec.ts';
 import type { Billing } from './billing.ts';
 import type { Verbatim } from '../../verbatim.ts';
 import * as ChoiceCodec from './choice-codec.ts';
-import type { StructuringChoice } from './structuring-choice.ts';
+import type { StructuringChoice } from '../../engine/structuring-choice.ts';
 import type { Engine } from '../../engine.ts';
 import { MIMEType } from 'whatwg-mimetype';
 import { HeaderRecord } from 'undici/types/header';

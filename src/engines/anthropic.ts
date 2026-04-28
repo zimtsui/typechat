@@ -5,8 +5,8 @@ import { ToolCodec } from './anthropic/tool-codec.ts';
 import { Billing } from './anthropic/billing.ts';
 import { MessageCodec } from './anthropic/message-codec.ts';
 import { Transport } from './anthropic/transport.ts';
-import { StructuringChoice } from './compatible/structuring-choice.ts';
-import { StructuringValidator } from './compatible/structuring-validator.ts';
+import { StructuringChoice } from '../engine/structuring-choice.ts';
+import { StructuringValidator } from '../engine/structuring-validator.ts';
 
 
 export type AnthropicEngine<
@@ -22,12 +22,10 @@ export namespace AnthropicEngine {
         protected messageCodec: MessageCodec<fdm, vdm>;
         protected billing: Billing;
         protected override transport: Transport<fdm, vdm>;
-        protected structuringChoice: StructuringChoice.From<fdm, vdm>;
         protected override structuringValidator: Engine.StructuringValidator.From<fdm, vdm>;
 
         public constructor(protected options: AnthropicEngine.Options<fdm, vdm>) {
             super(options);
-            this.structuringChoice = options.structuringChoice ?? StructuringChoice.AUTO;
             this.toolCodec = new ToolCodec({ fdm: this.fdm });
             this.messageCodec = new MessageCodec({
                 toolCodec: this.toolCodec,
@@ -58,8 +56,5 @@ export namespace AnthropicEngine {
     export interface Options<
         in out fdm extends Function.Decl.Map.Proto,
         in out vdm extends Verbatim.Decl.Map.Proto,
-    > extends Engine.Options<fdm, vdm> {
-        structuringChoice?: StructuringChoice.From<fdm, vdm>;
-    }
+    > extends Engine.Options<fdm, vdm> {}
 }
-

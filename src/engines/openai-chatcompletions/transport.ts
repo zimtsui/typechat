@@ -11,7 +11,7 @@ import type { Billing } from './billing.ts';
 import type { ToolCodec } from './tool-codec.ts';
 import { Throttle } from '../../throttle.ts';
 import { type MessageCodec } from './message-codec.ts';
-import type { StructuringChoice } from '../compatible/structuring-choice.ts';
+import type { StructuringChoice } from '../../engine/structuring-choice.ts';
 import * as ChoiceCodec from './choice-codec.ts';
 import * as Undici from 'undici';
 
@@ -218,4 +218,3 @@ export namespace Transport {
         billing: Billing;
     }
 }
-

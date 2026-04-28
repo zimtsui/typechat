@@ -3,8 +3,8 @@ import { Engine } from '../engine.ts';
 import { MessageCodec } from './openai-chatcompletions/message-codec.ts';
 import { Transport } from './openai-chatcompletions/transport.ts';
 import type { Verbatim } from '../verbatim.ts';
-import { StructuringChoice } from './compatible/structuring-choice.ts';
-import { StructuringValidator } from './compatible/structuring-validator.ts';
+import { StructuringChoice } from '../engine/structuring-choice.ts';
+import { StructuringValidator } from '../engine/structuring-validator.ts';
 import { ToolCodec } from './openai-chatcompletions/tool-codec.ts';
 import { Billing } from './openai-chatcompletions/billing.ts';
 
@@ -22,12 +22,10 @@ export namespace OpenAIChatCompletionsEngine {
         protected messageCodec: MessageCodec<fdm, vdm>;
         protected billing: Billing;
         protected override transport: Transport<fdm, vdm>;
-        protected structuringChoice: StructuringChoice.From<fdm, vdm>;
         protected override structuringValidator: Engine.StructuringValidator.From<fdm, vdm>;
 
         public constructor(protected options: OpenAIChatCompletionsEngine.Options<fdm, vdm>) {
             super(options);
-            this.structuringChoice = options.structuringChoice ?? StructuringChoice.AUTO;
             this.toolCodec = new ToolCodec({ fdm: this.fdm });
             this.messageCodec = new MessageCodec({
                 toolCodec: this.toolCodec,
@@ -58,8 +56,5 @@ export namespace OpenAIChatCompletionsEngine {
     export interface Options<
         in out fdm extends Function.Decl.Map.Proto,
         in out vdm extends Verbatim.Decl.Map.Proto,
-    > extends Engine.Options<fdm, vdm> {
-        structuringChoice?: StructuringChoice.From<fdm, vdm>;
-    }
+    > extends Engine.Options<fdm, vdm> {}
 }
-

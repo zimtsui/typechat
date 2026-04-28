@@ -1,34 +1,32 @@
 import type { Function } from '../../function.ts';
 import type { Verbatim } from '../../verbatim.ts';
 import OpenAI from 'openai';
-import { StructuringChoice } from '../compatible/structuring-choice.ts';
+import { StructuringChoice } from '../../engine/structuring-choice.ts';
 
 
 export function encode<
     fdu extends Function.Decl.Proto,
     vdu extends Verbatim.Decl.Proto,
 >(
-    choice: StructuringChoice<fdu, vdu>,
+    structuringChoice: StructuringChoice<fdu, vdu>,
 ): OpenAI.ChatCompletionToolChoiceOption {
-    if (choice === StructuringChoice.NONE) return 'none';
-    else if (choice === StructuringChoice.REQUIRED) return 'auto';
-    else if (choice === StructuringChoice.ANYONE) return 'auto';
-    else if (choice === StructuringChoice.AUTO) return 'auto';
+    if (structuringChoice === StructuringChoice.NONE) return 'none';
+    else if (structuringChoice === StructuringChoice.REQUIRED) return 'auto';
+    else if (structuringChoice === StructuringChoice.ANYONE) return 'auto';
+    else if (structuringChoice === StructuringChoice.AUTO) return 'auto';
 
-    else if (choice === StructuringChoice.FCall.REQUIRED) return 'required';
-    else if (choice === StructuringChoice.FCall.ANYONE) return 'required';
-    else if (choice instanceof StructuringChoice.FCall)
+    else if (structuringChoice === StructuringChoice.TCall.REQUIRED) return 'required';
+    else if (structuringChoice === StructuringChoice.TCall.ANYONE) return 'required';
+    else if (structuringChoice instanceof StructuringChoice.TCall.FCall)
         return {
             type: 'function',
             function: {
-                name: choice.name,
+                name: structuringChoice.name,
             },
         };
 
-    else if (choice === StructuringChoice.VRequest.REQUIRED) return 'none';
-    else if (choice === StructuringChoice.VRequest.ANYONE) return 'none';
-    else if (choice instanceof StructuringChoice.VRequest) return 'none';
+    else if (structuringChoice === StructuringChoice.VRequest.REQUIRED) return 'none';
+    else if (structuringChoice === StructuringChoice.VRequest.ANYONE) return 'none';
 
     else throw new Error();
 }
-

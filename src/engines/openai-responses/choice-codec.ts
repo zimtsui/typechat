@@ -1,4 +1,4 @@
-import { OpenAIResponsesStructuringChoice } from './structuring-choice.ts';
+import { StructuringChoice } from '../../engine/structuring-choice.ts';
 import type { Function } from '../../function.ts';
 import type { Verbatim } from '../../verbatim.ts';
 import type { OpenAI } from 'openai';
@@ -8,26 +8,24 @@ export function encode<
     fdu extends Function.Decl.Proto,
     vdu extends Verbatim.Decl.Proto,
 >(
-    choice: OpenAIResponsesStructuringChoice<fdu, vdu>,
+    structuringChoice: StructuringChoice<fdu, vdu>,
 ): OpenAI.Responses.ToolChoiceOptions | OpenAI.Responses.ToolChoiceAllowed {
-    if (choice === OpenAIResponsesStructuringChoice.NONE) return 'none';
-    else if (choice === OpenAIResponsesStructuringChoice.REQUIRED) return 'auto';
-    else if (choice === OpenAIResponsesStructuringChoice.ANYONE) return 'auto';
-    else if (choice === OpenAIResponsesStructuringChoice.AUTO) return 'auto';
+    if (structuringChoice === StructuringChoice.NONE) return 'none';
+    else if (structuringChoice === StructuringChoice.REQUIRED) return 'auto';
+    else if (structuringChoice === StructuringChoice.ANYONE) return 'auto';
+    else if (structuringChoice === StructuringChoice.AUTO) return 'auto';
 
-    else if (choice === OpenAIResponsesStructuringChoice.TCall.REQUIRED) return 'required';
-    else if (choice === OpenAIResponsesStructuringChoice.TCall.ANYONE) return 'required';
-    else if (choice instanceof OpenAIResponsesStructuringChoice.TCall.FCall)
+    else if (structuringChoice === StructuringChoice.TCall.REQUIRED) return 'required';
+    else if (structuringChoice === StructuringChoice.TCall.ANYONE) return 'required';
+    else if (structuringChoice instanceof StructuringChoice.TCall.FCall)
         return {
             type: 'allowed_tools',
             mode: 'required',
-            tools: [{ type: 'function', name: choice.name }] satisfies OpenAI.Responses.ToolChoiceFunction[],
+            tools: [{ type: 'function', name: structuringChoice.name }] satisfies OpenAI.Responses.ToolChoiceFunction[],
         };
 
-    else if (choice === OpenAIResponsesStructuringChoice.VRequest.REQUIRED) return 'none';
-    else if (choice === OpenAIResponsesStructuringChoice.VRequest.ANYONE) return 'none';
-    else if (choice instanceof OpenAIResponsesStructuringChoice.VRequest) return 'none';
+    else if (structuringChoice === StructuringChoice.VRequest.REQUIRED) return 'none';
+    else if (structuringChoice === StructuringChoice.VRequest.ANYONE) return 'none';
 
     else throw new Error();
 }
-

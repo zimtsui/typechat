@@ -6,8 +6,8 @@ import { ToolCodec } from './google/tool-codec.ts';
 import { Billing } from './google/billing.ts';
 import { env } from 'node:process';
 import { Agent, ProxyAgent } from 'undici';
-import { StructuringChoice } from './google/structuring-choice.ts';
-import { StructuringValidator } from './google/structuring-validator.ts';
+import { StructuringChoice } from '../engine/structuring-choice.ts';
+import { StructuringValidator } from '../engine/structuring-validator.ts';
 import { Transport } from './google/transport.ts';
 import { InferenceContext } from '../inference-context.ts';
 import { Session } from '../session.ts';
@@ -27,7 +27,6 @@ export namespace GoogleEngine {
         protected messageCodec: MessageCodec<fdm, vdm>;
         protected billing: Billing;
         protected override transport: Transport<fdm, vdm>;
-        protected structuringChoice: StructuringChoice.From<fdm, vdm>;
         protected override structuringValidator: Engine.StructuringValidator.From<fdm, vdm>;
         protected codeExecution: boolean;
         protected urlContext: boolean;
@@ -36,7 +35,6 @@ export namespace GoogleEngine {
         public constructor(protected options: GoogleEngine.Options<fdm, vdm>) {
             super(options);
 
-            this.structuringChoice = options.structuringChoice ?? StructuringChoice.AUTO;
             this.codeExecution = options.codeExecution ?? false;
             this.urlContext = options.urlContext ?? false;
             this.googleSearch = options.googleSearch ?? false;
@@ -165,7 +163,6 @@ export namespace GoogleEngine {
         in out fdm extends Function.Decl.Map.Proto,
         in out vdm extends Verbatim.Decl.Map.Proto,
     > extends Engine.Options<fdm, vdm> {
-        structuringChoice?: StructuringChoice.From<fdm, vdm>;
         codeExecution?: boolean;
         urlContext?: boolean;
         googleSearch?: boolean;

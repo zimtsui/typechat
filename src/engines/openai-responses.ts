@@ -4,14 +4,14 @@ import { Verbatim } from '../verbatim.ts';
 import { MessageCodec } from './openai-responses/message-codec.ts';
 import { ToolCodec } from './openai-responses/tool-codec.ts';
 import { Billing } from './openai-responses/billing.ts';
-import { OpenAIResponsesStructuringChoice } from './openai-responses/structuring-choice.ts';
-import { StructuringValidator } from './openai-responses/structuring-validator.ts';
+import { StructuringChoice } from '../engine/structuring-choice.ts';
+import { StructuringValidator } from '../engine/structuring-validator.ts';
 import { Transport } from './openai-responses/transport.ts';
 import { InferenceContext } from '../inference-context.ts';
 import { Session } from '../session.ts';
 import { NativeRoleMessage } from './openai-responses/message.ts';
 import { RoleMessage } from '../message.ts';
-import { Tool } from './openai-responses/tool.ts';
+import * as ToolModule from './openai-responses/tool.ts';
 
 
 export type OpenAIResponsesEngine<
@@ -27,14 +27,12 @@ export namespace OpenAIResponsesEngine {
         protected messageCodec: MessageCodec<fdm, vdm>;
         protected billing: Billing;
         protected override transport: Transport<fdm, vdm>;
-        protected structuringChoice: OpenAIResponsesStructuringChoice.From<fdm, vdm>;
         protected override structuringValidator: Engine.StructuringValidator.From<fdm, vdm>;
         protected applyPatch: boolean;
 
         public constructor(protected options: OpenAIResponsesEngine.Options<fdm, vdm>) {
             super(options);
             this.applyPatch = options.applyPatch ?? false;
-            this.structuringChoice = options.structuringChoice ?? OpenAIResponsesStructuringChoice.AUTO;
 
             this.toolCodec = new ToolCodec({ fdm: this.fdm });
             this.messageCodec = new MessageCodec({
@@ -140,9 +138,7 @@ export namespace OpenAIResponsesEngine {
         in out vdm extends Verbatim.Decl.Map.Proto,
     > extends Engine.Options<fdm, vdm> {
         applyPatch?: boolean;
-        structuringChoice?: OpenAIResponsesStructuringChoice.From<fdm, vdm>;
     }
-}
 
-export { OpenAIResponsesStructuringChoice } from './openai-responses/structuring-choice.ts';
-export { Tool as OpenAIResponsesTool } from './openai-responses/tool.ts';
+    export import Tool = ToolModule.Tool;
+}

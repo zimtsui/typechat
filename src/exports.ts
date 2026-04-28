@@ -9,7 +9,8 @@ export * from './media.ts';
 export * from './message.ts';
 export * from './session.ts';
 export * from './engine/recoverable.ts';
-export * from './engines/compatible/structuring-choice.ts';
+export * from './engine/structuring-choice.ts';
+
 export * from './engines/google.ts';
 export * from './engines/openai-responses.ts';
 export * from './engines/openai-chatcompletions.ts';

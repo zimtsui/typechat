@@ -13,6 +13,7 @@ import { Recoverable } from './engine/recoverable.ts';
 import { Middleware } from './engine/middleware.ts';
 import * as StructuringValidatorModule from './engine/structuring-validator.ts';
 import * as EngineTransportModule from './engine/transport.ts';
+import { StructuringChoice } from './engine/structuring-choice.ts';
 
 
 export interface Pricing {
@@ -50,6 +51,7 @@ export namespace Engine {
         public fdm: fdm;
         public vdm: vdm;
         protected throttle: Throttle;
+        protected structuringChoice: StructuringChoice.From<fdm, vdm>;
         protected abstract structuringValidator: Engine.StructuringValidator.From<fdm, vdm>;
         protected partsValidator: PartsValidator.From<fdm, vdm>;
         protected abstract transport: Engine.Transport<fdm, vdm>;
@@ -90,6 +92,7 @@ export namespace Engine {
             };
             this.fdm = options.functionDeclarationMap;
             this.vdm = options.verbatimDeclarationMap;
+            this.structuringChoice = options.structuringChoice ?? StructuringChoice.AUTO;
             this.throttle = options.throttle;
             this.partsValidator = new PartsValidator();
         }
@@ -300,6 +303,7 @@ export namespace Engine {
         endpointSpec: EndpointSpec;
         functionDeclarationMap: fdm;
         verbatimDeclarationMap: vdm;
+        structuringChoice?: StructuringChoice.From<fdm, vdm>;
         providerRetry?: number;
         inferenceRetry?: number;
     }

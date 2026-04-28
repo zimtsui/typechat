@@ -11,10 +11,14 @@ export namespace Tool {
         > = Function.Name.From<fdm> | typeof Tool.APPLY_PATCH;
     }
 
-    export type Map<fdm extends Function.Decl.Map.Proto> =
-        Function.Map<fdm> & {
-            [Tool.APPLY_PATCH]?: Tool.ApplyPatch;
-        };
+    export type Map<fdm extends Function.Decl.Map.Proto> = {
+        [name in Tool.Name.From<fdm>]:
+            name extends typeof Tool.APPLY_PATCH
+                ? Tool.ApplyPatch
+            : name extends Function.Name.From<fdm>
+                ? Function.Extract<fdm, name>
+            : never;
+    };
 
     export namespace Call {
         export type Of<fdu extends Function.Decl.Proto> =
@@ -68,11 +72,10 @@ export namespace Tool {
         export class Response {
             public id: string;
             public failure: string;
-            public constructor(apr: Omit<ApplyPatch.Response, never>) {
-                this.id = apr.id;
-                this.failure = apr.failure;
+            public constructor(apres: Omit<ApplyPatch.Response, never>) {
+                this.id = apres.id;
+                this.failure = apres.failure;
             }
         }
     }
 }
-

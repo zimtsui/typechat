@@ -23,7 +23,7 @@ export namespace NativeRoleMessage {
         public getRaw(): OpenAI.Responses.ResponseOutputItem[] {
             return this.raw;
         }
-        public getToolCalls(): Tool.Call.Of<fdu>[] {
+        public override getToolCalls(): Tool.Call.Of<fdu>[] {
             const tcs: Tool.Call.Of<fdu>[] = [];
             for (const part of this.parts)
                 if (part instanceof Function.Call || part instanceof Tool.ApplyPatch.Call) {

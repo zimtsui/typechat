@@ -11,7 +11,7 @@ import type { ToolCodec } from './tool-codec.ts';
 import type { Billing } from './billing.ts';
 import type { Verbatim } from '../../verbatim.ts';
 import * as ChoiceCodec from './choice-codec.ts';
-import { OpenAIResponsesStructuringChoice } from './structuring-choice.ts';
+import { StructuringChoice } from '../../engine/structuring-choice.ts';
 import type { Engine } from '../../engine.ts';
 import * as Undici from 'undici';
 
@@ -25,7 +25,7 @@ export class Transport<
     protected providerSpec: ProviderSpec;
     protected fdm: fdm;
     protected throttle: Throttle;
-    protected structuringChoice: OpenAIResponsesStructuringChoice.From<fdm, vdm>;
+    protected structuringChoice: StructuringChoice.From<fdm, vdm>;
     protected applyPatch: boolean;
     protected messageCodec: MessageCodec<fdm, vdm>;
     protected toolCodec: ToolCodec<fdm>;
@@ -129,11 +129,10 @@ export namespace Transport {
         providerSpec: ProviderSpec;
         fdm: fdm;
         throttle: Throttle;
-        structuringChoice: OpenAIResponsesStructuringChoice.From<fdm, vdm>;
+        structuringChoice: StructuringChoice.From<fdm, vdm>;
         applyPatch: boolean;
         messageCodec: MessageCodec<fdm, vdm>;
         toolCodec: ToolCodec<fdm>;
         billing: Billing;
     }
 }
-

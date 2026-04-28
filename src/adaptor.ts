@@ -7,7 +7,7 @@ import { OpenAIChatCompletionsEngine } from './engines/openai-chatcompletions.ts
 import { AnthropicEngine } from './engines/anthropic.ts';
 import type { Verbatim } from './verbatim.ts';
 import { Engine } from './engine.ts';
-import { StructuringChoice } from './engines/compatible/structuring-choice.ts';
+import { StructuringChoice } from './engine/structuring-choice.ts';
 
 
 export class Adaptor {
@@ -37,13 +37,13 @@ export class Adaptor {
             throttle,
         };
         if (endpointSpec.apiType === 'openai-responses')
-            return new OpenAIResponsesEngine.Instance<fdm, vdm>(options as OpenAIResponsesEngine.Options<fdm, vdm>);
+            return new OpenAIResponsesEngine.Instance<fdm, vdm>(options);
         else if (endpointSpec.apiType === 'google')
             return new GoogleEngine.Instance<fdm, vdm>(options);
         else if (endpointSpec.apiType === 'anthropic')
-            return new AnthropicEngine.Instance<fdm, vdm>(options as AnthropicEngine.Options<fdm, vdm>);
+            return new AnthropicEngine.Instance<fdm, vdm>(options);
         else if (endpointSpec.apiType === 'openai-chatcompletions')
-            return new OpenAIChatCompletionsEngine.Instance<fdm, vdm>(options as OpenAIChatCompletionsEngine.Options<fdm, vdm>);
+            return new OpenAIChatCompletionsEngine.Instance<fdm, vdm>(options);
         else throw new Error();
     }
 
@@ -86,7 +86,6 @@ export namespace Adaptor {
         in out vdm extends Verbatim.Decl.Map.Proto,
     > extends Omit<Engine.Options<fdm, vdm>, 'endpointSpec' | 'throttle'> {
         endpoint: string;
-        structuringChoice?: StructuringChoice.From<fdm, vdm>;
     }
 
     export interface GoogleEngineOptions<
