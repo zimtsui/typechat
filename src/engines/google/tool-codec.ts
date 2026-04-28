@@ -6,8 +6,11 @@ import { Parse, ParseError } from 'typebox/schema';
 
 export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
     protected fdm: fdm;
+    protected apiFds: Google.FunctionDeclaration[];
     public constructor(options: ToolCodec.Options<fdm>) {
         this.fdm = options.fdm;
+        const fdentries = Object.entries(this.fdm) as Function.Decl.Entry.From<fdm>[];
+        this.apiFds = fdentries.map(fdentry => ToolCodec.encodeFunctionDeclarationEntry(fdentry));
     }
 
     public encodeFunctionCall(
@@ -20,13 +23,12 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
         };
     }
 
-    public encodeFunctionDeclarationMap(fdm: fdm): Google.FunctionDeclaration[] {
-        const fdentries = Object.entries(fdm) as Function.Decl.Entry.From<fdm>[];
-        return fdentries.map(fdentry => this.encodeFunctionDeclarationEntry(fdentry));
+    public encodeFunctionDeclarationMap(): Google.FunctionDeclaration[] {
+        return this.apiFds;
     }
 
-    protected encodeFunctionDeclarationEntry(
-        fdentry: Function.Decl.Entry.From<fdm>,
+    protected static encodeFunctionDeclarationEntry<fdu extends Function.Decl.Proto>(
+        fdentry: Function.Decl.Entry.Of<fdu>,
     ): Google.FunctionDeclaration {
         return {
             name: fdentry[0],

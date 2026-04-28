@@ -1,39 +1,35 @@
 import { type InferenceParams, type ProviderSpec } from '../../engine.ts';
-import { RoleMessage, type Session } from './session.ts';
+import { type Session } from '../../session.ts';
+import { NativeRoleMessage } from './message.ts';
 import { Function } from '../../function.ts';
 import * as Google from '@google/genai';
 import * as Undici from 'undici';
 import { type InferenceContext } from '../../inference-context.ts';
-import type { RestfulRequest } from '../../api-types/google/restful-request.ts';
+import type { RestfulRequest } from './restful-request.ts';
 import { Throttle } from '../../throttle.ts';
 import { loggers } from '../../telemetry.ts';
 import type { MessageCodec } from './message-codec.ts';
-import type { ToolCodec } from '../../api-types/google/tool-codec.ts';
-import type { Billing } from '../../api-types/google/billing.ts';
+import type { ToolCodec } from './tool-codec.ts';
+import type { Billing } from './billing.ts';
 import type { Verbatim } from '../../verbatim.ts';
-import * as ChoiceCodec from '../../compatible-engine.d/google/choice-codec.ts';
-import type { Structuring } from '../../compatible-engine/structuring.ts';
+import * as ChoiceCodec from './choice-codec.ts';
+import type { StructuringChoice } from './structuring-choice.ts';
 import type { Engine } from '../../engine.ts';
 import { MIMEType } from 'whatwg-mimetype';
 import { HeaderRecord } from 'undici/types/header';
 
 
 
-export class GoogleNativeTransport<
+export class Transport<
     in out fdm extends Function.Decl.Map.Proto,
     in out vdm extends Verbatim.Decl.Map.Proto,
-> implements Engine.Transport<
-    RoleMessage.User.From<fdm>,
-    RoleMessage.Ai.From<fdm, vdm>,
-    RoleMessage.Developer,
-    Session.From<fdm, vdm>
-> {
+> implements Engine.Transport<fdm, vdm> {
     protected apiURL: URL;
     protected inferenceParams: InferenceParams;
     protected providerSpec: ProviderSpec;
     protected fdm: fdm;
     protected throttle: Throttle;
-    protected choice: Structuring.Choice.From<fdm, vdm>;
+    protected structuringChoice: StructuringChoice.From<fdm, vdm>;
     protected codeExecution: boolean;
     protected urlContext: boolean;
     protected googleSearch: boolean;
@@ -47,7 +43,7 @@ export class GoogleNativeTransport<
         this.providerSpec = options.providerSpec;
         this.fdm = options.fdm;
         this.throttle = options.throttle;
-        this.choice = options.choice;
+        this.structuringChoice = options.structuringChoice;
         this.codeExecution = options.codeExecution;
         this.urlContext = options.urlContext;
         this.googleSearch = options.googleSearch;
@@ -60,20 +56,20 @@ export class GoogleNativeTransport<
         wfctx: InferenceContext,
         session: Session.From<fdm, vdm>,
         signal?: AbortSignal,
-    ): Promise<RoleMessage.Ai.From<fdm, vdm>> {
-        const systemInstruction = session.developerMessage && this.messageCodec.encodeDeveloperMessage(session.developerMessage);
-        const contents = this.messageCodec.encodeChatMessages(session.chatMessages);
-
+    ): Promise<NativeRoleMessage.Ai.From<fdm, vdm>> {
         await this.throttle.requests(wfctx);
 
-        const apifds = this.toolCodec.encodeFunctionDeclarationMap(this.fdm);
+        // Prepare request body
+        const systemInstruction = session.developerMessage && this.messageCodec.encodeDeveloperMessage(session.developerMessage);
+        const contents = this.messageCodec.encodeChatMessages(session.chatMessages);
+        const apiFds = this.toolCodec.encodeFunctionDeclarationMap();
         const apiTools: Google.Tool[] = [];
-        if (apifds.length) apiTools.push({ functionDeclarations: apifds });
+        if (apiFds.length) apiTools.push({ functionDeclarations: apiFds });
         if (this.urlContext) apiTools.push({ urlContext: {} });
         if (this.googleSearch) apiTools.push({ googleSearch: {} });
         if (this.codeExecution) apiTools.push({ codeExecution: {} });
         const apiToolConfig: Google.ToolConfig = {};
-        if (apifds.length) apiToolConfig.functionCallingConfig = ChoiceCodec.encode(this.choice);
+        if (apiFds.length) apiToolConfig.functionCallingConfig = ChoiceCodec.encode(this.structuringChoice);
         const reqbody: RestfulRequest = {
             contents,
             tools: apiTools.length ? apiTools : undefined,
@@ -81,9 +77,9 @@ export class GoogleNativeTransport<
             systemInstruction,
             generationConfig: this.inferenceParams.additionalOptions,
         };
-
         loggers.message.debug(reqbody);
 
+        // Send request
         const res = await Undici.fetch(
             this.apiURL,
             {
@@ -98,6 +94,8 @@ export class GoogleNativeTransport<
             },
         );
         loggers.message.debug(res);
+
+        // Get response
         if (res.ok) {} else {
             const contentType = res.headers.get('Content-Type');
             if (contentType) {} else throw new Error(res.statusText, { cause: res });
@@ -109,20 +107,21 @@ export class GoogleNativeTransport<
             else throw new Error(res.statusText, { cause: res });
         }
         const response = await res.json() as Google.GenerateContentResponse;
+        loggers.message.debug(response);
 
+        // Validate response
         if (response.candidates?.[0]?.content?.parts?.length) {} else
             throw new SyntaxError('Content missing', { cause: response });
         if (response.candidates[0].finishReason === Google.FinishReason.MAX_TOKENS)
             throw new SyntaxError('Token limit exceeded.', { cause: response });
         if (response.candidates[0].finishReason === Google.FinishReason.STOP) {} else
             throw new SyntaxError('Abnormal finish reason', { cause: response });
-
+        if (response.usageMetadata) {} else
+            throw new SyntaxError('Usage metadata missing', { cause: response });
         for (const part of response.candidates[0].content.parts) {
             if (part.text) loggers.inference.info(part.text);
             if (part.functionCall) loggers.message.info(part.functionCall);
         }
-
-        if (response.usageMetadata) {} else throw new SyntaxError('Usage metadata missing', { cause: response });
         wfctx.cost?.(this.billing.charge(response.usageMetadata));
 
         return this.messageCodec.decodeAiMessage(response.candidates[0].content);
@@ -138,7 +137,7 @@ export namespace GoogleNativeTransport {
         providerSpec: ProviderSpec;
         fdm: fdm;
         throttle: Throttle;
-        choice: Structuring.Choice.From<fdm, vdm>;
+        structuringChoice: StructuringChoice.From<fdm, vdm>;
         codeExecution: boolean;
         urlContext: boolean;
         googleSearch: boolean;

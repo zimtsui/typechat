@@ -3,14 +3,18 @@
 ```mermaid
 classDiagram
 
-Engine <|.. CompatibleEngine
+RoleMessage <|-- GoogleRoleMessage
+RoleMessage <|-- OpenAIResponsesRoleMessage
+RoleMessage <|-- OpenAIChatCompletionsRoleMessage
+RoleMessage <|-- AnthropicRoleMessage
 
-Engine <|.. OpenAIResponsesNativeEngine
-OpenAIResponsesNativeEngine o--> OpenAIResponsesNativeHelpers
-OpenAIResponsesNativeHelpers o--> OpenAIResponsesHelpers
+GoogleEngine ..|> Engine
+OpenAIResponsesEngine ..|> Engine
+OpenAIChatCompletionsEngine ..|> Engine
+AnthropicEngine ..|> Engine
 
-CompatibleEngine <|.. OpenAICompatibleEngine
-OpenAICompatibleEngine o--> OpenAIResponsesCompatibleHelpers
-OpenAIResponsesCompatibleHelpers o--> OpenAIResponsesHelpers
-
+GoogleRoleMessage <-- GoogleEngine
+OpenAIResponsesRoleMessage <-- OpenAIResponsesEngine
+OpenAIChatCompletionsRoleMessage <-- OpenAIChatCompletionsEngine
+AnthropicRoleMessage <-- AnthropicEngine
 ```

@@ -1,24 +1,23 @@
-import { Structuring } from './structuring.ts';
-import { Function } from '../function.ts';
-import { Verbatim } from '../verbatim.ts';
-import { RoleMessage } from './session.ts';
-import type { Engine } from '../engine.ts';
-import * as VerbatimCodec from '../verbatim/codec.ts';
-import { isRepeating } from '../repetition.ts';
+import { StructuringChoice } from './structuring-choice.ts';
+import { Function } from '../../function.ts';
+import { Verbatim } from '../../verbatim.ts';
+import { RoleMessage } from '../../message.ts';
+import type { Engine } from '../../engine.ts';
+import * as VerbatimCodec from '../../verbatim/codec.ts';
 
 
 export class StructuringValidator<
     in out fdu extends Function.Decl.Proto,
     in out vdu extends Verbatim.Decl.Proto,
-> implements Engine.StructuringValidator<RoleMessage.User<fdu>, RoleMessage.Ai<fdu, vdu>> {
-    protected structuringChoice: Structuring.Choice<fdu, vdu>;
+> implements Engine.StructuringValidator<fdu, vdu> {
+    protected structuringChoice: StructuringChoice<fdu, vdu>;
     public constructor(options: StructuringValidator.Options<fdu, vdu>) {
         this.structuringChoice = options.structuringChoice;
     }
 
     public validate(
         aiMessage: RoleMessage.Ai<fdu, vdu>,
-    ): RoleMessage.User<fdu> | void {
+    ): RoleMessage.User<never> | void {
         const fcs = aiMessage.getFunctionCalls();
         const vrs = aiMessage.getVerbatimRequests();
         return this.validateStructuring(fcs, vrs);
@@ -27,88 +26,88 @@ export class StructuringValidator<
     public validateStructuring(
         fcs: Function.Call.Of<fdu>[],
         vrs: Verbatim.Request.Of<vdu>[],
-    ): RoleMessage.User<fdu> | void {
-        if (this.structuringChoice === Structuring.Choice.FCall.REQUIRED) {
+    ): RoleMessage.User<never> | void {
+        if (this.structuringChoice === StructuringChoice.FCall.REQUIRED) {
             if (!fcs.length) throw new SyntaxError('Function call required.');
 
-        } else if (this.structuringChoice === Structuring.Choice.FCall.ANYONE) {
+        } else if (this.structuringChoice === StructuringChoice.FCall.ANYONE) {
             if (!fcs.length) throw new SyntaxError('Function call required.');
             if (fcs.length > 1) throw new SyntaxError('Only one function call allowed.');
 
-        } else if (this.structuringChoice instanceof Structuring.Choice.FCall) {
+        } else if (this.structuringChoice instanceof StructuringChoice.FCall) {
             if (!fcs.length) throw new SyntaxError(`Function call of ${this.structuringChoice.name} required.`);
             if (fcs.length > 1) throw new SyntaxError('Only one function call allowed.');
             if (fcs[0]!.name !== this.structuringChoice.name)
                 throw new SyntaxError(`Only function call of ${this.structuringChoice.name} allowed.`);
 
-        } else if (this.structuringChoice === Structuring.Choice.VRequest.REQUIRED) {
+        } else if (this.structuringChoice === StructuringChoice.VRequest.REQUIRED) {
             if (!vrs.length)
-                return new RoleMessage.User<fdu>([
-                    RoleMessage.Part.Text.paragraph(
+                return new RoleMessage.User<never>([
+                    RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: No valid verbatim request found. Check your output format.`),
                     ),
                 ]);
 
-        } else if (this.structuringChoice === Structuring.Choice.VRequest.ANYONE) {
+        } else if (this.structuringChoice === StructuringChoice.VRequest.ANYONE) {
             if (!vrs.length)
-                return new RoleMessage.User<fdu>([
-                    RoleMessage.Part.Text.paragraph(
+                return new RoleMessage.User<never>([
+                    RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: No valid verbatim request found. Check your output format.`),
                     ),
                 ]);
             if (vrs.length > 1)
-                return new RoleMessage.User<fdu>([
-                    RoleMessage.Part.Text.paragraph(
+                return new RoleMessage.User<never>([
+                    RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: Only 1 verbatim request allowed, but multiple found.`),
                     ),
                 ]);
 
-        } else if (this.structuringChoice instanceof Structuring.Choice.VRequest) {
+        } else if (this.structuringChoice instanceof StructuringChoice.VRequest) {
             if (!vrs.length)
-                return new RoleMessage.User<fdu>([
-                    RoleMessage.Part.Text.paragraph(
+                return new RoleMessage.User<never>([
+                    RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: No valid verbatim request through channel \`${this.structuringChoice.name}\` found. Check your output format.`),
                     ),
                 ]);
             if (vrs.length > 1)
-                return new RoleMessage.User<fdu>([
-                    RoleMessage.Part.Text.paragraph(
+                return new RoleMessage.User<never>([
+                    RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: Only 1 verbatim request through channel \`${this.structuringChoice.name}\` allowed.`),
                     ),
                 ]);
             if (vrs[0]!.name !== this.structuringChoice.name)
-                return new RoleMessage.User<fdu>([
-                    RoleMessage.Part.Text.paragraph(
+                return new RoleMessage.User<never>([
+                    RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: Only verbatim request through channel \`${this.structuringChoice.name}\` allowed.`),
                     ),
                 ]);
 
-        } else if (this.structuringChoice === Structuring.Choice.REQUIRED) {
+        } else if (this.structuringChoice === StructuringChoice.REQUIRED) {
             if (fcs.length + vrs.length) {} else
-                return new RoleMessage.User<fdu>([
-                    RoleMessage.Part.Text.paragraph(
+                return new RoleMessage.User<never>([
+                    RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: No function call or valid verbatim request found. Check your output format.`),
                     ),
                 ]);
 
-        } else if (this.structuringChoice === Structuring.Choice.ANYONE) {
+        } else if (this.structuringChoice === StructuringChoice.ANYONE) {
             if (fcs.length + vrs.length) {} else
-                return new RoleMessage.User<fdu>([
-                    RoleMessage.Part.Text.paragraph(
+                return new RoleMessage.User<never>([
+                    RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: No function call or valid verbatim request found. Check your output format.`),
                     ),
                 ]);
             if (fcs.length + vrs.length > 1)
-                return new RoleMessage.User<fdu>([
-                    RoleMessage.Part.Text.paragraph(
+                return new RoleMessage.User<never>([
+                    RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: Only 1 function call or verbatim request allowed, but multiple found.`),
                     ),
                 ]);
 
-        } else if (this.structuringChoice === Structuring.Choice.NONE) {
+        } else if (this.structuringChoice === StructuringChoice.NONE) {
             if (fcs.length + vrs.length)
-                return new RoleMessage.User<fdu>([
-                    RoleMessage.Part.Text.paragraph(
+                return new RoleMessage.User<never>([
+                    RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: Neither function call nor verbatim request allowed.`),
                     ),
                 ]);
@@ -125,7 +124,7 @@ export namespace StructuringValidator {
         in out fdu extends Function.Decl.Proto,
         in out vdu extends Verbatim.Decl.Proto,
     > {
-        structuringChoice: Structuring.Choice<fdu, vdu>;
+        structuringChoice: StructuringChoice<fdu, vdu>;
     }
     export namespace Options {
         export type From<
@@ -133,33 +132,4 @@ export namespace StructuringValidator {
             vdm extends Verbatim.Decl.Map.Proto,
         > = Options<Function.Decl.From<fdm>, Verbatim.Decl.From<vdm>>;
     }
-}
-
-export class PartsValidator<
-    in out fdu extends Function.Decl.Proto,
-    in out vdu extends Verbatim.Decl.Proto,
-> implements Engine.PartsValidator<RoleMessage.Ai<fdu, vdu>> {
-    public constructor() {}
-
-    public validateMessageTextParts(
-        parts: RoleMessage.Part.Text<vdu>[],
-    ): void {
-        for (const part of parts)
-            if (isRepeating(part.text))
-                throw new SyntaxError('Repeating');
-    }
-
-    public validate(
-        message: RoleMessage.Ai<fdu, vdu>,
-    ): void {
-        if (message.getParts().length) {} else throw new SyntaxError('Empty message.');
-        this.validateMessageTextParts(message.getTextParts());
-    }
-
-}
-export namespace PartsValidator {
-    export type From<
-        fdm extends Function.Decl.Map.Proto,
-        vdm extends Verbatim.Decl.Map.Proto,
-    > = PartsValidator<Function.Decl.From<fdm>, Verbatim.Decl.From<vdm>>;
 }
