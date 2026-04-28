@@ -26,21 +26,25 @@ export class MessageCodec<
     public encodeAiMessage(
         aiMessage: RoleMessage.Ai.From<fdm, vdm>,
     ): Google.Content {
-        if (aiMessage instanceof NativeRoleMessage.Ai)
-            return aiMessage.getRaw();
+        if (aiMessage instanceof NativeRoleMessage.Ai) {
+            const nativeMessage = aiMessage as NativeRoleMessage.Ai<Function.Decl.From<fdm>, Verbatim.Decl.From<vdm>>;
+            return nativeMessage.getRaw();
+        }
         else {
             const apiParts: Google.PartUnion[] = [];
             for (const part of aiMessage.getParts()) {
-                if (part instanceof NativeRoleMessage.Ai.Part.Text)
+                if (part instanceof NativeRoleMessage.Ai.Part.Text) {
+                    const textPart = part as NativeRoleMessage.Ai.Part.Text.From<vdm>;
                     apiParts.push(
-                        Google.createPartFromText((part as NativeRoleMessage.Ai.Part.Text.From<vdm>).text),
+                        Google.createPartFromText(textPart.text),
                     );
-                else if (part instanceof Function.Call) {
-                    if (part.args instanceof Object) {} else throw new Error();
+                } else if (part instanceof Function.Call) {
+                    const fc = part as Function.Call.From<fdm>;
+                    if (fc.args instanceof Object) {} else throw new Error();
                     apiParts.push(
                         Google.createPartFromFunctionCall(
-                            part.name,
-                            (part as Function.Call.From<fdm>).args satisfies Record<string, unknown>,
+                            fc.name,
+                            fc.args satisfies Record<string, unknown>,
                         ),
                     );
                 } else throw new Error('Unknown AI message part type', { cause: part });
@@ -53,8 +57,13 @@ export class MessageCodec<
         chatMessages: Session.ChatMessage.From<fdm, vdm>[],
     ): Google.Content[] {
         return chatMessages.map(chatMessage => {
-            if (chatMessage instanceof RoleMessage.User) return this.encodeUserMessage(chatMessage);
-            else if (chatMessage instanceof RoleMessage.Ai) return this.encodeAiMessage(chatMessage);
+            if (chatMessage instanceof RoleMessage.User) {
+                const userMessage = chatMessage as RoleMessage.User.From<fdm>;
+                return this.encodeUserMessage(userMessage);
+            } else if (chatMessage instanceof RoleMessage.Ai) {
+                const aiMessage = chatMessage as RoleMessage.Ai.From<fdm, vdm>;
+                return this.encodeAiMessage(aiMessage);
+            }
             else throw new Error();
         });
     }
@@ -66,8 +75,10 @@ export class MessageCodec<
         for (const part of userMessage.getParts()) {
             if (part instanceof RoleMessage.User.Part.Text)
                 apiParts.push(Google.createPartFromText(part.text));
-            else if (part instanceof Function.Response)
-                apiParts.push(this.toolCodec.encodeFunctionResponse(part as Function.Response.From<fdm>));
+            else if (part instanceof Function.Response) {
+                const fr = part as Function.Response.From<fdm>;
+                apiParts.push(this.toolCodec.encodeFunctionResponse(fr));
+            }
             else if (part instanceof Media.Pdf)
                 apiParts.push(
                     Google.createPartFromBase64(

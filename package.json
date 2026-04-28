@@ -4,9 +4,7 @@
   "exports": {
     ".": "./build/exports.js",
     "./assets": "./build/assets.js",
-    "./codec": "./build/verbatim/codec.js",
-    "./openai-responses": "./build/native-engines.d/openai-responses.d/exports.js",
-    "./google": "./build/native-engines.d/google.d/exports.js"
+    "./codec": "./build/verbatim/codec.js"
   },
   "engines": {
     "node": ">=24"

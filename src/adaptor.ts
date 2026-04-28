@@ -2,8 +2,12 @@ import { Config } from './config.ts';
 import { Function } from './function.ts';
 import { Throttle } from './throttle.ts';
 import { GoogleEngine } from './engines/google.ts';
+import { OpenAIResponsesEngine } from './engines/openai-responses.ts';
+import { OpenAIChatCompletionsEngine } from './engines/openai-chatcompletions.ts';
+import { AnthropicEngine } from './engines/anthropic.ts';
 import type { Verbatim } from './verbatim.ts';
 import { Engine } from './engine.ts';
+import { StructuringChoice } from './engines/compatible/structuring-choice.ts';
 
 
 export class Adaptor {
@@ -32,8 +36,14 @@ export class Adaptor {
             endpointSpec,
             throttle,
         };
-        if (endpointSpec.apiType === 'google')
+        if (endpointSpec.apiType === 'openai-responses')
+            return new OpenAIResponsesEngine.Instance<fdm, vdm>(options as OpenAIResponsesEngine.Options<fdm, vdm>);
+        else if (endpointSpec.apiType === 'google')
             return new GoogleEngine.Instance<fdm, vdm>(options);
+        else if (endpointSpec.apiType === 'anthropic')
+            return new AnthropicEngine.Instance<fdm, vdm>(options as AnthropicEngine.Options<fdm, vdm>);
+        else if (endpointSpec.apiType === 'openai-chatcompletions')
+            return new OpenAIChatCompletionsEngine.Instance<fdm, vdm>(options as OpenAIChatCompletionsEngine.Options<fdm, vdm>);
         else throw new Error();
     }
 
@@ -52,6 +62,22 @@ export class Adaptor {
         };
         return new GoogleEngine.Instance(options);
     }
+
+    public makeOpenAIResponsesEngine<
+        fdm extends Function.Decl.Map.Proto,
+        vdm extends Verbatim.Decl.Map.Proto,
+    >(adaptorOptions: Adaptor.OpenAIResponsesEngineOptions<fdm, vdm>): OpenAIResponsesEngine<fdm, vdm> {
+        const endpointSpec = this.config.endpoints[adaptorOptions.endpoint];
+        if (endpointSpec?.apiType === 'openai-responses') {} else throw new Error();
+        const throttle = this.throttles.get(adaptorOptions.endpoint);
+        if (throttle) {} else throw new Error();
+        const options: OpenAIResponsesEngine.Options<fdm, vdm> = {
+            ...adaptorOptions,
+            endpointSpec,
+            throttle,
+        };
+        return new OpenAIResponsesEngine.Instance(options);
+    }
 }
 
 export namespace Adaptor {
@@ -60,12 +86,20 @@ export namespace Adaptor {
         in out vdm extends Verbatim.Decl.Map.Proto,
     > extends Omit<Engine.Options<fdm, vdm>, 'endpointSpec' | 'throttle'> {
         endpoint: string;
+        structuringChoice?: StructuringChoice.From<fdm, vdm>;
     }
 
     export interface GoogleEngineOptions<
         in out fdm extends Function.Decl.Map.Proto,
         in out vdm extends Verbatim.Decl.Map.Proto,
     > extends Omit<GoogleEngine.Options<fdm, vdm>, 'endpointSpec' | 'throttle'> {
+        endpoint: string;
+    }
+
+    export interface OpenAIResponsesEngineOptions<
+        in out fdm extends Function.Decl.Map.Proto,
+        in out vdm extends Verbatim.Decl.Map.Proto,
+    > extends Omit<OpenAIResponsesEngine.Options<fdm, vdm>, 'endpointSpec' | 'throttle'> {
         endpoint: string;
     }
 }

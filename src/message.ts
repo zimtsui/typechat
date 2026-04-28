@@ -18,10 +18,16 @@ export namespace RoleMessage {
         }
         public getOnlyTextParts(): RoleMessage.Developer.Part.Text[] {
             if (this.allTextParts()) {} else throw new Error();
-            return this.parts as RoleMessage.Developer.Part.Text[];
+            return this.getTextParts();
         }
         public getTextParts(): RoleMessage.Developer.Part.Text[] {
-            return this.parts.filter(part => part instanceof RoleMessage.Developer.Part.Text);
+            const textParts: RoleMessage.Developer.Part.Text[] = [];
+            for (const part of this.parts)
+                if (part instanceof RoleMessage.Developer.Part.Text) {
+                    const textPart = part;
+                    textParts.push(textPart);
+                }
+            return textParts;
         }
         public getText(): string {
             return this.getTextParts().map(part => part.text).join('');
@@ -56,13 +62,25 @@ export namespace RoleMessage {
             return this.parts.every(part => part instanceof RoleMessage.Ai.Part.Text);
         }
         public getTextParts(): RoleMessage.Ai.Part.Text<vdu>[] {
-            return this.parts.filter(part => part instanceof RoleMessage.Ai.Part.Text) as RoleMessage.Ai.Part.Text<vdu>[];
+            const textParts: RoleMessage.Ai.Part.Text<vdu>[] = [];
+            for (const part of this.parts)
+                if (part instanceof RoleMessage.Ai.Part.Text) {
+                    const textPart = part as RoleMessage.Ai.Part.Text<vdu>;
+                    textParts.push(textPart);
+                }
+            return textParts;
         }
         public getText(): string {
             return this.getTextParts().map(part => part.text).join('');
         }
         public getFunctionCalls(): Function.Call.Of<fdu>[] {
-            return this.parts.filter(part => part instanceof Function.Call) as Function.Call.Of<fdu>[];
+            const fcs: Function.Call.Of<fdu>[] = [];
+            for (const part of this.parts)
+                if (part instanceof Function.Call) {
+                    const fc = part as Function.Call.Of<fdu>;
+                    fcs.push(fc);
+                }
+            return fcs;
         }
         public getVerbatimRequests(): Verbatim.Request.Of<vdu>[] {
             return this.getTextParts().flatMap(part => part.vrs);
@@ -115,13 +133,20 @@ export namespace RoleMessage {
             return this.parts;
         }
         public getFunctionResponses(): Function.Response.Of<fdu>[] {
-            return this.parts.filter(part => part instanceof Function.Response) as Function.Response.Of<fdu>[];
+            const frs: Function.Response.Of<fdu>[] = [];
+            for (const part of this.parts)
+                if (part instanceof Function.Response) {
+                    const fr = part as Function.Response.Of<fdu>;
+                    frs.push(fr);
+                }
+            return frs;
         }
         public getOnlyFunctionResponse(): Function.Response.Of<fdu> {
             if (this.parts.length === 1) {} else throw new Error();
             const part = this.parts[0]!;
             if (part instanceof Function.Response) {} else throw new Error();
-            return part as Function.Response.Of<fdu>;
+            const fr = part as Function.Response.Of<fdu>;
+            return fr;
         }
     }
     export namespace User {

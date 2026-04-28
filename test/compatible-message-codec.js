@@ -3,20 +3,20 @@ import { Type } from 'typebox';
 import { MIMEType } from 'whatwg-mimetype';
 import { Function } from '../build/function.js';
 import { Media } from '../build/media.js';
-import { RoleMessage as CompatibleRoleMessage } from '../build/compatible-engine/session.js';
-import { ToolCodec as AnthropicToolCodec } from '../build/api-types/anthropic/tool-codec.js';
-import { ToolCodec as GoogleToolCodec } from '../build/api-types/google/tool-codec.js';
-import { ToolCodec as OpenAIChatCompletionsToolCodec } from '../build/api-types/openai-chatcompletions/tool-codec.js';
-import { ToolCodec as OpenAIResponsesToolCodec } from '../build/api-types/openai-responses/tool-codec.js';
-import { MessageCodec as AnthropicMessageCodec } from '../build/compatible-engine.d/anthropic/message-codec.js';
-import * as AnthropicChoiceCodec from '../build/compatible-engine.d/anthropic/choice-codec.js';
-import { MessageCodec as GoogleMessageCodec } from '../build/compatible-engine.d/google/message-codec.js';
-import { MessageCodec as OpenAIChatCompletionsMessageCodec } from '../build/compatible-engine.d/openai-chatcompletions/message-codec.js';
-import { MessageCodec as OpenAIResponsesMessageCodec } from '../build/compatible-engine.d/openai-responses/message-codec.js';
-import { Structuring as CompatibleStructuring } from '../build/compatible-engine/structuring.js';
-import { Transport as OpenAIChatCompletionsTransport } from '../build/compatible-engine.d/openai-chatcompletions/transport.js';
-import { Transport as OpenAIResponsesTransport } from '../build/compatible-engine.d/openai-responses/transport.js';
-import { Transport as OpenAIResponsesNativeTransport } from '../build/native-engines.d/openai-responses/transport.js';
+import { RoleMessage } from '../build/message.js';
+import { ToolCodec as AnthropicToolCodec } from '../build/engines/anthropic/tool-codec.js';
+import { ToolCodec as GoogleToolCodec } from '../build/engines/google/tool-codec.js';
+import { ToolCodec as OpenAIChatCompletionsToolCodec } from '../build/engines/openai-chatcompletions/tool-codec.js';
+import { ToolCodec as OpenAIResponsesToolCodec } from '../build/engines/openai-responses/tool-codec.js';
+import { MessageCodec as AnthropicMessageCodec } from '../build/engines/anthropic/message-codec.js';
+import * as AnthropicChoiceCodec from '../build/engines/anthropic/choice-codec.js';
+import { MessageCodec as GoogleMessageCodec } from '../build/engines/google/message-codec.js';
+import { MessageCodec as OpenAIChatCompletionsMessageCodec } from '../build/engines/openai-chatcompletions/message-codec.js';
+import { MessageCodec as OpenAIResponsesMessageCodec } from '../build/engines/openai-responses/message-codec.js';
+import { StructuringChoice } from '../build/engines/compatible/structuring-choice.js';
+import { OpenAIResponsesStructuringChoice } from '../build/engines/openai-responses/structuring-choice.js';
+import { Transport as OpenAIChatCompletionsTransport } from '../build/engines/openai-chatcompletions/transport.js';
+import { Transport as OpenAIResponsesTransport } from '../build/engines/openai-responses/transport.js';
 
 
 const functionDeclarationMap = {
@@ -44,8 +44,8 @@ test('OpenAI responses codec encodes multimodal user message', t => {
         toolCodec,
         vdm: verbatimDeclarationMap,
     });
-    const userMessage = new CompatibleRoleMessage.User([
-        new CompatibleRoleMessage.Part.Text('Hello.\n', []),
+    const userMessage = new RoleMessage.User([
+        new RoleMessage.User.Part.Text('Hello.\n'),
         new Media.Image({
             mimeType: new MIMEType('image/png'),
             base64: 'aGVsbG8=',
@@ -95,7 +95,7 @@ test('OpenAI responses codec encodes PDF file input as raw base64', t => {
         toolCodec,
         vdm: verbatimDeclarationMap,
     });
-    const userMessage = new CompatibleRoleMessage.User([
+    const userMessage = new RoleMessage.User([
         new Media.Pdf('cGRm'),
     ]);
 
@@ -117,7 +117,7 @@ test('OpenAI responses codec omits empty user message for pure tool responses', 
         toolCodec,
         vdm: verbatimDeclarationMap,
     });
-    const userMessage = new CompatibleRoleMessage.User([
+    const userMessage = new RoleMessage.User([
         Function.Response.Successful.of({
             id: 'call_1',
             name: 'noop',
@@ -134,13 +134,14 @@ test('OpenAI responses codec omits empty user message for pure tool responses', 
     }]);
 });
 
-test('Google compatible codec encodes PDF user message', t => {
+test('Google codec encodes PDF user message', t => {
     const toolCodec = new GoogleToolCodec({ fdm: functionDeclarationMap });
     const messageCodec = new GoogleMessageCodec({
         toolCodec,
         vdm: verbatimDeclarationMap,
+        codeExecution: false,
     });
-    const userMessage = new CompatibleRoleMessage.User([
+    const userMessage = new RoleMessage.User([
         new Media.Pdf('cGRm'),
     ]);
 
@@ -158,13 +159,13 @@ test('Google compatible codec encodes PDF user message', t => {
     }]);
 });
 
-test('Anthropic compatible codec rejects media user message', t => {
+test('Anthropic codec rejects media user message', t => {
     const toolCodec = new AnthropicToolCodec({ fdm: functionDeclarationMap });
     const messageCodec = new AnthropicMessageCodec({
         toolCodec,
         vdm: verbatimDeclarationMap,
     });
-    const userMessage = new CompatibleRoleMessage.User([
+    const userMessage = new RoleMessage.User([
         new Media.Pdf('cGRm'),
     ]);
 
@@ -179,7 +180,7 @@ test('OpenAI chat completions codec rejects media user message', t => {
         toolCodec,
         vdm: verbatimDeclarationMap,
     });
-    const userMessage = new CompatibleRoleMessage.User([
+    const userMessage = new RoleMessage.User([
         new Media.Image({
             mimeType: new MIMEType('image/png'),
             base64: 'aGVsbG8=',
@@ -193,7 +194,7 @@ test('OpenAI chat completions codec rejects media user message', t => {
 });
 
 test('Anthropic choice codec leaves disable_parallel_tool_use undefined when option is unspecified', t => {
-    const encoded = AnthropicChoiceCodec.encode(CompatibleStructuring.Choice.AUTO);
+    const encoded = AnthropicChoiceCodec.encode(StructuringChoice.AUTO);
 
     t.is(encoded.disable_parallel_tool_use, undefined);
 });
@@ -207,7 +208,7 @@ test('OpenAI Chat Completions transport reads parallelToolCall from inferencePar
     const transport = new OpenAIChatCompletionsTransport({
         fdm: functionDeclarationMap,
         throttle: { requests: async () => {} },
-        choice: CompatibleStructuring.Choice.AUTO,
+        structuringChoice: StructuringChoice.AUTO,
         providerSpec: {
             baseUrl: 'https://example.invalid/openai',
             apiKey: 'test-key',
@@ -223,8 +224,8 @@ test('OpenAI Chat Completions transport reads parallelToolCall from inferencePar
         billing: { charge: () => 0 },
     });
     const session = {
-        chatMessages: [new CompatibleRoleMessage.User([
-            new CompatibleRoleMessage.Part.Text('Hello.\n', []),
+        chatMessages: [new RoleMessage.User([
+            new RoleMessage.User.Part.Text('Hello.\n'),
         ])],
     };
 
@@ -243,7 +244,7 @@ test('OpenAI Chat Completions transport streams usage by default', t => {
     const transport = new OpenAIChatCompletionsTransport({
         fdm: functionDeclarationMap,
         throttle: { requests: async () => {} },
-        choice: CompatibleStructuring.Choice.AUTO,
+        structuringChoice: StructuringChoice.AUTO,
         providerSpec: {
             baseUrl: 'https://example.invalid/openai',
             apiKey: 'test-key',
@@ -259,8 +260,8 @@ test('OpenAI Chat Completions transport streams usage by default', t => {
         billing: { charge: () => 0 },
     });
     const session = {
-        chatMessages: [new CompatibleRoleMessage.User([
-            new CompatibleRoleMessage.Part.Text('Hello.\n', []),
+        chatMessages: [new RoleMessage.User([
+            new RoleMessage.User.Part.Text('Hello.\n'),
         ])],
     };
 
@@ -273,7 +274,7 @@ test('OpenAI Chat Completions transport streams usage by default', t => {
     });
 });
 
-test('OpenAI Responses compatible transport reads parallelToolCall from inference params', t => {
+test('OpenAI Responses transport reads parallelToolCall from inference params', t => {
     const toolCodec = new OpenAIResponsesToolCodec({ fdm: functionDeclarationMap });
     const messageCodec = new OpenAIResponsesMessageCodec({
         toolCodec,
@@ -292,14 +293,15 @@ test('OpenAI Responses compatible transport reads parallelToolCall from inferenc
         },
         fdm: functionDeclarationMap,
         throttle: { requests: async () => {} },
-        choice: CompatibleStructuring.Choice.AUTO,
+        structuringChoice: OpenAIResponsesStructuringChoice.AUTO,
+        applyPatch: false,
         messageCodec,
         toolCodec,
         billing: { charge: () => 0 },
     });
     const session = {
-        chatMessages: [new CompatibleRoleMessage.User([
-            new CompatibleRoleMessage.Part.Text('Hello.\n', []),
+        chatMessages: [new RoleMessage.User([
+            new RoleMessage.User.Part.Text('Hello.\n'),
         ])],
     };
 
@@ -308,7 +310,7 @@ test('OpenAI Responses compatible transport reads parallelToolCall from inferenc
     t.is(params.parallel_tool_calls, true);
 });
 
-test('OpenAI Responses compatible transport throws on stream error event', async t => {
+test('OpenAI Responses transport throws on stream error event', async t => {
     const toolCodec = new OpenAIResponsesToolCodec({ fdm: functionDeclarationMap });
     const messageCodec = new OpenAIResponsesMessageCodec({
         toolCodec,
@@ -327,7 +329,8 @@ test('OpenAI Responses compatible transport throws on stream error event', async
         },
         fdm: functionDeclarationMap,
         throttle: { requests: async () => {} },
-        choice: CompatibleStructuring.Choice.AUTO,
+        structuringChoice: OpenAIResponsesStructuringChoice.AUTO,
+        applyPatch: false,
         messageCodec,
         toolCodec,
         billing: { charge: () => 0 },
@@ -344,8 +347,8 @@ test('OpenAI Responses compatible transport throws on stream error event', async
         },
     };
     const session = {
-        chatMessages: [new CompatibleRoleMessage.User([
-            new CompatibleRoleMessage.Part.Text('Hello.\n', []),
+        chatMessages: [new RoleMessage.User([
+            new RoleMessage.User.Part.Text('Hello.\n'),
         ])],
     };
 
@@ -354,13 +357,13 @@ test('OpenAI Responses compatible transport throws on stream error event', async
     t.is(error?.message, 'Response stream error');
 });
 
-test('OpenAI Responses native transport reads parallelToolCall from inferenceParams', t => {
+test('OpenAI Responses transport reads disabled parallelToolCall from inferenceParams', t => {
     const toolCodec = new OpenAIResponsesToolCodec({ fdm: functionDeclarationMap });
     const messageCodec = new OpenAIResponsesMessageCodec({
         toolCodec,
         vdm: verbatimDeclarationMap,
     });
-    const transport = new OpenAIResponsesNativeTransport({
+    const transport = new OpenAIResponsesTransport({
         inferenceParams: {
             model: 'test-model',
             parallelToolCall: false,
@@ -373,15 +376,15 @@ test('OpenAI Responses native transport reads parallelToolCall from inferencePar
         },
         fdm: functionDeclarationMap,
         throttle: { requests: async () => {} },
-        choice: CompatibleStructuring.Choice.AUTO,
+        structuringChoice: OpenAIResponsesStructuringChoice.AUTO,
         applyPatch: false,
         messageCodec,
         toolCodec,
         billing: { charge: () => 0 },
     });
     const session = {
-        chatMessages: [new CompatibleRoleMessage.User([
-            new CompatibleRoleMessage.Part.Text('Hello.\n', []),
+        chatMessages: [new RoleMessage.User([
+            new RoleMessage.User.Part.Text('Hello.\n'),
         ])],
     };
 
@@ -409,3 +412,4 @@ test('Media text rejects non-text MIME type', t => {
 
     t.is(error?.message, 'Major MIME type of text must be `text`.');
 });
+

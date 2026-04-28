@@ -48,16 +48,16 @@ import { config } from './config.ts';
 // 创建会话
 const session: Session<never, never> = {
     developerMessage: new RoleMessage.Developer([
-        RoleMessage.Part.Text.paragraph('You are a helpful assistant.'),
+        RoleMessage.Developer.Part.Text.paragraph('You are a helpful assistant.'),
     ]),
     chatMessages: [
-        new RoleMessage.User([ RoleMessage.Part.Text.paragraph('Hello!') ]),
+        new RoleMessage.User([ RoleMessage.User.Part.Text.paragraph('Hello!') ]),
     ],
 };
 
 // 选择推理引擎
 const adaptor = Adaptor.create(config);
-const engine = adaptor.makeCompatibleEngine<{}, {}>({
+const engine = adaptor.makeEngine<{}, {}>({
     endpoint: 'gpt-5.4-mini',
     functionDeclarationMap: {},
     verbatimDeclarationMap: {},
@@ -70,7 +70,7 @@ console.log(response.getText());
 ## 智能体
 
 ```ts
-import { Adaptor, agentloop, RoleMessage, Function, type Session, Structuring } from '@zimtsui/typechat';
+import { Adaptor, RoleMessage, Function, type Session, OpenAIResponsesStructuringChoice } from '@zimtsui/typechat';
 import { Type } from 'typebox';
 import { config } from './config.ts';
 
@@ -111,25 +111,25 @@ const fnm: Function.Map<fdm> = {
 // 创建会话
 const session: Session<fdu, never> = {
     developerMessage: new RoleMessage.Developer([
-        RoleMessage.Part.Text.paragraph('你的工作是为用户查询天气，并给出穿衣建议。调用工具提交最终结果'),
+        RoleMessage.Developer.Part.Text.paragraph('你的工作是为用户查询天气，并给出穿衣建议。调用工具提交最终结果'),
     ]),
     chatMessages: [
-        new RoleMessage.User([ RoleMessage.Part.Text.paragraph('请查询现在北京的天气，并给穿衣建议。') ]),
+        new RoleMessage.User([ RoleMessage.User.Part.Text.paragraph('请查询现在北京的天气，并给穿衣建议。') ]),
     ],
 };
 
 // 选择推理引擎
 const adaptor = Adaptor.create(config);
-const engine = adaptor.makeCompatibleEngine<fdm, {}>({
+const engine = adaptor.makeOpenAIResponsesEngine<fdm, {}>({
     endpoint: 'gpt-5.4-mini',
     functionDeclarationMap: fdm,
     verbatimDeclarationMap: {},
-    structuringChoice: Structuring.Choice.FCall.REQUIRED,
+    structuringChoice: OpenAIResponsesStructuringChoice.TCall.REQUIRED,
 });
 
 // 使用 agentloop 驱动智能体循环，最多 8 轮对话
 try {
-    for await (const text of agentloop({}, session, engine, fnm, 8)) console.log(text);
+    for await (const text of engine.agentloop({}, session, fnm, {}, 8)) console.log(text);
 } catch (e) {
     if (e instanceof Submission) {} else throw e;
     console.log(e.weather);
@@ -144,7 +144,7 @@ When a LLM outputs structured data in JSON format (e.g., legacy LLM function cal
 XML Verbatim Channel is designed to avoid escaping in LLM messages.
 
 ```ts
-import { Adaptor, RoleMessage, type Session, Structuring, Verbatim } from '@zimtsui/typechat';
+import { Adaptor, RoleMessage, type Session, OpenAIResponsesStructuringChoice, Verbatim } from '@zimtsui/typechat';
 import Assets from '@zimtsui/typechat/assets';
 import * as Codec from '@zimtsui/typechat/codec';
 import { config } from './config.ts';
@@ -170,22 +170,22 @@ type vdu = Verbatim.Decl.From<vdm>;
 // 创建会话
 const session: Session<never, vdu> = {
     developerMessage: new RoleMessage.Developer([
-        RoleMessage.Part.Text.paragraph(Assets.verbatim.instruction),
-        RoleMessage.Part.Text.paragraph('# Available Verbatim Channels'),
-        RoleMessage.Part.Text.paragraph(Codec.Declarations.encode(vdm)),
+        RoleMessage.Developer.Part.Text.paragraph(Assets.verbatim.instruction),
+        RoleMessage.Developer.Part.Text.paragraph('# Available Verbatim Channels'),
+        RoleMessage.Developer.Part.Text.paragraph(Codec.Declarations.encode(vdm)),
     ]),
     chatMessages: [
-        new RoleMessage.User([ RoleMessage.Part.Text.paragraph('请使用 Bash 命令查询当前系统时间。') ]),
+        new RoleMessage.User([ RoleMessage.User.Part.Text.paragraph('请使用 Bash 命令查询当前系统时间。') ]),
     ],
 };
 
 // 选择推理引擎
 const adaptor = Adaptor.create(config);
-const engine = adaptor.makeCompatibleEngine<{}, vdm>({
+const engine = adaptor.makeOpenAIResponsesEngine<{}, vdm>({
     endpoint: 'gpt-5.4-mini',
     functionDeclarationMap: {},
     verbatimDeclarationMap: vdm,
-    structuringChoice: Structuring.Choice.VRequest.ANYONE,
+    structuringChoice: OpenAIResponsesStructuringChoice.VRequest.ANYONE,
 });
 
 const response = await engine.stateless({}, session);

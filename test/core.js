@@ -2,11 +2,10 @@ import test from 'ava';
 import { Type } from 'typebox';
 import { Adaptor } from '../build/adaptor.js';
 import { Throttle } from '../build/throttle.js';
-import { OpenAIResponsesCompatibleEngine } from '../build/compatible-engine.d/openai-responses.js';
-import { GoogleCompatibleEngine } from '../build/compatible-engine.d/google.js';
-import { OpenAIChatCompletionsCompatibleEngine } from '../build/compatible-engine.d/openai-chatcompletions.js';
-import { OpenAIResponsesNativeEngine } from '../build/native-engines.d/openai-responses.js';
-import { GoogleNativeEngine } from '../build/native-engines.d/google.js';
+import { OpenAIResponsesEngine } from '../build/engines/openai-responses.js';
+import { GoogleEngine } from '../build/engines/google.js';
+import { OpenAIChatCompletionsEngine } from '../build/engines/openai-chatcompletions.js';
+import { AnthropicEngine } from '../build/engines/anthropic.js';
 
 
 const functionDeclarationMap = {
@@ -68,7 +67,7 @@ test('Throttle acquires and releases busy lock when rpm is finite', async t => {
     t.is(releaseReadCalls, 1);
 });
 
-test('Adaptor creates compatible engines matching endpoint apiType', t => {
+test('Adaptor creates engines matching endpoint apiType', t => {
     const adaptor = Adaptor.create({
         endpoints: {
             openai: {
@@ -76,47 +75,60 @@ test('Adaptor creates compatible engines matching endpoint apiType', t => {
                 baseUrl: 'https://example.invalid/openai',
                 apiKey: 'test-key',
                 model: 'test-model',
-                name: 'OpenAI Compatible',
+                name: 'OpenAI Responses',
             },
             google: {
                 apiType: 'google',
                 baseUrl: 'https://example.invalid/google',
                 apiKey: 'test-key',
                 model: 'test-model',
-                name: 'Google Compatible',
+                name: 'Google',
             },
             openaiChatCompletions: {
                 apiType: 'openai-chatcompletions',
                 baseUrl: 'https://example.invalid/openai-chatcompletions',
                 apiKey: 'test-key',
                 model: 'test-model',
-                name: 'OpenAI Chat Completions Compatible',
+                name: 'OpenAI Chat Completions',
+            },
+            anthropic: {
+                apiType: 'anthropic',
+                baseUrl: 'https://example.invalid/anthropic',
+                apiKey: 'test-key',
+                model: 'test-model',
+                name: 'Anthropic',
             },
         },
     });
 
-    const openaiEngine = adaptor.makeCompatibleEngine({
+    const openaiEngine = adaptor.makeEngine({
         endpoint: 'openai',
         functionDeclarationMap,
         verbatimDeclarationMap,
     });
-    const googleEngine = adaptor.makeCompatibleEngine({
+    const googleEngine = adaptor.makeEngine({
         endpoint: 'google',
         functionDeclarationMap,
         verbatimDeclarationMap,
     });
-    const openaiChatCompletionsEngine = adaptor.makeCompatibleEngine({
+    const openaiChatCompletionsEngine = adaptor.makeEngine({
         endpoint: 'openaiChatCompletions',
         functionDeclarationMap,
         verbatimDeclarationMap,
     });
+    const anthropicEngine = adaptor.makeEngine({
+        endpoint: 'anthropic',
+        functionDeclarationMap,
+        verbatimDeclarationMap,
+    });
 
-    t.true(openaiEngine instanceof OpenAIResponsesCompatibleEngine.Instance);
-    t.true(googleEngine instanceof GoogleCompatibleEngine.Instance);
-    t.true(openaiChatCompletionsEngine instanceof OpenAIChatCompletionsCompatibleEngine.Instance);
+    t.true(openaiEngine instanceof OpenAIResponsesEngine.Instance);
+    t.true(googleEngine instanceof GoogleEngine.Instance);
+    t.true(openaiChatCompletionsEngine instanceof OpenAIChatCompletionsEngine.Instance);
+    t.true(anthropicEngine instanceof AnthropicEngine.Instance);
 });
 
-test('Adaptor creates native engines matching endpoint apiType', t => {
+test('Adaptor creates dedicated Google and OpenAI Responses engines', t => {
     const adaptor = Adaptor.create({
         endpoints: {
             openai: {
@@ -124,31 +136,31 @@ test('Adaptor creates native engines matching endpoint apiType', t => {
                 baseUrl: 'https://example.invalid/openai',
                 apiKey: 'test-key',
                 model: 'test-model',
-                name: 'OpenAI Native',
+                name: 'OpenAI Responses',
             },
             google: {
                 apiType: 'google',
                 baseUrl: 'https://example.invalid/google',
                 apiKey: 'test-key',
                 model: 'test-model',
-                name: 'Google Native',
+                name: 'Google',
             },
         },
     });
 
-    const openaiEngine = adaptor.makeOpenAIResponsesNativeEngine({
+    const openaiEngine = adaptor.makeOpenAIResponsesEngine({
         endpoint: 'openai',
         functionDeclarationMap,
         verbatimDeclarationMap,
     });
-    const googleEngine = adaptor.makeGoogleNativeEngine({
+    const googleEngine = adaptor.makeGoogleEngine({
         endpoint: 'google',
         functionDeclarationMap,
         verbatimDeclarationMap,
     });
 
-    t.true(openaiEngine instanceof OpenAIResponsesNativeEngine.Instance);
-    t.true(googleEngine instanceof GoogleNativeEngine.Instance);
+    t.true(openaiEngine instanceof OpenAIResponsesEngine.Instance);
+    t.true(googleEngine instanceof GoogleEngine.Instance);
 });
 
 test('Adaptor rejects unknown endpoint ids', t => {
@@ -156,7 +168,7 @@ test('Adaptor rejects unknown endpoint ids', t => {
         endpoints: {},
     });
 
-    const error = t.throws(() => adaptor.makeCompatibleEngine({
+    const error = t.throws(() => adaptor.makeEngine({
         endpoint: 'missing',
         functionDeclarationMap,
         verbatimDeclarationMap,
@@ -165,7 +177,7 @@ test('Adaptor rejects unknown endpoint ids', t => {
     t.truthy(error);
 });
 
-test('Google native engine rejects disabling parallel tool calls', t => {
+test('Google engine rejects disabling parallel tool calls', t => {
     const adaptor = Adaptor.create({
         endpoints: {
             google: {
@@ -173,13 +185,13 @@ test('Google native engine rejects disabling parallel tool calls', t => {
                 baseUrl: 'https://example.invalid/google',
                 apiKey: 'test-key',
                 model: 'test-model',
-                name: 'Google Native',
+                name: 'Google',
                 parallelToolCall: false,
             },
         },
     });
 
-    const error = t.throws(() => adaptor.makeGoogleNativeEngine({
+    const error = t.throws(() => adaptor.makeGoogleEngine({
         endpoint: 'google',
         functionDeclarationMap,
         verbatimDeclarationMap,
@@ -188,7 +200,7 @@ test('Google native engine rejects disabling parallel tool calls', t => {
     t.regex(error.message, /Parallel tool calling is required by Google engine\./);
 });
 
-test('Google compatible engine allows omitted parallel tool call option', t => {
+test('Google engine allows omitted parallel tool call option', t => {
     const adaptor = Adaptor.create({
         endpoints: {
             google: {
@@ -196,38 +208,17 @@ test('Google compatible engine allows omitted parallel tool call option', t => {
                 baseUrl: 'https://example.invalid/google',
                 apiKey: 'test-key',
                 model: 'test-model',
-                name: 'Google Compatible',
+                name: 'Google',
             },
         },
     });
 
-    const engine = adaptor.makeCompatibleEngine({
+    const engine = adaptor.makeGoogleEngine({
         endpoint: 'google',
         functionDeclarationMap,
         verbatimDeclarationMap,
     });
 
-    t.true(engine instanceof GoogleCompatibleEngine.Instance);
+    t.true(engine instanceof GoogleEngine.Instance);
 });
 
-test('Google native engine allows omitted parallel tool call option', t => {
-    const adaptor = Adaptor.create({
-        endpoints: {
-            google: {
-                apiType: 'google',
-                baseUrl: 'https://example.invalid/google',
-                apiKey: 'test-key',
-                model: 'test-model',
-                name: 'Google Native',
-            },
-        },
-    });
-
-    const engine = adaptor.makeGoogleNativeEngine({
-        endpoint: 'google',
-        functionDeclarationMap,
-        verbatimDeclarationMap,
-    });
-
-    t.true(engine instanceof GoogleNativeEngine.Instance);
-});

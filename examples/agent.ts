@@ -1,4 +1,4 @@
-import { Adaptor, agentloop, RoleMessage, Function, type Session, Structuring } from '@zimtsui/typechat';
+import { Adaptor, RoleMessage, Function, type Session, OpenAIResponsesStructuringChoice } from '@zimtsui/typechat';
 import { Type } from 'typebox';
 import { config } from './config.ts';
 
@@ -38,25 +38,25 @@ const fnm: Function.Map<fdm> = {
 // 创建会话
 const session: Session<fdu, never> = {
     developerMessage: new RoleMessage.Developer([
-        RoleMessage.Part.Text.paragraph('你的工作是为用户查询天气，并给出穿衣建议。调用工具提交最终结果'),
+        RoleMessage.Developer.Part.Text.paragraph('你的工作是为用户查询天气，并给出穿衣建议。调用工具提交最终结果'),
     ]),
     chatMessages: [
-        new RoleMessage.User([ RoleMessage.Part.Text.paragraph('请查询现在北京的天气，并给穿衣建议。') ]),
+        new RoleMessage.User([ RoleMessage.User.Part.Text.paragraph('请查询现在北京的天气，并给穿衣建议。') ]),
     ],
 };
 
 // 选择推理引擎
 const adaptor = Adaptor.create(config);
-const engine = adaptor.makeCompatibleEngine<fdm, {}>({
+const engine = adaptor.makeOpenAIResponsesEngine<fdm, {}>({
     endpoint: 'gpt-5.4-mini',
     functionDeclarationMap: fdm,
     verbatimDeclarationMap: {},
-    structuringChoice: Structuring.Choice.FCall.REQUIRED,
+    structuringChoice: OpenAIResponsesStructuringChoice.TCall.REQUIRED,
 });
 
 // 使用 agentloop 驱动智能体循环，最多 8 轮对话
 try {
-    for await (const text of agentloop({}, session, engine, fnm, 8)) console.log(text);
+    for await (const text of engine.agentloop({}, session, fnm, {}, 8)) console.log(text);
 } catch (e) {
     if (e instanceof Submission) {} else throw e;
     console.log(e.weather);

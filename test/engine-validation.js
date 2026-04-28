@@ -2,19 +2,17 @@ import test from 'ava';
 import { Type } from 'typebox';
 import { MIMEType } from 'whatwg-mimetype';
 import { Throttle } from '../build/throttle.js';
-import { Engine, Recoverable } from '../build/engine.js';
+import { Engine } from '../build/engine.js';
+import { Recoverable } from '../build/engine/recoverable.js';
 import * as VerbatimCodec from '../build/verbatim/codec.js';
-import { Structuring as CompatibleStructuring } from '../build/compatible-engine/structuring.js';
-import {
-    StructuringValidator as CompatibleStructuringValidator,
-    PartsValidator as CompatiblePartsValidator,
-} from '../build/compatible-engine/validation.js';
-import { RoleMessage as CompatibleRoleMessage } from '../build/compatible-engine/session.js';
-import { Structuring as OpenAIStructuring } from '../build/native-engines.d/openai-responses/structuring.js';
-import { StructuringValidator as OpenAIResponsesStructuringValidator } from '../build/native-engines.d/openai-responses/validation.js';
-import { RoleMessage as OpenAIResponsesRoleMessage } from '../build/native-engines.d/openai-responses/session.js';
-import { PartsValidator as GooglePartsValidator } from '../build/native-engines.d/google/validation.js';
-import { RoleMessage as GoogleRoleMessage } from '../build/native-engines.d/google/session.js';
+import { StructuringChoice } from '../build/engines/compatible/structuring-choice.js';
+import { StructuringValidator as CompatibleStructuringValidator } from '../build/engines/compatible/structuring-validator.js';
+import { PartsValidator } from '../build/engine/parts-validator.js';
+import { RoleMessage } from '../build/message.js';
+import { OpenAIResponsesStructuringChoice } from '../build/engines/openai-responses/structuring-choice.js';
+import { StructuringValidator as OpenAIResponsesStructuringValidator } from '../build/engines/openai-responses/structuring-validator.js';
+import { NativeRoleMessage as OpenAIResponsesRoleMessage } from '../build/engines/openai-responses/message.js';
+import { NativeRoleMessage as GoogleRoleMessage } from '../build/engines/google/message.js';
 
 
 const functionDeclarationMap = {
@@ -50,10 +48,10 @@ test('Verbatim system codec wraps escaped XML body text', t => {
 
 test('Compatible validator returns verbatim meta feedback when request is missing', t => {
     const validator = new CompatibleStructuringValidator({
-        structuringChoice: CompatibleStructuring.Choice.VRequest.REQUIRED,
+        structuringChoice: StructuringChoice.VRequest.REQUIRED,
     });
-    const aiMessage = new CompatibleRoleMessage.Ai([
-        CompatibleRoleMessage.Part.Text.paragraph('plain text'),
+    const aiMessage = new RoleMessage.Ai([
+        RoleMessage.Ai.Part.Text.paragraph('plain text'),
     ]);
 
     const rejection = validator.validate(aiMessage);
@@ -64,10 +62,10 @@ test('Compatible validator returns verbatim meta feedback when request is missin
 
 test('OpenAI Responses validator returns verbatim meta feedback when request is missing', t => {
     const validator = new OpenAIResponsesStructuringValidator({
-        structuringChoice: OpenAIStructuring.Choice.VRequest.REQUIRED,
+        structuringChoice: OpenAIResponsesStructuringChoice.VRequest.REQUIRED,
     });
     const aiMessage = new OpenAIResponsesRoleMessage.Ai([
-        OpenAIResponsesRoleMessage.Part.Text.paragraph('plain text'),
+        OpenAIResponsesRoleMessage.Ai.Part.Text.paragraph('plain text'),
     ], []);
 
     const rejection = validator.validate(aiMessage);
@@ -76,8 +74,8 @@ test('OpenAI Responses validator returns verbatim meta feedback when request is 
     t.regex(getOnlyText(rejection), /<verbatim:system>Error: No valid verbatim request found\. Check your output format\.<\/verbatim:system>\n\n$/);
 });
 
-test('Google parts validator ignores executable code and code execution result', t => {
-    const validator = new GooglePartsValidator();
+test('Parts validator ignores Google executable code and code execution result text', t => {
+    const validator = new PartsValidator();
     const aiMessage = new GoogleRoleMessage.Ai([
         new GoogleRoleMessage.Ai.Part.ExecutableCode('ab'.repeat(50), 'python'),
         new GoogleRoleMessage.Ai.Part.CodeExecutionResult('ok', 'ab'.repeat(50)),
@@ -110,18 +108,6 @@ test('Engine stateful retries validator rejection without mutating session by de
             };
         }
 
-        appendUserMessage(session, message) {
-            return {
-                developerMessage: session.developerMessage,
-                chatMessages: [...session.chatMessages, message],
-            };
-        }
-
-        pushUserMessage(session, message) {
-            session.chatMessages.push(message);
-            return session;
-        }
-
         clone() {
             const engine = new FakeEngine(responses, this.structuringValidator, this.partsValidator);
             engine.middlewares = [...this.middlewares];
@@ -134,8 +120,8 @@ test('Engine stateful retries validator rejection without mutating session by de
         { kind: 'invalid' },
         { kind: 'valid' },
     ];
-    const rejection = new CompatibleRoleMessage.User([
-        CompatibleRoleMessage.Part.Text.paragraph(
+    const rejection = new RoleMessage.User([
+        RoleMessage.User.Part.Text.paragraph(
             VerbatimCodec.System.encode('Error: No valid verbatim request found. Check your output format.'),
         ),
     ]);
@@ -180,18 +166,6 @@ test('Engine Recoverable middleware appends validator rejection into session his
             };
         }
 
-        appendUserMessage(session, message) {
-            return {
-                developerMessage: session.developerMessage,
-                chatMessages: [...session.chatMessages, message],
-            };
-        }
-
-        pushUserMessage(session, message) {
-            session.chatMessages.push(message);
-            return session;
-        }
-
         clone() {
             const engine = new FakeEngine(responses, this.structuringValidator, this.partsValidator);
             engine.middlewares = [...this.middlewares];
@@ -204,8 +178,8 @@ test('Engine Recoverable middleware appends validator rejection into session his
         { kind: 'invalid' },
         { kind: 'valid' },
     ];
-    const rejection = new CompatibleRoleMessage.User([
-        CompatibleRoleMessage.Part.Text.paragraph(
+    const rejection = new RoleMessage.User([
+        RoleMessage.User.Part.Text.paragraph(
             VerbatimCodec.System.encode('Error: No valid verbatim request found. Check your output format.'),
         ),
     ]);
@@ -228,3 +202,4 @@ test('Engine Recoverable middleware appends validator rejection into session his
         { kind: 'valid' },
     ]);
 });
+
