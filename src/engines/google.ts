@@ -119,7 +119,12 @@ export namespace GoogleEngine {
                 const pvress: Promise<RoleMessage.User.Part.Text>[] = [];
                 for (const part of response.getParts()) {
                     if (part instanceof Engine.RoleMessage.Ai.Part.Text) {
-                        yield part.text;
+                        const textPart = part as Engine.RoleMessage.Ai.Part.Text.From<vdm>;
+                        yield textPart.text;
+                        for (const vreq of textPart.vreqs) {
+                            const vh = vhm[vreq.name];
+                            pvress.push((async () => new RoleMessage.User.Part.Text(await vh.call(vhm, vreq.args)))());
+                        }
                     } else if (part instanceof Function.Call) {
                         const fcall = part as Function.Call.From<fdm>;
                         const f = fnm[fcall.name];
@@ -139,16 +144,6 @@ export namespace GoogleEngine {
                                 } as Function.Response.Failed.Options.From<fdm>);
                             }
                         })());
-                    } else if (part instanceof Verbatim.Request) {
-                        const vreq = part as Verbatim.Request.From<vdm>;
-                        const vh = vhm[vreq.name];
-                        pvress.push(
-                            Promise.resolve(
-                                new RoleMessage.User.Part.Text(
-                                    await vh.call(vhm, vreq.args),
-                                ),
-                            ),
-                        );
                     } else if (part instanceof RoleMessage.Ai.Part.ExecutableCode) {
                         yield RoleMessage.Ai.encodeChatPart(part);
                     } else if (part instanceof RoleMessage.Ai.Part.CodeExecutionResult) {

@@ -225,12 +225,17 @@ export namespace Engine {
         ): AsyncGenerator<string, string, void> {
             for (let i = 0; i < limit; i++) {
                 const response = await this.stateful(wfctx, session);
-                if (response.allTextPart()) return response.getText();
+                if (response.allChat()) return response.getChat();
                 const pfress: Promise<Function.Response.From<fdm>>[] = [];
                 const pvress: Promise<RoleMessage.User.Part.Text>[] = [];
                 for (const part of response.getParts()) {
                     if (part instanceof RoleMessage.Ai.Part.Text) {
-                        yield part.text;
+                        const textPart = part as Engine.RoleMessage.Ai.Part.Text.From<vdm>;
+                        yield textPart.text;
+                        for (const vreq of textPart.vreqs) {
+                            const vh = vhm[vreq.name];
+                            pvress.push((async () => new RoleMessage.User.Part.Text(await vh.call(vhm, vreq.args)))());
+                        }
                     } else if (part instanceof Function.Call) {
                         const fcall = part as Function.Call.From<fdm>;
                         const f = fnm[fcall.name];
@@ -249,14 +254,6 @@ export namespace Engine {
                                     error: e.message,
                                 } as Function.Response.Failed.Options.From<fdm>);
                             }
-                        })());
-                    } else if (part instanceof Verbatim.Request) {
-                        const vreq = part as Verbatim.Request.From<vdm>;
-                        const vh = vhm[vreq.name];
-                        pvress.push((async () => {
-                            return new RoleMessage.User.Part.Text(
-                                await vh.call(vhm, vreq.args),
-                            );
                         })());
                     } else throw new Error();
                 }

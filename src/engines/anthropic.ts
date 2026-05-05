@@ -5,7 +5,6 @@ import { ToolCodec } from './anthropic/tool-codec.ts';
 import { Billing } from './anthropic/billing.ts';
 import { MessageCodec } from './anthropic/message-codec.ts';
 import { Transport } from './anthropic/transport.ts';
-import { StructuringValidator } from '../engine/structuring-validator.ts';
 
 
 export type AnthropicEngine<
@@ -21,7 +20,6 @@ export namespace AnthropicEngine {
         protected messageCodec: MessageCodec<fdm, vdm>;
         protected billing: Billing;
         protected override transport: Transport<fdm, vdm>;
-        protected override structuringValidator: Engine.StructuringValidator.From<fdm, vdm>;
 
         public constructor(protected options: AnthropicEngine.Options<fdm, vdm>) {
             super(options);
@@ -41,7 +39,6 @@ export namespace AnthropicEngine {
                 toolCodec: this.toolCodec,
                 billing: this.billing,
             });
-            this.structuringValidator = new StructuringValidator({ structuringChoice: this.structuringChoice });
         }
 
         public override clone(): Engine<fdm, vdm> {

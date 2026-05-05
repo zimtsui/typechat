@@ -3,18 +3,18 @@ import { Verbatim } from '../../verbatim.ts';
 import { RoleMessage } from './message.ts';
 import * as VerbatimCodec from '../../verbatim/codec.ts';
 import { StructuringChoice } from '../../structuring-choice.ts';
+import { Engine } from '../../engine.ts';
 
 
 export class StructuringValidator<
     in out fdu extends Function.Decl.Proto,
     in out vdu extends Verbatim.Decl.Proto,
-> {
-    protected structuringChoice: StructuringChoice;
+> extends Engine.StructuringValidator<fdu, vdu> {
     public constructor(options: StructuringValidator.Options) {
-        this.structuringChoice = options.structuringChoice;
+        super(options);
     }
 
-    public validate(
+    public override validate(
         aiMessage: RoleMessage.Ai<fdu, vdu>,
     ): RoleMessage.User<never> | void {
         const tcalls = aiMessage.getToolCalls();
@@ -87,7 +87,5 @@ export namespace StructuringValidator {
         vdm extends Verbatim.Decl.Map.Proto,
     > = StructuringValidator<Function.Decl.From<fdm>, Verbatim.Decl.From<vdm>>;
 
-    export interface Options {
-        structuringChoice: StructuringChoice;
-    }
+    export type Options = Engine.StructuringValidator.Options;
 }

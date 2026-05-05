@@ -4,7 +4,7 @@ import { Verbatim } from '../verbatim.ts';
 import { MessageCodec } from './openai-responses/message-codec.ts';
 import { ToolCodec } from './openai-responses/tool-codec.ts';
 import { Billing } from './openai-responses/billing.ts';
-import { StructuringValidator } from '../engine/structuring-validator.ts';
+import { StructuringValidator } from './openai-responses/structuring-validator.ts';
 import { Transport } from './openai-responses/transport.ts';
 import { InferenceContext } from '../inference-context.ts';
 import { Session } from '../engine/session.ts';
@@ -25,7 +25,7 @@ export namespace OpenAIResponsesEngine {
         protected messageCodec: MessageCodec<fdm, vdm>;
         protected billing: Billing;
         protected override transport: Transport<fdm, vdm>;
-        protected override structuringValidator: Engine.StructuringValidator.From<fdm, vdm>;
+        protected override structuringValidator: StructuringValidator.From<fdm, vdm>;
         protected applyPatch: boolean;
 
         public constructor(protected options: OpenAIResponsesEngine.Options<fdm, vdm>) {
@@ -91,13 +91,18 @@ export namespace OpenAIResponsesEngine {
         ): AsyncGenerator<string, string, void> {
             for (let i = 0; i < limit; i++) {
                 const response = await this.stateful(wfctx, session);
-                if (response.allTextPart()) return response.getText();
+                if (response.allChat()) return response.getChat();
                 const pfress: Promise<Function.Response.From<fdm>>[] = [];
                 const pvress: Promise<RoleMessage.User.Part.Text>[] = [];
                 const papress: Promise<Tool.ApplyPatch.Response>[] = [];
                 for (const part of response.getParts()) {
                     if (part instanceof Engine.RoleMessage.Ai.Part.Text) {
-                        yield part.text;
+                        const textPart = part as Engine.RoleMessage.Ai.Part.Text.From<vdm>;
+                        yield textPart.text;
+                        for (const vreq of textPart.vreqs) {
+                            const vh = vhm[vreq.name];
+                            pvress.push((async () => new RoleMessage.User.Part.Text(await vh.call(vhm, vreq.args)))());
+                        }
                     } else if (part instanceof Function.Call) {
                         const fcall = part as Function.Call.From<fdm>;
                         const f = fnm[fcall.name];
@@ -117,10 +122,6 @@ export namespace OpenAIResponsesEngine {
                                 } as Function.Response.Failed.Options.From<fdm>);
                             }
                         })());
-                    } else if (part instanceof Verbatim.Request) {
-                        const vreq = part as Verbatim.Request.From<vdm>;
-                        const vh = vhm[vreq.name];
-                        pvress.push((async () => new RoleMessage.User.Part.Text(await vh.call(vhm, vreq.args)))());
                     } else if (part instanceof Tool.ApplyPatch.Call) {
                         if (applyPatch) {} else throw new Error('Apply patch handler missing.');
                         papress.push((async () => new Tool.ApplyPatch.Response({

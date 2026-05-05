@@ -58,8 +58,8 @@ export namespace RoleMessage {
         public getParts(): unknown[] {
             return this.parts;
         }
-        public allTextPart(): boolean {
-            return this.parts.every(part => part instanceof RoleMessage.Ai.Part.Text);
+        public allChat(): boolean {
+            return this.parts.every(part => part instanceof RoleMessage.Ai.Part.Text && !part.vreqs.length);
         }
         public getTextParts(): RoleMessage.Ai.Part.Text<vdu>[] {
             const textParts: RoleMessage.Ai.Part.Text<vdu>[] = [];
@@ -69,6 +69,9 @@ export namespace RoleMessage {
                     textParts.push(textPart);
                 }
             return textParts;
+        }
+        public getChat(): string {
+            return this.getTextParts().filter(part => !part.vreqs.length).map(part => part.text).join('');
         }
         public getText(): string {
             return this.getTextParts().map(part => part.text).join('');

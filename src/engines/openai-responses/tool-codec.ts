@@ -46,7 +46,7 @@ export class ToolCodec<
     }
 
     public encodeFunctionDeclarationMap(): OpenAI.Responses.FunctionTool[] {
-        return this.apiFds;
+        return this.apiFds.slice();
     }
 
     public decodeFunctionCall(

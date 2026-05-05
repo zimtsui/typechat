@@ -86,7 +86,7 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
     }
 
     public encodeFunctionDeclarationMap(): OpenAI.ChatCompletionTool[] {
-        return this.apiFds;
+        return this.apiFds.slice();
     }
 }
 

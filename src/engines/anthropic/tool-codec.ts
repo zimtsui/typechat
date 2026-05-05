@@ -67,7 +67,7 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
     }
 
     public encodeFunctionDeclarationMap(): Anthropic.Tool[] {
-        return this.apiFds;
+        return this.apiFds.slice();
     }
 }
 

@@ -24,7 +24,7 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
     }
 
     public encodeFunctionDeclarationMap(): Google.FunctionDeclaration[] {
-        return this.apiFds;
+        return this.apiFds.slice();
     }
 
     protected static encodeFunctionDeclarationEntry<fdu extends Function.Decl.Proto>(
