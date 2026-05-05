@@ -62,13 +62,7 @@ export namespace RoleMessage {
             return this.parts.every(part => part instanceof RoleMessage.Ai.Part.Text && !part.vreqs.length);
         }
         public getTextParts(): RoleMessage.Ai.Part.Text<vdu>[] {
-            const textParts: RoleMessage.Ai.Part.Text<vdu>[] = [];
-            for (const part of this.parts)
-                if (part instanceof RoleMessage.Ai.Part.Text) {
-                    const textPart = part as RoleMessage.Ai.Part.Text<vdu>;
-                    textParts.push(textPart);
-                }
-            return textParts;
+            return this.parts.filter(part => part instanceof RoleMessage.Ai.Part.Text) as RoleMessage.Ai.Part.Text<vdu>[];
         }
         public getChat(): string {
             return this.getTextParts().filter(part => !part.vreqs.length).map(part => part.text).join('');
@@ -150,6 +144,9 @@ export namespace RoleMessage {
             if (part instanceof Function.Response) {} else throw new Error();
             const fres = part as Function.Response.Of<fdu>;
             return fres;
+        }
+        public getTextParts(): RoleMessage.User.Part.Text[] {
+            return this.parts.filter(part => part instanceof RoleMessage.User.Part.Text);
         }
     }
     export namespace User {

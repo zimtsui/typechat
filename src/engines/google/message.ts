@@ -23,42 +23,29 @@ export namespace RoleMessage {
         public getRaw(): Google.Content {
             return this.raw;
         }
-        public allChatPart(): boolean {
+        public override allChat(): boolean {
             return this.parts.every(
-                part => part instanceof RoleMessage.Ai.Part.Text ||
+                part => part instanceof RoleMessage.Ai.Part.Text && !part.vreqs.length ||
                     part instanceof RoleMessage.Ai.Part.ExecutableCode ||
                     part instanceof RoleMessage.Ai.Part.CodeExecutionResult
             );
         }
-        public getChatParts(): unknown[] {
-            return this.parts.filter(
-                part => part instanceof RoleMessage.Ai.Part.Text ||
-                    part instanceof RoleMessage.Ai.Part.ExecutableCode ||
-                    part instanceof RoleMessage.Ai.Part.CodeExecutionResult
+        public static encodeExecutableCodePart(part: RoleMessage.Ai.Part.ExecutableCode): string {
+            return RoleMessage.Ai.Part.Text.paragraph(
+                '```' + (part.language ?? '') + '\n' + part.code + '\n```',
+            ).text;
+        }
+        public static encodeCodeExecutionResultPart(part: RoleMessage.Ai.Part.CodeExecutionResult): string {
+            const textParts: RoleMessage.Ai.Part.Text<never>[] = [];
+            if (part.output) textParts.push(
+                RoleMessage.Ai.Part.Text.paragraph(
+                    '```\n' + part.output + '\n```',
+                ),
             );
-        }
-        public static encodeChatPart(part: unknown): string {
-            if (part instanceof RoleMessage.Ai.Part.Text)
-                return part.text;
-            else if (part instanceof RoleMessage.Ai.Part.ExecutableCode)
-                return RoleMessage.Ai.Part.Text.paragraph(
-                    '```' + part.language + '\n' + part.code + '\n```',
-                ).text;
-            else if (part instanceof RoleMessage.Ai.Part.CodeExecutionResult) {
-                const textParts: RoleMessage.Ai.Part.Text<never>[] = [];
-                if (part.output) textParts.push(
-                    RoleMessage.Ai.Part.Text.paragraph(
-                        '```\n' + part.output + '\n```',
-                    ),
-                );
-                textParts.push(
-                    RoleMessage.Ai.Part.Text.paragraph(part.outcome),
-                );
-                return textParts.map(part => part.text).join('');
-            } else throw new Error();
-        }
-        public getChatText(): string {
-            return this.getChatParts().map(part => RoleMessage.Ai.encodeChatPart(part)).join('');
+            textParts.push(
+                RoleMessage.Ai.Part.Text.paragraph(part.outcome),
+            );
+            return textParts.map(part => part.text).join('');
         }
     }
     export namespace Ai {
@@ -73,7 +60,7 @@ export namespace RoleMessage {
 
             export class ExecutableCode {
                 protected declare [NOMINAL]: never;
-                public constructor(public code: string, public language: string) {}
+                public constructor(public code: string, public language?: string) {}
             }
 
             export class CodeExecutionResult {

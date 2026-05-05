@@ -44,17 +44,14 @@ export class MessageCodec<
     public encodeUserMessage(
         userMessage: Engine.RoleMessage.User.From<fdm>,
     ): [OpenAI.ChatCompletionUserMessageParam] | OpenAI.ChatCompletionToolMessageParam[] {
-        const textParts: Engine.RoleMessage.User.Part.Text[] = [];
-        for (const part of userMessage.getParts())
-            if (part instanceof Engine.RoleMessage.User.Part.Text) {
-                const textPart = part;
-                textParts.push(textPart);
-            }
+        const textParts = userMessage.getTextParts();
         const fress = userMessage.getFunctionResponses();
         if (textParts.length && !fress.length)
             return [{ role: 'user', content: textParts.map(part => ({ type: 'text', text: part.text })) }];
         else if (!textParts.length && fress.length)
             return fress.map(fres => this.toolCodec.encodeFunctionResponse(fres));
+        else if (textParts.length && fress.length)
+            throw new Error('Mixed text and function response parts in user message are not supported by OpenAI ChatCompletions API.');
         else throw new Error('Unsupported user message type.');
     }
 
@@ -65,13 +62,10 @@ export class MessageCodec<
         const textParts: Engine.RoleMessage.Ai.Part.Text.From<vdm>[] = [];
         const fcParts: Function.Call.From<fdm>[] = [];
         for (const part of parts) {
-            if (part instanceof Engine.RoleMessage.Ai.Part.Text) {
-                const textPart = part as Engine.RoleMessage.Ai.Part.Text.From<vdm>;
-                textParts.push(textPart);
-            } else if (part instanceof Function.Call) {
-                const fcall = part as Function.Call.From<fdm>;
-                fcParts.push(fcall);
-            }
+            if (part instanceof Engine.RoleMessage.Ai.Part.Text)
+                textParts.push(part as Engine.RoleMessage.Ai.Part.Text.From<vdm>);
+            else if (part instanceof Function.Call)
+                fcParts.push(part as Function.Call.From<fdm>);
         }
         return {
             role: 'assistant',

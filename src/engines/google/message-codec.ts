@@ -113,7 +113,10 @@ export class MessageCodec<
                 if (this.codeExecution) {} else throw new SyntaxError('Unexpected code execution', { cause: content });
                 if (part.executableCode.code) {} else throw new Error();
                 if (part.executableCode.language) {} else throw new Error();
-                parts.push(new RoleMessage.Ai.Part.ExecutableCode(part.executableCode.code, part.executableCode.language));
+                parts.push(new RoleMessage.Ai.Part.ExecutableCode(
+                    part.executableCode.code,
+                    part.executableCode.language === Google.Language.LANGUAGE_UNSPECIFIED ? undefined : part.executableCode.language,
+                ));
             }
             if (part.codeExecutionResult) {
                 if (this.codeExecution) {} else throw new SyntaxError('Unexpected code execution result', { cause: content });

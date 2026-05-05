@@ -39,6 +39,8 @@ export namespace OpenAIChatCompletionsEngine {
                 toolCodec: this.toolCodec,
                 billing: this.billing,
             });
+            if (Object.keys(this.fdm).length && Object.keys(this.vdm).length)
+                throw new Error('Functions cannot be declared together with Verbatim Channels in OpenAI ChatCompletions Engine.');
         }
 
         public override clone(): Engine<fdm, vdm> {

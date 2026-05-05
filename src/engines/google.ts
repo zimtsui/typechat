@@ -114,7 +114,7 @@ export namespace GoogleEngine {
         ): AsyncGenerator<string, string, void> {
             for (let i = 0; i < limit; i++) {
                 const response = await this.stateful(wfctx, session) as RoleMessage.Ai.From<fdm, vdm>;
-                if (response.allChatPart()) return response.getChatText();
+                if (response.allChat()) return response.getChat();
                 const pfress: Promise<Function.Response.From<fdm>>[] = [];
                 const pvress: Promise<RoleMessage.User.Part.Text>[] = [];
                 for (const part of response.getParts()) {
@@ -145,9 +145,9 @@ export namespace GoogleEngine {
                             }
                         })());
                     } else if (part instanceof RoleMessage.Ai.Part.ExecutableCode) {
-                        yield RoleMessage.Ai.encodeChatPart(part);
+                        yield RoleMessage.Ai.encodeExecutableCodePart(part);
                     } else if (part instanceof RoleMessage.Ai.Part.CodeExecutionResult) {
-                        yield RoleMessage.Ai.encodeChatPart(part);
+                        yield RoleMessage.Ai.encodeCodeExecutionResultPart(part);
                     } else throw new Error();
                 }
                 const fress: Function.Response.From<fdm>[] = await Promise.all(pfress);

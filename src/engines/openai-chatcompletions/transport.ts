@@ -68,8 +68,8 @@ export class Transport<
         apifc: OpenAI.ChatCompletionChunk.Choice.Delta.ToolCall,
     ): OpenAI.ChatCompletionMessageToolCall {
         if (apifc.id) {} else throw new Error();
-        if (apifc.function?.name) {} else throw new Error();
-        if (apifc.function?.arguments) {} else throw new Error();
+        if (apifc.function?.name) {} else throw new SyntaxError('Function name missing.', { cause: apifc });
+        if (apifc.function?.arguments) {} else throw new SyntaxError('Function arguments missing.', { cause: apifc });
         return {
             id: apifc.id,
             type: 'function',
