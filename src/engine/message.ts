@@ -1,5 +1,5 @@
-import { Function } from './function.ts';
-import { Verbatim } from './verbatim.ts';
+import { Function } from '../function.ts';
+import { Verbatim } from '../verbatim.ts';
 
 const NOMINAL = Symbol();
 
@@ -72,9 +72,6 @@ export namespace RoleMessage {
         }
         public getText(): string {
             return this.getTextParts().map(part => part.text).join('');
-        }
-        public getToolCalls(): unknown[] {
-            return this.getFunctionCalls();
         }
         public getFunctionCalls(): Function.Call.Of<fdu>[] {
             const fcalls: Function.Call.Of<fdu>[] = [];

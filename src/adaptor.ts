@@ -7,7 +7,6 @@ import { OpenAIChatCompletionsEngine } from './engines/openai-chatcompletions.ts
 import { AnthropicEngine } from './engines/anthropic.ts';
 import type { Verbatim } from './verbatim.ts';
 import { Engine } from './engine.ts';
-import { StructuringChoice } from './engine/structuring-choice.ts';
 
 
 export class Adaptor {

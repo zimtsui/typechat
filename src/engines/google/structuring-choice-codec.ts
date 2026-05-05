@@ -1,14 +1,14 @@
 import type { Function } from '../../function.ts';
 import type { Verbatim } from '../../verbatim.ts';
 import * as Google from '@google/genai';
-import { StructuringChoice } from '../../engine/structuring-choice.ts';
+import { StructuringChoice } from '../../structuring-choice.ts';
 
 
 export function encode<
     fdu extends Function.Decl.Proto,
     vdu extends Verbatim.Decl.Proto,
 >(
-    structuringChoice: StructuringChoice<fdu, vdu>,
+    structuringChoice: StructuringChoice,
 ): Google.FunctionCallingConfig {
 
     if (structuringChoice === StructuringChoice.NONE) return { mode: Google.FunctionCallingConfigMode.NONE };
@@ -18,8 +18,6 @@ export function encode<
 
     else if (structuringChoice === StructuringChoice.TCall.REQUIRED) return { mode: Google.FunctionCallingConfigMode.ANY };
     else if (structuringChoice === StructuringChoice.TCall.ANYONE) return { mode: Google.FunctionCallingConfigMode.ANY };
-    else if (structuringChoice instanceof StructuringChoice.TCall.FCall)
-        return { mode: Google.FunctionCallingConfigMode.ANY, allowedFunctionNames: [structuringChoice.name] };
 
     else if (structuringChoice === StructuringChoice.VRequest.REQUIRED) return { mode: Google.FunctionCallingConfigMode.NONE };
     else if (structuringChoice === StructuringChoice.VRequest.ANYONE) return { mode: Google.FunctionCallingConfigMode.NONE };

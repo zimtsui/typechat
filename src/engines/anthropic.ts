@@ -5,7 +5,6 @@ import { ToolCodec } from './anthropic/tool-codec.ts';
 import { Billing } from './anthropic/billing.ts';
 import { MessageCodec } from './anthropic/message-codec.ts';
 import { Transport } from './anthropic/transport.ts';
-import { StructuringChoice } from '../engine/structuring-choice.ts';
 import { StructuringValidator } from '../engine/structuring-validator.ts';
 
 
@@ -33,8 +32,8 @@ export namespace AnthropicEngine {
             });
             this.billing = new Billing({ pricing: this.pricing });
             this.transport = new Transport({
-                providerSpec: this.providerSpec,
-                inferenceParams: this.inferenceParams,
+                providerSpec: this.providerSpecs,
+                inferenceParams: this.inferenceOptions,
                 fdm: this.fdm,
                 throttle: this.throttle,
                 structuringChoice: this.structuringChoice,
@@ -47,8 +46,8 @@ export namespace AnthropicEngine {
 
         public override clone(): AnthropicEngine<fdm, vdm> {
             const engine = new AnthropicEngine.Instance(this.options);
-            engine.middlewares = [...this.middlewares];
-            engine.statefulMiddlewares = [...this.statefulMiddlewares];
+            engine.middlewaresStateless = [...this.middlewaresStateless];
+            engine.middlewaresStateful = [...this.middlewaresStateful];
             return engine;
         }
     }

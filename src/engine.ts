@@ -5,15 +5,15 @@ import { Agent, ProxyAgent, Dispatcher } from 'undici';
 import { env } from 'node:process';
 import { type InferenceContext } from './inference-context.ts';
 import { loggers } from './telemetry.ts';
-import { Session } from './session.ts';
-import { RoleMessage } from './message.ts';
+import * as SessionModule from './engine/session.ts';
+import * as MessageModule from './engine/message.ts';
 import { Verbatim } from './verbatim.ts';
 import { PartsValidator } from './engine/parts-validator.ts';
 import { Recoverable } from './engine/recoverable.ts';
 import { Middleware } from './engine/middleware.ts';
 import * as StructuringValidatorModule from './engine/structuring-validator.ts';
 import * as EngineTransportModule from './engine/transport.ts';
-import { StructuringChoice } from './engine/structuring-choice.ts';
+import { StructuringChoice } from './structuring-choice.ts';
 
 
 export interface Pricing {
@@ -21,13 +21,13 @@ export interface Pricing {
     cachePrice: number;
     outputPrice: number;
 }
-export interface ProviderSpec {
+export interface ProviderSpecs {
     baseUrl: string;
     apiKey: string;
     dispatcher: Dispatcher;
     retry: number;
 }
-export interface InferenceParams {
+export interface InferenceOptions {
     model: string;
     additionalOptions?: Record<string, unknown>;
     parallelToolCall?: boolean;
@@ -44,15 +44,15 @@ export namespace Engine {
         in out fdm extends Function.Decl.Map.Proto,
         in out vdm extends Verbatim.Decl.Map.Proto,
     > {
-        protected providerSpec: ProviderSpec;
-        protected inferenceParams: InferenceParams;
+        protected providerSpecs: ProviderSpecs;
+        protected inferenceOptions: InferenceOptions;
         public name: string;
         public pricing: Pricing;
         public fdm: fdm;
         public vdm: vdm;
         protected throttle: Throttle;
-        protected structuringChoice: StructuringChoice.From<fdm, vdm>;
-        protected abstract structuringValidator: Engine.StructuringValidator.From<fdm, vdm>;
+        protected structuringChoice: StructuringChoice;
+        protected structuringValidator: Engine.StructuringValidator.From<fdm, vdm>;
         protected partsValidator: PartsValidator.From<fdm, vdm>;
         protected abstract transport: Engine.Transport<fdm, vdm>;
 
@@ -69,7 +69,7 @@ export namespace Engine {
                     headersTimeout: 10000,
                     bodyTimeout: 0,
                 });
-            this.providerSpec = {
+            this.providerSpecs = {
                 baseUrl: options.endpointSpec.baseUrl,
                 apiKey: options.endpointSpec.apiKey,
                 dispatcher,
@@ -77,7 +77,7 @@ export namespace Engine {
             };
 
             this.name = options.endpointSpec.name;
-            this.inferenceParams = {
+            this.inferenceOptions = {
                 model: options.endpointSpec.model,
                 additionalOptions: options.endpointSpec.additionalOptions,
                 timeout: options.endpointSpec.timeout,
@@ -95,9 +95,11 @@ export namespace Engine {
             this.structuringChoice = options.structuringChoice ?? StructuringChoice.AUTO;
             this.throttle = options.throttle;
             this.partsValidator = new PartsValidator();
+            this.structuringValidator = new StructuringValidator({ structuringChoice: this.structuringChoice });
         }
 
         /**
+        * @throws {@link InferenceTimeout} 推理超时
         * @throws {@link SyntaxError} 模型抽风
         * @throws {@link Recoverable} 模型抽风但可恢复
         * @throws {@link TypeError} 网络故障
@@ -106,7 +108,7 @@ export namespace Engine {
             wfctx: InferenceContext,
             session: Session.From<fdm, vdm>,
         ): Promise<RoleMessage.Ai.From<fdm, vdm>> {
-            const signalTimeout = this.inferenceParams.timeout ? AbortSignal.timeout(this.inferenceParams.timeout) : null;
+            const signalTimeout = this.inferenceOptions.timeout ? AbortSignal.timeout(this.inferenceOptions.timeout) : null;
             const signals: AbortSignal[] = [];
             if (signalTimeout) signals.push(signalTimeout);
             if (wfctx.signal) signals.push(wfctx.signal);
@@ -133,21 +135,20 @@ export namespace Engine {
             wfctx: InferenceContext,
             session: Session.From<fdm, vdm>,
         ): Promise<RoleMessage.Ai.From<fdm, vdm>> {
-            const middleware = this.compose(this.middlewares);
+            const middleware = this.compose(this.middlewaresStateless);
             for (let retryProvider = 0, retryInference = 0;;) try {
-                const next = () => this.infer(wfctx, session);
-                return await middleware(wfctx, session, next);
+                return await middleware(wfctx, session, () => this.infer(wfctx, session));
             } catch (e) {
                 if (e instanceof InferenceTimeout) {    // 推理超时
-                    if (retryInference < this.inferenceParams.retry) {} else throw e;
+                    if (retryInference < this.inferenceOptions.retry) {} else throw e;
                     loggers.message.warn(e);
                     retryInference++;
                 } else if (e instanceof SyntaxError) {  // 模型抽风
-                    if (retryInference < this.inferenceParams.retry) {} else throw e;
+                    if (retryInference < this.inferenceOptions.retry) {} else throw e;
                     loggers.message.warn(e);
                     retryInference++;
                 } else if (e instanceof TypeError) {    // 网络故障
-                    if (retryProvider < this.providerSpec.retry) {} else throw e;
+                    if (retryProvider < this.providerSpecs.retry) {} else throw e;
                     loggers.message.warn(e);
                     retryProvider++;
                 } else throw e;
@@ -164,77 +165,52 @@ export namespace Engine {
             wfctx: InferenceContext,
             session: Session.From<fdm, vdm>,
         ): Promise<RoleMessage.Ai.From<fdm, vdm>> {
-            const middleware = this.compose(this.middlewares);
-            const statefulMiddleware = this.compose(this.statefulMiddlewares);
+            const middleware = this.compose(this.middlewaresStateful);
             for (let retryProvider = 0, retryInference = 0;;) try {
-                const next = () => this.infer(wfctx, session);
-                const statefulNext = async () => {
-                    const aiMessage = await middleware(wfctx, session, next);
+                const next = async () => {
+                    const aiMessage = await this.infer(wfctx, session);
                     session.chatMessages.push(aiMessage);
                     return aiMessage;
                 }
-                return await statefulMiddleware(wfctx, session, statefulNext);
+                return await middleware(wfctx, session, next);
             } catch (e) {
                 if (e instanceof InferenceTimeout) {    // 推理超时
-                    if (retryInference < this.inferenceParams.retry) {} else throw e;
+                    if (retryInference < this.inferenceOptions.retry) {} else throw e;
                     loggers.message.warn(e);
                     retryInference++;
                 } else if (e instanceof SyntaxError) {  // 模型抽风
-                    if (retryInference < this.inferenceParams.retry) {} else throw e;
+                    if (retryInference < this.inferenceOptions.retry) {} else throw e;
                     loggers.message.warn(e);
                     retryInference++;
                 } else if (e instanceof TypeError) {    // 网络故障
-                    if (retryProvider < this.providerSpec.retry) {} else throw e;
+                    if (retryProvider < this.providerSpecs.retry) {} else throw e;
                     loggers.message.warn(e);
                     retryProvider++;
                 } else throw e;
             }
         }
 
-        public appendUserMessage(
-            session: Session.From<fdm, vdm>,
-            message: RoleMessage.User.From<fdm>,
-        ): Session.From<fdm, vdm> {
-            return {
-                developerMessage: session.developerMessage,
-                chatMessages: [...session.chatMessages, message],
-            };
-        }
-
-        /**
-        * @param session mutable
-        */
-        public pushUserMessage(
-            session: Session.From<fdm, vdm>,
-            message: RoleMessage.User.From<fdm>,
-        ): Session.From<fdm, vdm> {
-            session.chatMessages.push(message);
-            return session;
-        }
-
         public abstract clone(): Engine<fdm, vdm>;
 
-        protected middlewares: Middleware.From<fdm, vdm>[] = [];
-        public use(middleware: Middleware.From<fdm, vdm>): Engine<fdm, vdm> {
-            const engine = this.clone() as ReturnType<this['clone']>;
-            engine.middlewares.push(middleware);
+        protected middlewaresStateless: Middleware.From<fdm, vdm>[] = [];
+        public useStateless(middleware: Middleware.From<fdm, vdm>): Engine<fdm, vdm> {
+            const engine = this.clone();
+            engine.middlewaresStateless.push(middleware);
             return engine;
         }
-        protected statefulMiddlewares: Middleware.From<fdm, vdm>[] = [];
-        public statefulUse(middleware: Middleware.From<fdm, vdm>): ReturnType<typeof this['clone']> {
-            const engine = this.clone() as ReturnType<typeof this['clone']>;
-            engine.statefulMiddlewares.push(middleware);
+        protected middlewaresStateful: Middleware.From<fdm, vdm>[] = [];
+        public useStateful(middleware: Middleware.From<fdm, vdm>): Engine<fdm, vdm> {
+            const engine = this.clone();
+            engine.middlewaresStateful.push(middleware);
             return engine;
         }
-        protected compose(middlewares: Middleware.From<fdm, vdm>[], i: number = 0): Middleware.From<fdm, vdm> {
-            if (i < middlewares.length)
-                return async (wfctx, session, next) => {
-                    const middleware = middlewares[i]!;
-                    const nextMiddlewares = this.compose(middlewares, i+1);
-                    return middleware(wfctx, session, () => nextMiddlewares(wfctx, session, next));
-                };
-            else
-                return (wfctx, session, next) => next();
+        protected compose(middlewares: Middleware.From<fdm, vdm>[]): Middleware.From<fdm, vdm> {
+            let composed: Middleware.From<fdm, vdm> = (wfctx, session, next) => next();
+            for (const middleware of middlewares.slice().reverse()) {
+                const nextMiddleware = composed;
+                composed = (wfctx, session, next) => middleware(wfctx, session, () => nextMiddleware(wfctx, session, next));
+            }
+            return composed;
         }
 
         /**
@@ -250,15 +226,15 @@ export namespace Engine {
             for (let i = 0; i < limit; i++) {
                 const response = await this.stateful(wfctx, session);
                 if (response.allTextPart()) return response.getText();
-                const pfrs: Promise<Function.Response.From<fdm>>[] = [];
-                const pvss: Promise<RoleMessage.User.Part.Text>[] = [];
+                const pfress: Promise<Function.Response.From<fdm>>[] = [];
+                const pvress: Promise<RoleMessage.User.Part.Text>[] = [];
                 for (const part of response.getParts()) {
                     if (part instanceof RoleMessage.Ai.Part.Text) {
                         yield part.text;
                     } else if (part instanceof Function.Call) {
                         const fcall = part as Function.Call.From<fdm>;
                         const f = fnm[fcall.name];
-                        pfrs.push((async () => {
+                        pfress.push((async () => {
                             try {
                                 return Function.Response.Successful.of({
                                     id: fcall.id,
@@ -277,16 +253,16 @@ export namespace Engine {
                     } else if (part instanceof Verbatim.Request) {
                         const vreq = part as Verbatim.Request.From<vdm>;
                         const vh = vhm[vreq.name];
-                        pvss.push((async () => {
+                        pvress.push((async () => {
                             return new RoleMessage.User.Part.Text(
                                 await vh.call(vhm, vreq.args),
                             );
                         })());
                     } else throw new Error();
                 }
-                const fress: Function.Response.From<fdm>[] = await Promise.all(pfrs);
-                const vress: RoleMessage.User.Part.Text[] = await Promise.all(pvss);
-                this.pushUserMessage(session, new RoleMessage.User([...fress, ...vress]));
+                const fress: Function.Response.From<fdm>[] = await Promise.all(pfress);
+                const vress: RoleMessage.User.Part.Text[] = await Promise.all(pvress);
+                session.chatMessages.push(new RoleMessage.User([...fress, ...vress]))
             }
             throw new Engine.FunctionCallLimitExceeded('Function call limit exceeded.');
         }
@@ -303,13 +279,15 @@ export namespace Engine {
         endpointSpec: EndpointSpec;
         functionDeclarationMap: fdm;
         verbatimDeclarationMap: vdm;
-        structuringChoice?: StructuringChoice.From<fdm, vdm>;
+        structuringChoice?: StructuringChoice;
         providerRetry?: number;
         inferenceRetry?: number;
     }
 
     export import Transport = EngineTransportModule.Transport;
     export import StructuringValidator = StructuringValidatorModule.StructuringValidator;
+    export import Session = SessionModule.Session;
+    export import RoleMessage = MessageModule.RoleMessage;
 }
 
 export class InferenceTimeout extends Error {}

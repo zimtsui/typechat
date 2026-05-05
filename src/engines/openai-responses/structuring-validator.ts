@@ -1,8 +1,8 @@
-import { StructuringChoice } from '../structuring-choice.ts';
-import { Function } from '../function.ts';
-import { Verbatim } from '../verbatim.ts';
+import { Function } from '../../function.ts';
+import { Verbatim } from '../../verbatim.ts';
 import { RoleMessage } from './message.ts';
-import * as VerbatimCodec from '../verbatim/codec.ts';
+import * as VerbatimCodec from '../../verbatim/codec.ts';
+import { StructuringChoice } from '../../structuring-choice.ts';
 
 
 export class StructuringValidator<
@@ -17,15 +17,15 @@ export class StructuringValidator<
     public validate(
         aiMessage: RoleMessage.Ai<fdu, vdu>,
     ): RoleMessage.User<never> | void {
-        const fcalls = aiMessage.getFunctionCalls();
+        const tcalls = aiMessage.getToolCalls();
         const vreqs = aiMessage.getVerbatimRequests();
 
         if (this.structuringChoice === StructuringChoice.TCall.REQUIRED) {
-            if (!fcalls.length) throw new SyntaxError('Function call required.');
+            if (!tcalls.length) throw new SyntaxError('Tool call required.');
 
         } else if (this.structuringChoice === StructuringChoice.TCall.ANYONE) {
-            if (!fcalls.length) throw new SyntaxError('Function call required.');
-            if (fcalls.length > 1) throw new SyntaxError('Only 1 function call allowed.');
+            if (!tcalls.length) throw new SyntaxError('Tool call required.');
+            if (tcalls.length > 1) throw new SyntaxError('Only 1 tool call allowed.');
 
         } else if (this.structuringChoice === StructuringChoice.VRequest.REQUIRED) {
             if (!vreqs.length)
@@ -50,32 +50,32 @@ export class StructuringValidator<
                 ]);
 
         } else if (this.structuringChoice === StructuringChoice.REQUIRED) {
-            if (fcalls.length + vreqs.length) {} else
+            if (tcalls.length + vreqs.length) {} else
                 return new RoleMessage.User<never>([
                     RoleMessage.User.Part.Text.paragraph(
-                        VerbatimCodec.System.encode(`Error: Either function call or verbatim request required, but none found. Check your output format.`),
+                        VerbatimCodec.System.encode(`Error: Either tool call or verbatim request required, but none found. Check your output format.`),
                     ),
                 ]);
 
         } else if (this.structuringChoice === StructuringChoice.ANYONE) {
-            if (fcalls.length + vreqs.length) {} else
+            if (tcalls.length + vreqs.length) {} else
                 return new RoleMessage.User<never>([
                     RoleMessage.User.Part.Text.paragraph(
-                        VerbatimCodec.System.encode(`Error: Either 1 function call or 1 verbatim request required, but none found. Check your output format.`),
+                        VerbatimCodec.System.encode(`Error: Either 1 tool call or 1 verbatim request required, but none found. Check your output format.`),
                     ),
                 ]);
-            if (fcalls.length + vreqs.length > 1)
+            if (tcalls.length + vreqs.length > 1)
                 return new RoleMessage.User<never>([
                     RoleMessage.User.Part.Text.paragraph(
-                        VerbatimCodec.System.encode(`Error: Either Only 1 function call or only 1 verbatim request allowed, but multiple found.`),
+                        VerbatimCodec.System.encode(`Error: Either Only 1 tool call or only 1 verbatim request allowed, but multiple found.`),
                     ),
                 ]);
 
         } else if (this.structuringChoice === StructuringChoice.NONE) {
-            if (fcalls.length + vreqs.length)
+            if (tcalls.length + vreqs.length)
                 return new RoleMessage.User<never>([
                     RoleMessage.User.Part.Text.paragraph(
-                        VerbatimCodec.System.encode(`Error: Neither function call nor verbatim request allowed.`),
+                        VerbatimCodec.System.encode(`Error: Neither tool call nor verbatim request allowed.`),
                     ),
                 ]);
         }

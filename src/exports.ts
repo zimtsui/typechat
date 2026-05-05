@@ -6,10 +6,10 @@ export * from './inference-context.ts';
 export * from './endpoint-spec.ts';
 export * from './engine.ts';
 export * from './media.ts';
-export * from './message.ts';
-export * from './session.ts';
+export * from './engine/message.ts';
+export * from './engine/session.ts';
 export * from './engine/recoverable.ts';
-export * from './engine/structuring-choice.ts';
+export * from './structuring-choice.ts';
 
 export * from './engines/google.ts';
 export * from './engines/openai-responses.ts';

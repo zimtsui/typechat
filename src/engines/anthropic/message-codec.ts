@@ -1,6 +1,5 @@
-import { RoleMessage } from '../../message.ts';
-import { type Session } from '../../session.ts';
-import { NativeRoleMessage } from './message.ts';
+import { Engine } from '../../engine.ts';
+import { RoleMessage } from './message.ts';
 import { Function } from '../../function.ts';
 import Anthropic from '@anthropic-ai/sdk';
 import type { ToolCodec } from './tool-codec.ts';
@@ -20,57 +19,57 @@ export class MessageCodec<
     }
 
     public encodeUserMessage(
-        userMessage: RoleMessage.User.From<fdm>,
+        userMessage: Engine.RoleMessage.User.From<fdm>,
     ): Anthropic.ContentBlockParam[] {
-        return userMessage.getParts().map(part => {
-            if (part instanceof RoleMessage.User.Part.Text)
-                return {
+        const blocks: Anthropic.ContentBlockParam[] = [];
+        for (const part of userMessage.getParts())
+            if (part instanceof Engine.RoleMessage.User.Part.Text)
+                blocks.push({
                     type: 'text',
                     text: part.text,
-                } satisfies Anthropic.TextBlockParam;
+                });
             else if (part instanceof Function.Response) {
                 const fres = part as Function.Response.From<fdm>;
-                return this.toolCodec.encodeFunctionResponse(fres);
-            }
-            else throw new Error('Unknown user message part type', { cause: part });
-        });
+                blocks.push(this.toolCodec.encodeFunctionResponse(fres));
+            } else throw new Error('Unknown user message part type', { cause: part });
+        return blocks;
     }
 
     public encodeAiMessage(
-        aiMessage: RoleMessage.Ai.From<fdm, vdm>,
+        aiMessage: Engine.RoleMessage.Ai.From<fdm, vdm>,
     ): Anthropic.ContentBlockParam[] {
-        if (aiMessage instanceof NativeRoleMessage.Ai) {
-            const nativeMessage = aiMessage as NativeRoleMessage.Ai<Function.Decl.From<fdm>, Verbatim.Decl.From<vdm>>;
-            return nativeMessage.getRaw();
+        if (aiMessage instanceof RoleMessage.Ai) {
+            const nativeAiMessage = aiMessage as RoleMessage.Ai<Function.Decl.From<fdm>, Verbatim.Decl.From<vdm>>;
+            return nativeAiMessage.getRaw();
         }
-        return aiMessage.getParts().map(part => {
-            if (part instanceof RoleMessage.Ai.Part.Text)
-                return {
+        const blocks: Anthropic.ContentBlockParam[] = [];
+        for (const part of aiMessage.getParts())
+            if (part instanceof Engine.RoleMessage.Ai.Part.Text)
+                blocks.push({
                     type: 'text',
                     text: part.text,
-                } satisfies Anthropic.TextBlockParam;
+                });
             else if (part instanceof Function.Call) {
                 const fcall = part as Function.Call.From<fdm>;
-                return this.toolCodec.encodeFunctionCall(fcall);
-            }
-            else throw new Error('Unknown AI message part type', { cause: part });
-        });
+                blocks.push(this.toolCodec.encodeFunctionCall(fcall));
+            } else throw new Error('Unknown AI message part type', { cause: part });
+        return blocks;
     }
 
     public encodeDeveloperMessage(
-        developerMessage: RoleMessage.Developer,
+        developerMessage: Engine.RoleMessage.Developer,
     ): Anthropic.TextBlockParam[] {
         return developerMessage.getOnlyTextParts().map(part => ({ type: 'text', text: part.text }));
     }
 
     public encodeChatMessage(
-        chatMessage: Session.ChatMessage.From<fdm, vdm>,
+        chatMessage: Engine.Session.ChatMessage.From<fdm, vdm>,
     ): Anthropic.MessageParam {
-        if (chatMessage instanceof RoleMessage.User) {
-            const userMessage = chatMessage as RoleMessage.User.From<fdm>;
+        if (chatMessage instanceof Engine.RoleMessage.User) {
+            const userMessage = chatMessage as Engine.RoleMessage.User.From<fdm>;
             return { role: 'user', content: this.encodeUserMessage(userMessage) };
-        } else if (chatMessage instanceof RoleMessage.Ai) {
-            const aiMessage = chatMessage as RoleMessage.Ai.From<fdm, vdm>;
+        } else if (chatMessage instanceof Engine.RoleMessage.Ai) {
+            const aiMessage = chatMessage as Engine.RoleMessage.Ai.From<fdm, vdm>;
             return { role: 'assistant', content: this.encodeAiMessage(aiMessage) };
         }
         else throw new Error('Unsupported chat message type.');
@@ -78,7 +77,7 @@ export class MessageCodec<
 
     public decodeAiMessage(
         raw: Anthropic.ContentBlock[],
-    ): NativeRoleMessage.Ai.From<fdm, vdm> {
+    ): RoleMessage.Ai.From<fdm, vdm> {
         const parts: unknown[] = [];
         for (const item of raw) {
             if (item.type === 'text') {
@@ -89,7 +88,7 @@ export class MessageCodec<
             else if (item.type === 'thinking') {}
             else throw new Error();
         }
-        return new NativeRoleMessage.Ai(parts, raw);
+        return new RoleMessage.Ai(parts, raw);
     }
 }
 

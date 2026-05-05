@@ -1,6 +1,5 @@
-import { type InferenceParams, type ProviderSpec } from '../../engine.ts';
-import { type Session } from '../../session.ts';
-import { NativeRoleMessage } from './message.ts';
+import { type InferenceOptions, type ProviderSpecs, Engine } from '../../engine.ts';
+import { RoleMessage } from './message.ts';
 import { Function } from '../../function.ts';
 import * as Google from '@google/genai';
 import * as Undici from 'undici';
@@ -12,9 +11,8 @@ import type { MessageCodec } from './message-codec.ts';
 import type { ToolCodec } from './tool-codec.ts';
 import type { Billing } from './billing.ts';
 import type { Verbatim } from '../../verbatim.ts';
-import * as ChoiceCodec from './choice-codec.ts';
-import type { StructuringChoice } from '../../engine/structuring-choice.ts';
-import type { Engine } from '../../engine.ts';
+import * as ChoiceCodec from './structuring-choice-codec.ts';
+import type { StructuringChoice } from '../../structuring-choice.ts';
 import { MIMEType } from 'whatwg-mimetype';
 import { HeaderRecord } from 'undici/types/header';
 
@@ -25,11 +23,11 @@ export class Transport<
     in out vdm extends Verbatim.Decl.Map.Proto,
 > implements Engine.Transport<fdm, vdm> {
     protected apiURL: URL;
-    protected inferenceParams: InferenceParams;
-    protected providerSpec: ProviderSpec;
+    protected inferenceParams: InferenceOptions;
+    protected providerSpec: ProviderSpecs;
     protected fdm: fdm;
     protected throttle: Throttle;
-    protected structuringChoice: StructuringChoice.From<fdm, vdm>;
+    protected structuringChoice: StructuringChoice;
     protected codeExecution: boolean;
     protected urlContext: boolean;
     protected googleSearch: boolean;
@@ -54,9 +52,9 @@ export class Transport<
 
     public async fetch(
         wfctx: InferenceContext,
-        session: Session.From<fdm, vdm>,
+        session: Engine.Session.From<fdm, vdm>,
         signal?: AbortSignal,
-    ): Promise<NativeRoleMessage.Ai.From<fdm, vdm>> {
+    ): Promise<RoleMessage.Ai.From<fdm, vdm>> {
         await this.throttle.requests(wfctx);
 
         // Prepare request body
@@ -133,11 +131,11 @@ export namespace GoogleNativeTransport {
         in out fdm extends Function.Decl.Map.Proto,
         in out vdm extends Verbatim.Decl.Map.Proto,
     > {
-        inferenceParams: InferenceParams;
-        providerSpec: ProviderSpec;
+        inferenceParams: InferenceOptions;
+        providerSpec: ProviderSpecs;
         fdm: fdm;
         throttle: Throttle;
-        structuringChoice: StructuringChoice.From<fdm, vdm>;
+        structuringChoice: StructuringChoice;
         codeExecution: boolean;
         urlContext: boolean;
         googleSearch: boolean;

@@ -1,6 +1,6 @@
 import { Function } from '../function.ts';
 import { Verbatim } from '../verbatim.ts';
-import { RoleMessage } from '../message.ts';
+import { RoleMessage } from './message.ts';
 import { isRepeating } from '../repetition.ts';
 
 

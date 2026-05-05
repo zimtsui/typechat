@@ -1,6 +1,6 @@
-import { type InferenceParams, type ProviderSpec } from '../../engine.ts';
-import { type Session } from '../../session.ts';
-import { NativeRoleMessage } from './message.ts';
+import { type InferenceOptions, type ProviderSpecs } from '../../engine.ts';
+import { type Session } from '../../engine/session.ts';
+import { RoleMessage } from './message.ts';
 import { Function } from '../../function.ts';
 import OpenAI from 'openai';
 import { type InferenceContext } from '../../inference-context.ts';
@@ -10,8 +10,8 @@ import type { MessageCodec } from './message-codec.ts';
 import type { ToolCodec } from './tool-codec.ts';
 import type { Billing } from './billing.ts';
 import type { Verbatim } from '../../verbatim.ts';
-import * as ChoiceCodec from './choice-codec.ts';
-import { StructuringChoice } from '../../engine/structuring-choice.ts';
+import * as StructuringChoiceCodec from './structuring-choice-codec.ts';
+import { StructuringChoice } from '../../structuring-choice.ts';
 import type { Engine } from '../../engine.ts';
 import * as Undici from 'undici';
 
@@ -21,11 +21,11 @@ export class Transport<
     in out vdm extends Verbatim.Decl.Map.Proto,
 > implements Engine.Transport<fdm, vdm> {
     protected client: OpenAI;
-    protected inferenceParams: InferenceParams;
-    protected providerSpec: ProviderSpec;
+    protected inferenceParams: InferenceOptions;
+    protected providerSpec: ProviderSpecs;
     protected fdm: fdm;
     protected throttle: Throttle;
-    protected structuringChoice: StructuringChoice.From<fdm, vdm>;
+    protected structuringChoice: StructuringChoice;
     protected applyPatch: boolean;
     protected messageCodec: MessageCodec<fdm, vdm>;
     protected toolCodec: ToolCodec<fdm>;
@@ -62,7 +62,7 @@ export class Transport<
             input: session.chatMessages.flatMap(chatMessage => this.messageCodec.encodeChatMessage(chatMessage)),
             instructions: session.developerMessage && this.messageCodec.encodeDeveloperMessage(session.developerMessage),
             tools: tools.length ? tools : undefined,
-            tool_choice: tools.length ? ChoiceCodec.encode(this.structuringChoice) : undefined,
+            tool_choice: tools.length ? StructuringChoiceCodec.encode(this.structuringChoice) : undefined,
             parallel_tool_calls: tools.length ? this.inferenceParams.parallelToolCall : undefined,
             ...this.inferenceParams.additionalOptions,
         };
@@ -86,7 +86,7 @@ export class Transport<
         wfctx: InferenceContext,
         session: Session.From<fdm, vdm>,
         signal?: AbortSignal,
-    ): Promise<NativeRoleMessage.Ai.From<fdm, vdm>> {
+    ): Promise<RoleMessage.Ai.From<fdm, vdm>> {
         await this.throttle.requests(wfctx);
 
         const params = this.makeParams(session);
@@ -125,11 +125,11 @@ export namespace Transport {
         in out fdm extends Function.Decl.Map.Proto,
         in out vdm extends Verbatim.Decl.Map.Proto,
     > {
-        inferenceParams: InferenceParams;
-        providerSpec: ProviderSpec;
+        inferenceParams: InferenceOptions;
+        providerSpec: ProviderSpecs;
         fdm: fdm;
         throttle: Throttle;
-        structuringChoice: StructuringChoice.From<fdm, vdm>;
+        structuringChoice: StructuringChoice;
         applyPatch: boolean;
         messageCodec: MessageCodec<fdm, vdm>;
         toolCodec: ToolCodec<fdm>;

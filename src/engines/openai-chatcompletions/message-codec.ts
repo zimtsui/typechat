@@ -1,5 +1,4 @@
-import { RoleMessage } from '../../message.ts';
-import { type Session } from '../../session.ts';
+import { Engine } from '../../engine.ts';
 import { Function } from '../../function.ts';
 import OpenAI from 'openai';
 import type { ToolCodec } from './tool-codec.ts';
@@ -20,22 +19,22 @@ export class MessageCodec<
 
     public decodeAiMessage(
         message: OpenAI.ChatCompletionMessage,
-    ): RoleMessage.Ai.From<fdm, vdm> {
+    ): Engine.RoleMessage.Ai.From<fdm, vdm> {
         const parts: unknown[] = [];
         if (message.content) {
             const vreqs = VerbatimCodec.Request.decode(message.content, this.vdm);
-            parts.push(new RoleMessage.Ai.Part.Text(message.content, vreqs));
+            parts.push(new Engine.RoleMessage.Ai.Part.Text(message.content, vreqs));
         }
         if (message.tool_calls)
             for (const apifc of message.tool_calls)
                 if (apifc.type === 'function')
                     parts.push(this.toolCodec.decodeFunctionCall(apifc));
                 else throw new Error();
-        if (parts.length) return new RoleMessage.Ai(parts);
+        if (parts.length) return new Engine.RoleMessage.Ai(parts);
         else throw new SyntaxError('Content or tool calls not found in Response', { cause: message });
     }
 
-    public encodeDeveloperMessage(developerMessage: RoleMessage.Developer): OpenAI.ChatCompletionSystemMessageParam {
+    public encodeDeveloperMessage(developerMessage: Engine.RoleMessage.Developer): OpenAI.ChatCompletionSystemMessageParam {
         return {
             role: 'system',
             content: developerMessage.getOnlyTextParts().map(part => part.text).join(''),
@@ -43,11 +42,11 @@ export class MessageCodec<
     }
 
     public encodeUserMessage(
-        userMessage: RoleMessage.User.From<fdm>,
+        userMessage: Engine.RoleMessage.User.From<fdm>,
     ): [OpenAI.ChatCompletionUserMessageParam] | OpenAI.ChatCompletionToolMessageParam[] {
-        const textParts: RoleMessage.User.Part.Text[] = [];
+        const textParts: Engine.RoleMessage.User.Part.Text[] = [];
         for (const part of userMessage.getParts())
-            if (part instanceof RoleMessage.User.Part.Text) {
+            if (part instanceof Engine.RoleMessage.User.Part.Text) {
                 const textPart = part;
                 textParts.push(textPart);
             }
@@ -60,14 +59,14 @@ export class MessageCodec<
     }
 
     public encodeAiMessage(
-        aiMessage: RoleMessage.Ai.From<fdm, vdm>,
+        aiMessage: Engine.RoleMessage.Ai.From<fdm, vdm>,
     ): OpenAI.ChatCompletionAssistantMessageParam {
         const parts = aiMessage.getParts();
-        const textParts: RoleMessage.Ai.Part.Text.From<vdm>[] = [];
+        const textParts: Engine.RoleMessage.Ai.Part.Text.From<vdm>[] = [];
         const fcParts: Function.Call.From<fdm>[] = [];
         for (const part of parts) {
-            if (part instanceof RoleMessage.Ai.Part.Text) {
-                const textPart = part as RoleMessage.Ai.Part.Text.From<vdm>;
+            if (part instanceof Engine.RoleMessage.Ai.Part.Text) {
+                const textPart = part as Engine.RoleMessage.Ai.Part.Text.From<vdm>;
                 textParts.push(textPart);
             } else if (part instanceof Function.Call) {
                 const fcall = part as Function.Call.From<fdm>;
@@ -82,22 +81,22 @@ export class MessageCodec<
     }
 
     public encodeRoleMessage(
-        roleMessage: Session.ChatMessage.From<fdm, vdm> | RoleMessage.Developer,
+        roleMessage: Engine.Session.ChatMessage.From<fdm, vdm> | Engine.RoleMessage.Developer,
     ): OpenAI.ChatCompletionMessageParam[] {
-        if (roleMessage instanceof RoleMessage.Developer)
+        if (roleMessage instanceof Engine.RoleMessage.Developer)
             return [this.encodeDeveloperMessage(roleMessage)];
-        else if (roleMessage instanceof RoleMessage.User) {
-            const userMessage = roleMessage as RoleMessage.User.From<fdm>;
+        else if (roleMessage instanceof Engine.RoleMessage.User) {
+            const userMessage = roleMessage as Engine.RoleMessage.User.From<fdm>;
             return this.encodeUserMessage(userMessage);
-        } else if (roleMessage instanceof RoleMessage.Ai) {
-            const aiMessage = roleMessage as RoleMessage.Ai.From<fdm, vdm>;
+        } else if (roleMessage instanceof Engine.RoleMessage.Ai) {
+            const aiMessage = roleMessage as Engine.RoleMessage.Ai.From<fdm, vdm>;
             return [this.encodeAiMessage(aiMessage)];
         }
         else throw new Error();
     }
 
     public encodeRoleMessages(
-        chatMessages: (Session.ChatMessage.From<fdm, vdm> | RoleMessage.Developer)[],
+        chatMessages: (Engine.Session.ChatMessage.From<fdm, vdm> | Engine.RoleMessage.Developer)[],
     ): OpenAI.ChatCompletionMessageParam[] {
         return chatMessages.map(chatMessage => this.encodeRoleMessage(chatMessage)).flat();
     }

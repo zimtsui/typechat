@@ -1,17 +1,17 @@
-import { RoleMessage } from '../../message.ts';
 import { Function } from '../../function.ts';
 import * as Google from '@google/genai';
 import { Verbatim } from '../../verbatim.ts';
+import { Engine } from '../../engine.ts';
 
 const NOMINAL = Symbol();
 
 
-export namespace NativeRoleMessage {
+export namespace RoleMessage {
 
     export class Ai<
         in out fdu extends Function.Decl.Proto,
         in out vdu extends Verbatim.Decl.Proto,
-    > extends RoleMessage.Ai<fdu, vdu> {
+    > extends Engine.RoleMessage.Ai<fdu, vdu> {
         protected declare [NOMINAL]: never;
         public constructor(
             parts: unknown[],
@@ -25,40 +25,40 @@ export namespace NativeRoleMessage {
         }
         public allChatPart(): boolean {
             return this.parts.every(
-                part => part instanceof NativeRoleMessage.Ai.Part.Text ||
-                    part instanceof NativeRoleMessage.Ai.Part.ExecutableCode ||
-                    part instanceof NativeRoleMessage.Ai.Part.CodeExecutionResult
+                part => part instanceof RoleMessage.Ai.Part.Text ||
+                    part instanceof RoleMessage.Ai.Part.ExecutableCode ||
+                    part instanceof RoleMessage.Ai.Part.CodeExecutionResult
             );
         }
         public getChatParts(): unknown[] {
             return this.parts.filter(
-                part => part instanceof NativeRoleMessage.Ai.Part.Text ||
-                    part instanceof NativeRoleMessage.Ai.Part.ExecutableCode ||
-                    part instanceof NativeRoleMessage.Ai.Part.CodeExecutionResult
+                part => part instanceof RoleMessage.Ai.Part.Text ||
+                    part instanceof RoleMessage.Ai.Part.ExecutableCode ||
+                    part instanceof RoleMessage.Ai.Part.CodeExecutionResult
             );
         }
         public static encodeChatPart(part: unknown): string {
-            if (part instanceof NativeRoleMessage.Ai.Part.Text)
+            if (part instanceof RoleMessage.Ai.Part.Text)
                 return part.text;
-            else if (part instanceof NativeRoleMessage.Ai.Part.ExecutableCode)
-                return NativeRoleMessage.Ai.Part.Text.paragraph(
+            else if (part instanceof RoleMessage.Ai.Part.ExecutableCode)
+                return RoleMessage.Ai.Part.Text.paragraph(
                     '```' + part.language + '\n' + part.code + '\n```',
                 ).text;
-            else if (part instanceof NativeRoleMessage.Ai.Part.CodeExecutionResult) {
-                const textParts: NativeRoleMessage.Ai.Part.Text<never>[] = [];
+            else if (part instanceof RoleMessage.Ai.Part.CodeExecutionResult) {
+                const textParts: RoleMessage.Ai.Part.Text<never>[] = [];
                 if (part.output) textParts.push(
-                    NativeRoleMessage.Ai.Part.Text.paragraph(
+                    RoleMessage.Ai.Part.Text.paragraph(
                         '```\n' + part.output + '\n```',
                     ),
                 );
                 textParts.push(
-                    NativeRoleMessage.Ai.Part.Text.paragraph(part.outcome),
+                    RoleMessage.Ai.Part.Text.paragraph(part.outcome),
                 );
                 return textParts.map(part => part.text).join('');
             } else throw new Error();
         }
         public getChatText(): string {
-            return this.getChatParts().map(part => NativeRoleMessage.Ai.encodeChatPart(part)).join('');
+            return this.getChatParts().map(part => RoleMessage.Ai.encodeChatPart(part)).join('');
         }
     }
     export namespace Ai {
@@ -69,7 +69,7 @@ export namespace NativeRoleMessage {
 
         export namespace Part {
 
-            export import Text = RoleMessage.Ai.Part.Text;
+            export import Text = Engine.RoleMessage.Ai.Part.Text;
 
             export class ExecutableCode {
                 protected declare [NOMINAL]: never;
@@ -83,6 +83,6 @@ export namespace NativeRoleMessage {
         }
     }
 
-    export import User = RoleMessage.User;
-    export import Developer = RoleMessage.Developer;
+    export import User = Engine.RoleMessage.User;
+    export import Developer = Engine.RoleMessage.Developer;
 }

@@ -1,5 +1,5 @@
-import { Function } from './function.ts';
-import { Verbatim } from './verbatim.ts';
+import { Function } from '../function.ts';
+import { Verbatim } from '../verbatim.ts';
 import { RoleMessage } from './message.ts';
 
 

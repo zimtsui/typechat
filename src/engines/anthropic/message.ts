@@ -1,4 +1,4 @@
-import { RoleMessage } from '../../message.ts';
+import { Engine } from '../../engine.ts';
 import { Function } from '../../function.ts';
 import type { Verbatim } from '../../verbatim.ts';
 import Anthropic from '@anthropic-ai/sdk';
@@ -6,11 +6,11 @@ import Anthropic from '@anthropic-ai/sdk';
 const NOMINAL = Symbol();
 
 
-export namespace NativeRoleMessage {
+export namespace RoleMessage {
     export class Ai<
         in out fdu extends Function.Decl.Proto,
         in out vdu extends Verbatim.Decl.Proto,
-    > extends RoleMessage.Ai<fdu, vdu> {
+    > extends Engine.RoleMessage.Ai<fdu, vdu> {
         protected declare [NOMINAL]: never;
 
         public constructor(
@@ -31,11 +31,10 @@ export namespace NativeRoleMessage {
         > = Ai<Function.Decl.From<fdm>, Verbatim.Decl.From<vdm>>;
 
         export namespace Part {
-            export import Text = RoleMessage.Ai.Part.Text;
+            export import Text = Engine.RoleMessage.Ai.Part.Text;
         }
     }
 
-    export import User = RoleMessage.User;
-    export import Developer = RoleMessage.Developer;
+    export import User = Engine.RoleMessage.User;
+    export import Developer = Engine.RoleMessage.Developer;
 }
-

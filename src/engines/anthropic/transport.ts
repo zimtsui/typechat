@@ -1,6 +1,4 @@
-import { type InferenceParams, type ProviderSpec } from '../../engine.ts';
-import { RoleMessage } from '../../message.ts';
-import { type Session } from '../../session.ts';
+import { type InferenceOptions, type ProviderSpecs, Engine } from '../../engine.ts';
 import { Function } from '../../function.ts';
 import Anthropic from '@anthropic-ai/sdk';
 import { type InferenceContext } from '../../inference-context.ts';
@@ -10,10 +8,10 @@ import type { MessageCodec } from './message-codec.ts';
 import type { Billing } from './billing.ts';
 import type { ToolCodec } from './tool-codec.ts';
 import type { Verbatim } from '../../verbatim.ts';
-import * as ChoiceCodec from './choice-codec.ts';
-import type { StructuringChoice } from '../../engine/structuring-choice.ts';
-import type { Engine } from '../../engine.ts';
+import * as ChoiceCodec from './structuring-choice-codec.ts';
+import type { StructuringChoice } from '../../structuring-choice.ts';
 import * as Undici from 'undici';
+import { RoleMessage } from './message.ts';
 
 
 export class Transport<
@@ -21,11 +19,11 @@ export class Transport<
     in out vdm extends Verbatim.Decl.Map.Proto,
 > implements Engine.Transport<fdm, vdm> {
     protected client: Anthropic;
-    protected providerSpec: ProviderSpec;
-    protected inferenceParams: InferenceParams;
+    protected providerSpec: ProviderSpecs;
+    protected inferenceParams: InferenceOptions;
     protected fdm: fdm;
     protected throttle: Throttle;
-    protected structuringChoice: StructuringChoice.From<fdm, vdm>;
+    protected structuringChoice: StructuringChoice;
     protected messageCodec: MessageCodec<fdm, vdm>;
     protected toolCodec: ToolCodec<fdm>;
     protected billing: Billing;
@@ -48,7 +46,7 @@ export class Transport<
     }
 
     protected makeParams(
-        session: Session.From<fdm, vdm>,
+        session: Engine.Session.From<fdm, vdm>,
     ): Anthropic.MessageCreateParamsStreaming {
         const tools = this.toolCodec.encodeFunctionDeclarationMap();
         return {
@@ -65,7 +63,7 @@ export class Transport<
 
     public async fetch(
         wfctx: InferenceContext,
-        session: Session.From<fdm, vdm>,
+        session: Engine.Session.From<fdm, vdm>,
         signal?: AbortSignal,
     ): Promise<RoleMessage.Ai.From<fdm, vdm>> {
         await this.throttle.requests(wfctx);
@@ -152,11 +150,11 @@ export namespace Transport {
         in out fdm extends Function.Decl.Map.Proto,
         in out vdm extends Verbatim.Decl.Map.Proto,
     > {
-        providerSpec: ProviderSpec;
-        inferenceParams: InferenceParams;
+        providerSpec: ProviderSpecs;
+        inferenceParams: InferenceOptions;
         fdm: fdm;
         throttle: Throttle;
-        structuringChoice: StructuringChoice.From<fdm, vdm>;
+        structuringChoice: StructuringChoice;
         messageCodec: MessageCodec<fdm, vdm>;
         toolCodec: ToolCodec<fdm>;
         billing: Billing;

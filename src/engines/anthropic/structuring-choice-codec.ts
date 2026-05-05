@@ -1,4 +1,4 @@
-import { StructuringChoice } from '../../engine/structuring-choice.ts';
+import { StructuringChoice } from '../../structuring-choice.ts';
 import type { Function } from '../../function.ts';
 import type { Verbatim } from '../../verbatim.ts';
 import Anthropic from '@anthropic-ai/sdk';
@@ -8,7 +8,7 @@ export function encode<
     fdu extends Function.Decl.Proto,
     vdu extends Verbatim.Decl.Proto,
 >(
-    structuringChoice: StructuringChoice<fdu, vdu>,
+    structuringChoice: StructuringChoice,
     parallelToolCall?: boolean,
 ): Anthropic.ToolChoice {
     const disable_parallel_tool_use: boolean | undefined = typeof parallelToolCall === 'boolean' ? !parallelToolCall : undefined;
@@ -20,8 +20,6 @@ export function encode<
 
     else if (structuringChoice === StructuringChoice.TCall.REQUIRED) return { type: 'any', disable_parallel_tool_use };
     else if (structuringChoice === StructuringChoice.TCall.ANYONE) return { type: 'any', disable_parallel_tool_use };
-    else if (structuringChoice instanceof StructuringChoice.TCall.FCall)
-        return { type: 'tool', name: structuringChoice.name, disable_parallel_tool_use };
 
     else if (structuringChoice === StructuringChoice.VRequest.REQUIRED) return { type: 'none' };
     else if (structuringChoice === StructuringChoice.VRequest.ANYONE) return { type: 'none' };

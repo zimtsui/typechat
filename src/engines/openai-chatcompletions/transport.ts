@@ -1,18 +1,15 @@
-import { RoleMessage } from '../../message.ts';
-import { type Session } from '../../session.ts';
 import { Function } from '../../function.ts';
 import OpenAI from 'openai';
 import type { InferenceContext } from '../../inference-context.ts';
 import type { Verbatim } from '../../verbatim.ts';
-import type { Engine } from '../../engine.ts';
-import { type InferenceParams, type ProviderSpec } from '../../engine.ts';
+import { type InferenceOptions, type ProviderSpecs, Engine } from '../../engine.ts';
 import { loggers } from '../../telemetry.ts';
 import type { Billing } from './billing.ts';
 import type { ToolCodec } from './tool-codec.ts';
 import { Throttle } from '../../throttle.ts';
 import { type MessageCodec } from './message-codec.ts';
-import type { StructuringChoice } from '../../engine/structuring-choice.ts';
-import * as ChoiceCodec from './choice-codec.ts';
+import type { StructuringChoice } from '../../structuring-choice.ts';
+import * as StructuringChoiceCodec from './structuring-choice-codec.ts';
 import * as Undici from 'undici';
 
 
@@ -21,11 +18,11 @@ export class Transport<
     in out vdm extends Verbatim.Decl.Map.Proto,
 > implements Engine.Transport<fdm, vdm> {
     protected client: OpenAI;
-    protected inferenceParams: InferenceParams;
-    protected providerSpec: ProviderSpec;
+    protected inferenceParams: InferenceOptions;
+    protected providerSpec: ProviderSpecs;
     protected fdm: fdm;
     protected throttle: Throttle;
-    protected structuringChoice: StructuringChoice.From<fdm, vdm>;
+    protected structuringChoice: StructuringChoice;
     protected messageCodec: MessageCodec<fdm, vdm>;
     protected toolCodec: ToolCodec<fdm>;
     protected billing: Billing;
@@ -47,7 +44,7 @@ export class Transport<
     }
 
     protected makeParams(
-        session: Session.From<fdm, vdm>,
+        session: Engine.Session.From<fdm, vdm>,
     ): OpenAI.ChatCompletionCreateParamsStreaming {
         const tools = this.toolCodec.encodeFunctionDeclarationMap();
         const messages: OpenAI.ChatCompletionMessageParam[] = [];
@@ -57,7 +54,7 @@ export class Transport<
             model: this.inferenceParams.model,
             messages,
             tools: tools.length ? tools : undefined,
-            tool_choice: tools.length ? ChoiceCodec.encode(this.structuringChoice) : undefined,
+            tool_choice: tools.length ? StructuringChoiceCodec.encode(this.structuringChoice) : undefined,
             parallel_tool_calls: tools.length ? this.inferenceParams.parallelToolCall : undefined,
             stream: true,
             stream_options: {
@@ -113,9 +110,9 @@ export class Transport<
 
     public async fetch(
         wfctx: InferenceContext,
-        session: Session.From<fdm, vdm>,
+        session: Engine.Session.From<fdm, vdm>,
         signal?: AbortSignal,
-    ): Promise<RoleMessage.Ai.From<fdm, vdm>> {
+    ): Promise<Engine.RoleMessage.Ai.From<fdm, vdm>> {
         try {
             await this.throttle.requests(wfctx);
 
@@ -208,11 +205,11 @@ export namespace Transport {
         in out fdm extends Function.Decl.Map.Proto,
         in out vdm extends Verbatim.Decl.Map.Proto,
     > {
-        inferenceParams: InferenceParams;
-        providerSpec: ProviderSpec;
+        inferenceParams: InferenceOptions;
+        providerSpec: ProviderSpecs;
         fdm: fdm;
         throttle: Throttle;
-        structuringChoice: StructuringChoice.From<fdm, vdm>;
+        structuringChoice: StructuringChoice;
         messageCodec: MessageCodec<fdm, vdm>;
         toolCodec: ToolCodec<fdm>;
         billing: Billing;

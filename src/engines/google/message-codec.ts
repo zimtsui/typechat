@@ -1,6 +1,5 @@
-import { type Session } from '../../session.ts';
-import { NativeRoleMessage } from './message.ts';
-import { RoleMessage } from '../../message.ts';
+import { RoleMessage } from './message.ts';
+import { Engine } from '../../engine.ts';
 import { Function } from '../../function.ts';
 import * as Google from '@google/genai';
 import { type ToolCodec } from './tool-codec.ts';
@@ -24,17 +23,17 @@ export class MessageCodec<
     }
 
     public encodeAiMessage(
-        aiMessage: RoleMessage.Ai.From<fdm, vdm>,
+        aiMessage: Engine.RoleMessage.Ai.From<fdm, vdm>,
     ): Google.Content {
-        if (aiMessage instanceof NativeRoleMessage.Ai) {
-            const nativeMessage = aiMessage as NativeRoleMessage.Ai<Function.Decl.From<fdm>, Verbatim.Decl.From<vdm>>;
-            return nativeMessage.getRaw();
+        if (aiMessage instanceof RoleMessage.Ai) {
+            const nativeAiMessage = aiMessage as RoleMessage.Ai<Function.Decl.From<fdm>, Verbatim.Decl.From<vdm>>;
+            return nativeAiMessage.getRaw();
         }
         else {
             const apiParts: Google.PartUnion[] = [];
             for (const part of aiMessage.getParts()) {
-                if (part instanceof NativeRoleMessage.Ai.Part.Text) {
-                    const textPart = part as NativeRoleMessage.Ai.Part.Text.From<vdm>;
+                if (part instanceof RoleMessage.Ai.Part.Text) {
+                    const textPart = part as RoleMessage.Ai.Part.Text.From<vdm>;
                     apiParts.push(
                         Google.createPartFromText(textPart.text),
                     );
@@ -54,14 +53,14 @@ export class MessageCodec<
     }
 
     public encodeChatMessages(
-        chatMessages: Session.ChatMessage.From<fdm, vdm>[],
+        chatMessages: Engine.Session.ChatMessage.From<fdm, vdm>[],
     ): Google.Content[] {
         return chatMessages.map(chatMessage => {
-            if (chatMessage instanceof RoleMessage.User) {
-                const userMessage = chatMessage as RoleMessage.User.From<fdm>;
+            if (chatMessage instanceof Engine.RoleMessage.User) {
+                const userMessage = chatMessage as Engine.RoleMessage.User.From<fdm>;
                 return this.encodeUserMessage(userMessage);
-            } else if (chatMessage instanceof RoleMessage.Ai) {
-                const aiMessage = chatMessage as RoleMessage.Ai.From<fdm, vdm>;
+            } else if (chatMessage instanceof Engine.RoleMessage.Ai) {
+                const aiMessage = chatMessage as Engine.RoleMessage.Ai.From<fdm, vdm>;
                 return this.encodeAiMessage(aiMessage);
             }
             else throw new Error();
@@ -69,11 +68,11 @@ export class MessageCodec<
     }
 
     public encodeUserMessage(
-        userMessage: RoleMessage.User.From<fdm>,
+        userMessage: Engine.RoleMessage.User.From<fdm>,
     ): Google.Content {
         const apiParts: Google.PartUnion[] = [];
         for (const part of userMessage.getParts()) {
-            if (part instanceof RoleMessage.User.Part.Text)
+            if (part instanceof Engine.RoleMessage.User.Part.Text)
                 apiParts.push(Google.createPartFromText(part.text));
             else if (part instanceof Function.Response) {
                 const fres = part as Function.Response.From<fdm>;
@@ -92,7 +91,7 @@ export class MessageCodec<
     }
 
     public encodeDeveloperMessage(
-        developerMessage: RoleMessage.Developer,
+        developerMessage: Engine.RoleMessage.Developer,
     ): Google.Content {
         const parts = developerMessage.getOnlyTextParts().map(part => Google.createPartFromText(part.text));
         return { parts };
@@ -100,7 +99,7 @@ export class MessageCodec<
 
     public decodeAiMessage(
         content: Google.Content,
-    ): NativeRoleMessage.Ai.From<fdm, vdm> {
+    ): RoleMessage.Ai.From<fdm, vdm> {
         if (content.parts) {} else throw new Error();
         const parts: unknown[] = [];
         for (const part of content.parts) {
@@ -114,15 +113,15 @@ export class MessageCodec<
                 if (this.codeExecution) {} else throw new SyntaxError('Unexpected code execution', { cause: content });
                 if (part.executableCode.code) {} else throw new Error();
                 if (part.executableCode.language) {} else throw new Error();
-                parts.push(new NativeRoleMessage.Ai.Part.ExecutableCode(part.executableCode.code, part.executableCode.language));
+                parts.push(new RoleMessage.Ai.Part.ExecutableCode(part.executableCode.code, part.executableCode.language));
             }
             if (part.codeExecutionResult) {
                 if (this.codeExecution) {} else throw new SyntaxError('Unexpected code execution result', { cause: content });
                 if (part.codeExecutionResult.outcome) {} else throw new Error();
-                parts.push(new NativeRoleMessage.Ai.Part.CodeExecutionResult(part.codeExecutionResult.outcome, part.codeExecutionResult.output));
+                parts.push(new RoleMessage.Ai.Part.CodeExecutionResult(part.codeExecutionResult.outcome, part.codeExecutionResult.output));
             }
         }
-        return new NativeRoleMessage.Ai(parts, content);
+        return new RoleMessage.Ai(parts, content);
     }
 }
 

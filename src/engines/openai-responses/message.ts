@@ -1,4 +1,4 @@
-import { RoleMessage } from '../../message.ts';
+import { Engine } from '../../engine.ts';
 import { Function } from '../../function.ts';
 import { Tool } from './tool.ts';
 import type { Verbatim } from '../../verbatim.ts';
@@ -7,11 +7,11 @@ import OpenAI from 'openai';
 const NOMINAL = Symbol();
 
 
-export namespace NativeRoleMessage {
+export namespace RoleMessage {
     export class Ai<
         in out fdu extends Function.Decl.Proto,
         in out vdu extends Verbatim.Decl.Proto,
-    > extends RoleMessage.Ai<fdu, vdu> {
+    > extends Engine.RoleMessage.Ai<fdu, vdu> {
         protected declare [NOMINAL]: never;
         public constructor(
             parts: unknown[],
@@ -23,7 +23,7 @@ export namespace NativeRoleMessage {
         public getRaw(): OpenAI.Responses.ResponseOutputItem[] {
             return this.raw;
         }
-        public override getToolCalls(): Tool.Call.Of<fdu>[] {
+        public getToolCalls(): Tool.Call.Of<fdu>[] {
             const tcs: Tool.Call.Of<fdu>[] = [];
             for (const part of this.parts)
                 if (part instanceof Function.Call || part instanceof Tool.ApplyPatch.Call) {
@@ -46,10 +46,10 @@ export namespace NativeRoleMessage {
         > = Ai<Function.Decl.From<fdm>, Verbatim.Decl.From<vdm>>;
 
         export namespace Part {
-            export import Text = RoleMessage.Ai.Part.Text;
+            export import Text = Engine.RoleMessage.Ai.Part.Text;
         }
     }
 
-    export import User = RoleMessage.User;
-    export import Developer = RoleMessage.Developer;
+    export import User = Engine.RoleMessage.User;
+    export import Developer = Engine.RoleMessage.Developer;
 }

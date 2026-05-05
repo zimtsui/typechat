@@ -3,8 +3,6 @@ import { Engine } from '../engine.ts';
 import { MessageCodec } from './openai-chatcompletions/message-codec.ts';
 import { Transport } from './openai-chatcompletions/transport.ts';
 import type { Verbatim } from '../verbatim.ts';
-import { StructuringChoice } from '../engine/structuring-choice.ts';
-import { StructuringValidator } from '../engine/structuring-validator.ts';
 import { ToolCodec } from './openai-chatcompletions/tool-codec.ts';
 import { Billing } from './openai-chatcompletions/billing.ts';
 
@@ -22,7 +20,6 @@ export namespace OpenAIChatCompletionsEngine {
         protected messageCodec: MessageCodec<fdm, vdm>;
         protected billing: Billing;
         protected override transport: Transport<fdm, vdm>;
-        protected override structuringValidator: Engine.StructuringValidator.From<fdm, vdm>;
 
         public constructor(protected options: OpenAIChatCompletionsEngine.Options<fdm, vdm>) {
             super(options);
@@ -33,8 +30,8 @@ export namespace OpenAIChatCompletionsEngine {
             });
             this.billing = new Billing({ pricing: this.pricing });
             this.transport = new Transport({
-                inferenceParams: this.inferenceParams,
-                providerSpec: this.providerSpec,
+                inferenceParams: this.inferenceOptions,
+                providerSpec: this.providerSpecs,
                 fdm: this.fdm,
                 throttle: this.throttle,
                 structuringChoice: this.structuringChoice,
@@ -42,13 +39,12 @@ export namespace OpenAIChatCompletionsEngine {
                 toolCodec: this.toolCodec,
                 billing: this.billing,
             });
-            this.structuringValidator = new StructuringValidator({ structuringChoice: this.structuringChoice });
         }
 
         public override clone(): OpenAIChatCompletionsEngine<fdm, vdm> {
             const engine = new OpenAIChatCompletionsEngine.Instance(this.options);
-            engine.middlewares = [...this.middlewares];
-            engine.statefulMiddlewares = [...this.statefulMiddlewares];
+            engine.middlewaresStateless = [...this.middlewaresStateless];
+            engine.middlewaresStateful = [...this.middlewaresStateful];
             return engine;
         }
     }

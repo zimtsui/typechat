@@ -4,13 +4,11 @@ import { Verbatim } from '../verbatim.ts';
 import { MessageCodec } from './openai-responses/message-codec.ts';
 import { ToolCodec } from './openai-responses/tool-codec.ts';
 import { Billing } from './openai-responses/billing.ts';
-import { StructuringChoice } from '../engine/structuring-choice.ts';
 import { StructuringValidator } from '../engine/structuring-validator.ts';
 import { Transport } from './openai-responses/transport.ts';
 import { InferenceContext } from '../inference-context.ts';
-import { Session } from '../session.ts';
-import { NativeRoleMessage } from './openai-responses/message.ts';
-import { RoleMessage } from '../message.ts';
+import { Session } from '../engine/session.ts';
+import * as MessageModule from './openai-responses/message.ts';
 import * as ToolModule from './openai-responses/tool.ts';
 
 
@@ -41,8 +39,8 @@ export namespace OpenAIResponsesEngine {
             });
             this.billing = new Billing({ pricing: this.pricing });
             this.transport = new Transport({
-                inferenceParams: this.inferenceParams,
-                providerSpec: this.providerSpec,
+                inferenceParams: this.inferenceOptions,
+                providerSpec: this.providerSpecs,
                 fdm: this.fdm,
                 throttle: this.throttle,
                 structuringChoice: this.structuringChoice,
@@ -56,21 +54,21 @@ export namespace OpenAIResponsesEngine {
 
         public override clone(): OpenAIResponsesEngine<fdm, vdm> {
             const engine = new OpenAIResponsesEngine.Instance(this.options);
-            engine.middlewares = [...this.middlewares];
-            engine.statefulMiddlewares = [...this.statefulMiddlewares];
+            engine.middlewaresStateless = [...this.middlewaresStateless];
+            engine.middlewaresStateful = [...this.middlewaresStateful];
             return engine;
         }
 
-        protected override async infer(wfctx: InferenceContext, session: Session.From<fdm, vdm>): Promise<NativeRoleMessage.Ai.From<fdm, vdm>> {
-            return await super.infer(wfctx, session) as NativeRoleMessage.Ai.From<fdm, vdm>;
+        protected override async infer(wfctx: InferenceContext, session: Session.From<fdm, vdm>): Promise<RoleMessage.Ai.From<fdm, vdm>> {
+            return await super.infer(wfctx, session) as RoleMessage.Ai.From<fdm, vdm>;
         }
 
-        public override async stateless(wfctx: InferenceContext, session: Session.From<fdm, vdm>): Promise<NativeRoleMessage.Ai.From<fdm, vdm>> {
-            return await super.stateless(wfctx, session) as NativeRoleMessage.Ai.From<fdm, vdm>;
+        public override async stateless(wfctx: InferenceContext, session: Session.From<fdm, vdm>): Promise<RoleMessage.Ai.From<fdm, vdm>> {
+            return await super.stateless(wfctx, session) as RoleMessage.Ai.From<fdm, vdm>;
         }
 
-        public override async stateful(wfctx: InferenceContext, session: Session.From<fdm, vdm>): Promise<NativeRoleMessage.Ai.From<fdm, vdm>> {
-            return await super.stateful(wfctx, session) as NativeRoleMessage.Ai.From<fdm, vdm>;
+        public override async stateful(wfctx: InferenceContext, session: Session.From<fdm, vdm>): Promise<RoleMessage.Ai.From<fdm, vdm>> {
+            return await super.stateful(wfctx, session) as RoleMessage.Ai.From<fdm, vdm>;
         }
 
         /**
@@ -87,16 +85,16 @@ export namespace OpenAIResponsesEngine {
             for (let i = 0; i < limit; i++) {
                 const response = await this.stateful(wfctx, session);
                 if (response.allTextPart()) return response.getText();
-                const pfrs: Promise<Function.Response.From<fdm>>[] = [];
-                const pvss: Promise<NativeRoleMessage.User.Part.Text>[] = [];
-                const paprs: Promise<Tool.ApplyPatch.Response>[] = [];
+                const pfress: Promise<Function.Response.From<fdm>>[] = [];
+                const pvress: Promise<RoleMessage.User.Part.Text>[] = [];
+                const papress: Promise<Tool.ApplyPatch.Response>[] = [];
                 for (const part of response.getParts()) {
-                    if (part instanceof NativeRoleMessage.Ai.Part.Text) {
+                    if (part instanceof Engine.RoleMessage.Ai.Part.Text) {
                         yield part.text;
                     } else if (part instanceof Function.Call) {
                         const fcall = part as Function.Call.From<fdm>;
                         const f = fnm[fcall.name];
-                        pfrs.push((async () => {
+                        pfress.push((async () => {
                             try {
                                 return Function.Response.Successful.of({
                                     id: fcall.id,
@@ -115,19 +113,19 @@ export namespace OpenAIResponsesEngine {
                     } else if (part instanceof Verbatim.Request) {
                         const vreq = part as Verbatim.Request.From<vdm>;
                         const vh = vhm[vreq.name];
-                        pvss.push((async () => new NativeRoleMessage.User.Part.Text(await vh.call(vhm, vreq.args)))());
+                        pvress.push((async () => new RoleMessage.User.Part.Text(await vh.call(vhm, vreq.args)))());
                     } else if (part instanceof Tool.ApplyPatch.Call) {
                         if (applyPatch) {} else throw new Error('Apply patch handler missing.');
-                        paprs.push((async () => new Tool.ApplyPatch.Response({
+                        papress.push((async () => new Tool.ApplyPatch.Response({
                             id: part.raw.call_id,
                             failure: await applyPatch(part.raw.operation),
                         }))());
                     } else throw new Error();
                 }
-                const fress = await Promise.all(pfrs);
-                const vress = await Promise.all(pvss);
-                const aprs = await Promise.all(paprs);
-                this.pushUserMessage(session, new RoleMessage.User([...fress, ...vress, ...aprs]));
+                const fress = await Promise.all(pfress);
+                const vress = await Promise.all(pvress);
+                const aprs = await Promise.all(papress);
+                session.chatMessages.push(new RoleMessage.User([...fress, ...aprs, ...vress]));
             }
             throw new Engine.FunctionCallLimitExceeded('Function call limit exceeded.');
         }
@@ -141,4 +139,5 @@ export namespace OpenAIResponsesEngine {
     }
 
     export import Tool = ToolModule.Tool;
+    export import RoleMessage = MessageModule.RoleMessage;
 }

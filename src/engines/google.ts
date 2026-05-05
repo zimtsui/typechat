@@ -6,12 +6,10 @@ import { ToolCodec } from './google/tool-codec.ts';
 import { Billing } from './google/billing.ts';
 import { env } from 'node:process';
 import { Agent, ProxyAgent } from 'undici';
-import { StructuringChoice } from '../engine/structuring-choice.ts';
 import { StructuringValidator } from '../engine/structuring-validator.ts';
 import { Transport } from './google/transport.ts';
 import { InferenceContext } from '../inference-context.ts';
-import { Session } from '../session.ts';
-import { NativeRoleMessage } from './google/message.ts';
+import * as MessageModule from './google/message.ts';
 
 
 export type GoogleEngine<
@@ -40,7 +38,7 @@ export namespace GoogleEngine {
             this.googleSearch = options.googleSearch ?? false;
 
             const proxyUrl = options.endpointSpec.proxy || env.https_proxy || env.HTTPS_PROXY;
-            this.providerSpec.dispatcher = proxyUrl
+            this.providerSpecs.dispatcher = proxyUrl
                 ? new ProxyAgent({
                     uri: proxyUrl,
                     headersTimeout: 0,
@@ -62,8 +60,8 @@ export namespace GoogleEngine {
             });
             this.billing = new Billing({ pricing: this.pricing });
             this.transport = new Transport({
-                inferenceParams: this.inferenceParams,
-                providerSpec: this.providerSpec,
+                inferenceParams: this.inferenceOptions,
+                providerSpec: this.providerSpecs,
                 fdm: this.fdm,
                 throttle: this.throttle,
                 structuringChoice: this.structuringChoice,
@@ -80,21 +78,21 @@ export namespace GoogleEngine {
 
         public override clone(): GoogleEngine<fdm, vdm> {
             const engine = new GoogleEngine.Instance(this.options);
-            engine.middlewares = [...this.middlewares];
-            engine.statefulMiddlewares = [...this.statefulMiddlewares];
+            engine.middlewaresStateless = [...this.middlewaresStateless];
+            engine.middlewaresStateful = [...this.middlewaresStateful];
             return engine;
         }
 
-        protected override async infer(wfctx: InferenceContext, session: Session.From<fdm, vdm>): Promise<NativeRoleMessage.Ai.From<fdm, vdm>> {
-            return await super.infer(wfctx, session) as NativeRoleMessage.Ai.From<fdm, vdm>;
+        protected override async infer(wfctx: InferenceContext, session: Engine.Session.From<fdm, vdm>): Promise<RoleMessage.Ai.From<fdm, vdm>> {
+            return await super.infer(wfctx, session) as RoleMessage.Ai.From<fdm, vdm>;
         }
 
-        public override async stateless(wfctx: InferenceContext, session: Session.From<fdm, vdm>): Promise<NativeRoleMessage.Ai.From<fdm, vdm>> {
-            return await super.stateless(wfctx, session) as NativeRoleMessage.Ai.From<fdm, vdm>;
+        public override async stateless(wfctx: InferenceContext, session: Engine.Session.From<fdm, vdm>): Promise<RoleMessage.Ai.From<fdm, vdm>> {
+            return await super.stateless(wfctx, session) as RoleMessage.Ai.From<fdm, vdm>;
         }
 
-        public override async stateful(wfctx: InferenceContext, session: Session.From<fdm, vdm>): Promise<NativeRoleMessage.Ai.From<fdm, vdm>> {
-            return await super.stateful(wfctx, session) as NativeRoleMessage.Ai.From<fdm, vdm>;
+        public override async stateful(wfctx: InferenceContext, session: Engine.Session.From<fdm, vdm>): Promise<RoleMessage.Ai.From<fdm, vdm>> {
+            return await super.stateful(wfctx, session) as RoleMessage.Ai.From<fdm, vdm>;
         }
 
         /**
@@ -102,23 +100,23 @@ export namespace GoogleEngine {
          */
         public override async *agentloop(
             wfctx: InferenceContext,
-            session: Session.From<fdm, vdm>,
+            session: Engine.Session.From<fdm, vdm>,
             fnm: Function.Map<fdm>,
             vhm: Verbatim.Handler.Map<vdm>,
             limit = Number.POSITIVE_INFINITY,
         ): AsyncGenerator<string, string, void> {
             for (let i = 0; i < limit; i++) {
-                const response = await this.stateful(wfctx, session) as NativeRoleMessage.Ai.From<fdm, vdm>;
+                const response = await this.stateful(wfctx, session) as RoleMessage.Ai.From<fdm, vdm>;
                 if (response.allChatPart()) return response.getChatText();
-                const pfrs: Promise<Function.Response.From<fdm>>[] = [];
-                const pvss: Promise<NativeRoleMessage.User.Part.Text>[] = [];
+                const pfress: Promise<Function.Response.From<fdm>>[] = [];
+                const pvress: Promise<RoleMessage.User.Part.Text>[] = [];
                 for (const part of response.getParts()) {
-                    if (part instanceof NativeRoleMessage.Ai.Part.Text) {
+                    if (part instanceof Engine.RoleMessage.Ai.Part.Text) {
                         yield part.text;
                     } else if (part instanceof Function.Call) {
                         const fcall = part as Function.Call.From<fdm>;
                         const f = fnm[fcall.name];
-                        pfrs.push((async () => {
+                        pfress.push((async () => {
                             try {
                                 return Function.Response.Successful.of({
                                     id: fcall.id,
@@ -137,22 +135,22 @@ export namespace GoogleEngine {
                     } else if (part instanceof Verbatim.Request) {
                         const vreq = part as Verbatim.Request.From<vdm>;
                         const vh = vhm[vreq.name];
-                        pvss.push(
+                        pvress.push(
                             Promise.resolve(
-                                new NativeRoleMessage.User.Part.Text(
+                                new RoleMessage.User.Part.Text(
                                     await vh.call(vhm, vreq.args),
                                 ),
                             ),
                         );
-                    } else if (part instanceof NativeRoleMessage.Ai.Part.ExecutableCode) {
-                        yield NativeRoleMessage.Ai.encodeChatPart(part);
-                    } else if (part instanceof NativeRoleMessage.Ai.Part.CodeExecutionResult) {
-                        yield NativeRoleMessage.Ai.encodeChatPart(part);
+                    } else if (part instanceof RoleMessage.Ai.Part.ExecutableCode) {
+                        yield RoleMessage.Ai.encodeChatPart(part);
+                    } else if (part instanceof RoleMessage.Ai.Part.CodeExecutionResult) {
+                        yield RoleMessage.Ai.encodeChatPart(part);
                     } else throw new Error();
                 }
-                const fress: Function.Response.From<fdm>[] = await Promise.all(pfrs);
-                const vress: NativeRoleMessage.User.Part.Text[] = await Promise.all(pvss);
-                this.pushUserMessage(session, new NativeRoleMessage.User([...fress, ...vress]));
+                const fress: Function.Response.From<fdm>[] = await Promise.all(pfress);
+                const vress: RoleMessage.User.Part.Text[] = await Promise.all(pvress);
+                session.chatMessages.push(new RoleMessage.User([...fress, ...vress]));
             }
             throw new Engine.FunctionCallLimitExceeded('Function call limit exceeded.');
         }
@@ -167,5 +165,7 @@ export namespace GoogleEngine {
         urlContext?: boolean;
         googleSearch?: boolean;
     }
+
+    export import RoleMessage = MessageModule.RoleMessage;
 
 }
