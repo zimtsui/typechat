@@ -1,14 +1,13 @@
-import { Adaptor, RoleMessage, type Session } from '@zimtsui/typechat';
+import { Adaptor, Engine } from '@zimtsui/typechat';
 import { config } from './config.ts';
 
-
 // 创建会话
-const session: Session<never, never> = {
-    developerMessage: new RoleMessage.Developer([
-        RoleMessage.Developer.Part.Text.paragraph('You are a helpful assistant.'),
+const session: Engine.Session<never, never> = {
+    developerMessage: new Engine.RoleMessage.Developer([
+        Engine.RoleMessage.Developer.Part.Text.paragraph('You are a helpful assistant.'),
     ]),
     chatMessages: [
-        new RoleMessage.User([ RoleMessage.User.Part.Text.paragraph('Hello!') ]),
+        new Engine.RoleMessage.User([ Engine.RoleMessage.User.Part.Text.paragraph('Hello!') ]),
     ],
 };
 

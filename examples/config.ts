@@ -1,6 +1,5 @@
 import { type Config } from '@zimtsui/typechat';
 
-
 // 配置推理服务商 API 接入点
 export const config: Config = {
     endpoints: {

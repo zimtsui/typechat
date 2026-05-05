@@ -1,4 +1,4 @@
-import { Adaptor, RoleMessage, type Session, OpenAIResponsesStructuringChoice, Verbatim } from '@zimtsui/typechat';
+import { Adaptor, Engine, StructuringChoice, Verbatim } from '@zimtsui/typechat';
 import Assets from '@zimtsui/typechat/assets';
 import * as Codec from '@zimtsui/typechat/codec';
 import { config } from './config.ts';
@@ -22,14 +22,14 @@ type vdu = Verbatim.Decl.From<vdm>;
 
 
 // 创建会话
-const session: Session<never, vdu> = {
-    developerMessage: new RoleMessage.Developer([
-        RoleMessage.Developer.Part.Text.paragraph(Assets.verbatim.instruction),
-        RoleMessage.Developer.Part.Text.paragraph('# Available Verbatim Channels'),
-        RoleMessage.Developer.Part.Text.paragraph(Codec.Declarations.encode(vdm)),
+const session: Engine.Session<never, vdu> = {
+    developerMessage: new Engine.RoleMessage.Developer([
+        Engine.RoleMessage.Developer.Part.Text.paragraph(Assets.verbatim.instruction),
+        Engine.RoleMessage.Developer.Part.Text.paragraph('# Available Verbatim Channels'),
+        Engine.RoleMessage.Developer.Part.Text.paragraph(Codec.Declarations.encode(vdm)),
     ]),
     chatMessages: [
-        new RoleMessage.User([ RoleMessage.User.Part.Text.paragraph('请使用 Bash 命令查询当前系统时间。') ]),
+        new Engine.RoleMessage.User([ Engine.RoleMessage.User.Part.Text.paragraph('请使用 Bash 命令查询当前系统时间。') ]),
     ],
 };
 
@@ -39,7 +39,7 @@ const engine = adaptor.makeOpenAIResponsesEngine<{}, vdm>({
     endpoint: 'gpt-5.4-mini',
     functionDeclarationMap: {},
     verbatimDeclarationMap: vdm,
-    structuringChoice: OpenAIResponsesStructuringChoice.VRequest.ANYONE,
+    structuringChoice: StructuringChoice.VRequest.ANYONE,
 });
 
 const response = await engine.stateless({}, session);
