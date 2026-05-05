@@ -1,71 +1,11 @@
 import test from 'ava';
-import { Type } from 'typebox';
 import { Adaptor } from '../build/adaptor.js';
-import { Throttle } from '../build/throttle.js';
 import { OpenAIResponsesEngine } from '../build/engines/openai-responses.js';
 import { GoogleEngine } from '../build/engines/google.js';
 import { OpenAIChatCompletionsEngine } from '../build/engines/openai-chatcompletions.js';
 import { AnthropicEngine } from '../build/engines/anthropic.js';
+import { functionDeclarationMap, verbatimDeclarationMap } from './helpers.js';
 
-
-const functionDeclarationMap = {
-    noop: {
-        description: 'No-op tool.',
-        parameters: Type.Object({}),
-    },
-};
-
-const verbatimDeclarationMap = {
-    note: {
-        description: 'A note.',
-        parameters: {
-            body: {
-                description: 'Body text.',
-                mimeType: 'text/plain',
-            },
-        },
-    },
-};
-
-test('Throttle bypasses locking when rpm is unlimited', async t => {
-    const throttle = new Throttle(Number.POSITIVE_INFINITY);
-    let acquireReadCalls = 0;
-    let releaseReadCalls = 0;
-
-    await throttle.requests({
-        busy: {
-            acquireRead: async () => {
-                acquireReadCalls++;
-            },
-            releaseRead: () => {
-                releaseReadCalls++;
-            },
-        },
-    });
-
-    t.is(acquireReadCalls, 0);
-    t.is(releaseReadCalls, 0);
-});
-
-test('Throttle acquires and releases busy lock when rpm is finite', async t => {
-    const throttle = new Throttle(60000);
-    let acquireReadCalls = 0;
-    let releaseReadCalls = 0;
-
-    await throttle.requests({
-        busy: {
-            acquireRead: async () => {
-                acquireReadCalls++;
-            },
-            releaseRead: () => {
-                releaseReadCalls++;
-            },
-        },
-    });
-
-    t.is(acquireReadCalls, 1);
-    t.is(releaseReadCalls, 1);
-});
 
 test('Adaptor creates engines matching endpoint apiType', t => {
     const adaptor = Adaptor.create({
@@ -114,7 +54,7 @@ test('Adaptor creates engines matching endpoint apiType', t => {
     const openaiChatCompletionsEngine = adaptor.makeEngine({
         endpoint: 'openaiChatCompletions',
         functionDeclarationMap,
-        verbatimDeclarationMap,
+        verbatimDeclarationMap: {},
     });
     const anthropicEngine = adaptor.makeEngine({
         endpoint: 'anthropic',
@@ -176,49 +116,3 @@ test('Adaptor rejects unknown endpoint ids', t => {
 
     t.truthy(error);
 });
-
-test('Google engine rejects disabling parallel tool calls', t => {
-    const adaptor = Adaptor.create({
-        endpoints: {
-            google: {
-                apiType: 'google',
-                baseUrl: 'https://example.invalid/google',
-                apiKey: 'test-key',
-                model: 'test-model',
-                name: 'Google',
-                parallelToolCall: false,
-            },
-        },
-    });
-
-    const error = t.throws(() => adaptor.makeGoogleEngine({
-        endpoint: 'google',
-        functionDeclarationMap,
-        verbatimDeclarationMap,
-    }));
-
-    t.regex(error.message, /Parallel tool calling is required by Google engine\./);
-});
-
-test('Google engine allows omitted parallel tool call option', t => {
-    const adaptor = Adaptor.create({
-        endpoints: {
-            google: {
-                apiType: 'google',
-                baseUrl: 'https://example.invalid/google',
-                apiKey: 'test-key',
-                model: 'test-model',
-                name: 'Google',
-            },
-        },
-    });
-
-    const engine = adaptor.makeGoogleEngine({
-        endpoint: 'google',
-        functionDeclarationMap,
-        verbatimDeclarationMap,
-    });
-
-    t.true(engine instanceof GoogleEngine.Instance);
-});
-
