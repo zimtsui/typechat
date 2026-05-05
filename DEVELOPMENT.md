@@ -3,18 +3,9 @@
 ```mermaid
 classDiagram
 
-RoleMessage <|-- GoogleRoleMessage
-RoleMessage <|-- OpenAIResponsesRoleMessage
-RoleMessage <|-- OpenAIChatCompletionsRoleMessage
-RoleMessage <|-- AnthropicRoleMessage
+Engine <|-- NativeEngine
 
-GoogleEngine ..|> Engine
-OpenAIResponsesEngine ..|> Engine
-OpenAIChatCompletionsEngine ..|> Engine
-AnthropicEngine ..|> Engine
+NativeRoleMessage --|> RoleMessage
 
-GoogleRoleMessage <-- GoogleEngine
-OpenAIResponsesRoleMessage <-- OpenAIResponsesEngine
-OpenAIChatCompletionsRoleMessage <-- OpenAIChatCompletionsEngine
-AnthropicRoleMessage <-- AnthropicEngine
+NativeEngine --> NativeRoleMessage
 ```
