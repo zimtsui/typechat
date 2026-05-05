@@ -1,4 +1,4 @@
-import { Engine } from '../engine.ts';
+import { Engine, Middleware } from '../engine.ts';
 import { Function } from '../function.ts';
 import { Verbatim } from '../verbatim.ts';
 import { MessageCodec } from './openai-responses/message-codec.ts';
@@ -69,6 +69,13 @@ export namespace OpenAIResponsesEngine {
 
         public override async stateful(wfctx: InferenceContext, session: Session.From<fdm, vdm>): Promise<RoleMessage.Ai.From<fdm, vdm>> {
             return await super.stateful(wfctx, session) as RoleMessage.Ai.From<fdm, vdm>;
+        }
+
+        public override useStateless(middleware: Middleware.From<fdm, vdm>): OpenAIResponsesEngine<fdm, vdm> {
+            return super.useStateless(middleware) as OpenAIResponsesEngine<fdm, vdm>;
+        }
+        public override useStateful(middleware: Middleware.From<fdm, vdm>): OpenAIResponsesEngine<fdm, vdm> {
+            return super.useStateful(middleware) as OpenAIResponsesEngine<fdm, vdm>;
         }
 
         /**

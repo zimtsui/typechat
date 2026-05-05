@@ -44,7 +44,7 @@ export namespace AnthropicEngine {
             this.structuringValidator = new StructuringValidator({ structuringChoice: this.structuringChoice });
         }
 
-        public override clone(): AnthropicEngine<fdm, vdm> {
+        public override clone(): Engine<fdm, vdm> {
             const engine = new AnthropicEngine.Instance(this.options);
             engine.middlewaresStateless = [...this.middlewaresStateless];
             engine.middlewaresStateful = [...this.middlewaresStateful];

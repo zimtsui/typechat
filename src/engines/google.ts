@@ -1,4 +1,4 @@
-import { Engine } from '../engine.ts';
+import { Engine, Middleware } from '../engine.ts';
 import { Function } from '../function.ts';
 import { Verbatim } from '../verbatim.ts';
 import { MessageCodec } from './google/message-codec.ts';
@@ -93,6 +93,13 @@ export namespace GoogleEngine {
 
         public override async stateful(wfctx: InferenceContext, session: Engine.Session.From<fdm, vdm>): Promise<RoleMessage.Ai.From<fdm, vdm>> {
             return await super.stateful(wfctx, session) as RoleMessage.Ai.From<fdm, vdm>;
+        }
+
+        public override useStateless(middleware: Middleware.From<fdm, vdm>): GoogleEngine<fdm, vdm> {
+            return super.useStateless(middleware) as GoogleEngine<fdm, vdm>;
+        }
+        public override useStateful(middleware: Middleware.From<fdm, vdm>): GoogleEngine<fdm, vdm> {
+            return super.useStateful(middleware) as GoogleEngine<fdm, vdm>;
         }
 
         /**

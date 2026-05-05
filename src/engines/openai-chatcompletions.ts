@@ -41,7 +41,7 @@ export namespace OpenAIChatCompletionsEngine {
             });
         }
 
-        public override clone(): OpenAIChatCompletionsEngine<fdm, vdm> {
+        public override clone(): Engine<fdm, vdm> {
             const engine = new OpenAIChatCompletionsEngine.Instance(this.options);
             engine.middlewaresStateless = [...this.middlewaresStateless];
             engine.middlewaresStateful = [...this.middlewaresStateful];
