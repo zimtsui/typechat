@@ -284,6 +284,13 @@ export namespace Engine {
         inferenceRetry?: number;
     }
 
+    export interface Create {
+        <
+            fdm extends Function.Decl.Map.Proto,
+            vdm extends Verbatim.Decl.Map.Proto,
+        >(options: Engine.Options<fdm, vdm>): Engine<fdm, vdm>;
+    }
+
     export import Transport = EngineTransportModule.Transport;
     export import StructuringValidator = StructuringValidatorModule.StructuringValidator;
     export import Session = SessionModule.Session;
@@ -291,6 +298,7 @@ export namespace Engine {
 }
 
 export class InferenceTimeout extends Error {}
+export { Recoverable, Middleware }
 
 declare global {
     export namespace NodeJS {

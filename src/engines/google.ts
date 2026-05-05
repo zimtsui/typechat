@@ -166,6 +166,13 @@ export namespace GoogleEngine {
         googleSearch?: boolean;
     }
 
+    export const create: Engine.Create = function<
+        fdm extends Function.Decl.Map.Proto,
+        vdm extends Verbatim.Decl.Map.Proto,
+    >(options: Engine.Options<fdm, vdm>): Engine<fdm, vdm> {
+        return new Instance(options);
+    }
+
     export import RoleMessage = MessageModule.RoleMessage;
 
 }

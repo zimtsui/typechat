@@ -56,4 +56,11 @@ export namespace AnthropicEngine {
         in out fdm extends Function.Decl.Map.Proto,
         in out vdm extends Verbatim.Decl.Map.Proto,
     > extends Engine.Options<fdm, vdm> {}
+
+    export const create: Engine.Create = function<
+        fdm extends Function.Decl.Map.Proto,
+        vdm extends Verbatim.Decl.Map.Proto,
+    >(options: Engine.Options<fdm, vdm>): Engine<fdm, vdm> {
+        return new Instance(options);
+    }
 }

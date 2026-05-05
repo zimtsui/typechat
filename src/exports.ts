@@ -6,9 +6,6 @@ export * from './inference-context.ts';
 export * from './endpoint-spec.ts';
 export * from './engine.ts';
 export * from './media.ts';
-export * from './engine/message.ts';
-export * from './engine/session.ts';
-export * from './engine/recoverable.ts';
 export * from './structuring-choice.ts';
 
 export * from './engines/google.ts';
