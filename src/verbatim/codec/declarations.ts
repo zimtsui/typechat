@@ -1,7 +1,6 @@
 import { Verbatim } from '../../verbatim.ts';
 import Handlebars from './helpers.ts';
 import Assets from '../../assets.ts';
-import assert from 'node:assert';
 
 
 const template = Handlebars.compile<template.Input>(Assets.verbatim.declarations);
@@ -31,7 +30,6 @@ export function encode<vdm extends Verbatim.Decl.Map.Proto>(
 ): string {
     const vds = Object.entries(vdm).map(
         ([name, body]) => {
-            assert(/^[^<>&'"]+$/.test(name));
             return ({
                 name,
                 description: body.description,

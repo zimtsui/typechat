@@ -1,6 +1,5 @@
 import Assets from '../../assets.ts';
 import Handlebars from './helpers.ts';
-import { loggers } from '../../telemetry.ts';
 import { MIMEType } from 'whatwg-mimetype';
 
 
@@ -14,7 +13,5 @@ namespace template {
 }
 
 export function encode(name: string, mimeType: MIMEType, text: string): string {
-    if (text.includes(']]>'))
-        loggers.message.warn('The text contains "]]>", which is not allowed in XML CDATA sections. ');
     return template({ name, mimeType: `${mimeType}`, text });
 }

@@ -35,7 +35,7 @@ You can make a request through a channel in the form of
 
 -   The only attribute of <verbatim:request> is `name`. Additional attributes will be ignored.
 -   The only attribute of <verbatim:parameter> is `name`. Additional attributes will be ignored.
--   All arguments must be wrapped in CDATA.
+-   All arguments must be wrapped in CDATA. The CDATA sections will be extracted not by standard XML parsers, but by regular expressions instead. Therefore, they can directly contain `]]>`, which is not allowed in standard CDATA.
 
 ## Response from Channels
 

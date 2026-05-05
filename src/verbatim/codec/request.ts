@@ -53,14 +53,14 @@ function extractArgs(argsString: string): Record<string, string> {
         const argAttrs: Record<string, string> = {};
         for (const argAttrMatch of argMatch.groups!.vbt_arg_attrs!.matchAll(new RegExp(XML_ATTR, 'g'))) {
             if (argAttrs[argAttrMatch.groups!.attr_name!] === undefined) {} else
-                throw new SyntaxError(`Duplicate attribute ${argAttrMatch.groups!.attr_name!} in argument.`);
+                throw new SyntaxError(`Duplicate attribute.`);
             argAttrs[argAttrMatch.groups!.attr_name!] = argAttrMatch.groups!.attr_val_body!;
         }
         if (argAttrs['name']) {} else
-            throw new SyntaxError('Attribute `name` is required in argument.');
+            throw new SyntaxError('Attribute `name` is required in <verbatim:parameter>.');
         const argCdataBody = argMatch.groups!.vbt_arg_cdata_body!;
         if (args[argAttrs['name']!] === undefined) {} else
-            throw new SyntaxError(`Duplicate argument of parameter ${argAttrs['name']!}`);
+            throw new SyntaxError(`Duplicate argument.`);
         args[argAttrs['name']!] = argCdataBody;
     }
     return args;
@@ -72,7 +72,7 @@ function extractRequests(reqsString: string): [name: string, params: Record<stri
         const reqAttrs: Record<string, string> = {};
         for (const reqAttrMatch of reqMatch.groups!.vbt_req_attrs!.matchAll(new RegExp(XML_ATTR, 'g'))) {
             if (reqAttrs[reqAttrMatch.groups!.attr_name!] === undefined) {} else
-                throw new SyntaxError(`Duplicate attribute ${reqAttrMatch.groups!.attr_name!} in request.`);
+                throw new SyntaxError(`Duplicate attribute.`);
             reqAttrs[reqAttrMatch.groups!.attr_name!] = reqAttrMatch.groups!.attr_val_body!;
         }
         if (reqAttrs['name']) {} else
