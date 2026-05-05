@@ -26,7 +26,7 @@ export class MessageCodec<
         aiMessage: Engine.RoleMessage.Ai.From<fdm, vdm>,
     ): Google.Content {
         if (aiMessage instanceof RoleMessage.Ai) {
-            const nativeAiMessage = aiMessage as RoleMessage.Ai<Function.Decl.From<fdm>, Verbatim.Decl.From<vdm>>;
+            const nativeAiMessage = aiMessage as RoleMessage.Ai.From<fdm, vdm>;
             return nativeAiMessage.getRaw();
         }
         else {
@@ -34,9 +34,7 @@ export class MessageCodec<
             for (const part of aiMessage.getParts()) {
                 if (part instanceof RoleMessage.Ai.Part.Text) {
                     const textPart = part as RoleMessage.Ai.Part.Text.From<vdm>;
-                    apiParts.push(
-                        Google.createPartFromText(textPart.text),
-                    );
+                    apiParts.push(Google.createPartFromText(textPart.text));
                 } else if (part instanceof Function.Call) {
                     const fcall = part as Function.Call.From<fdm>;
                     if (fcall.args instanceof Object) {} else throw new Error();

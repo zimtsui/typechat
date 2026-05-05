@@ -2,7 +2,7 @@ import { Function } from '../function.ts';
 import { type InferenceContext } from '../inference-context.ts';
 import { Session } from './session.ts';
 import { RoleMessage } from './message.ts';
-import { Verbatim } from "../verbatim.js";
+import { Verbatim } from '../verbatim.ts';
 
 
 export interface Middleware<

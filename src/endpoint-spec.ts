@@ -1,4 +1,4 @@
-import { Type, type Static } from "typebox";
+import { Type, type Static } from 'typebox';
 
 
 export type EndpointSpec = Static<typeof EndpointSpec.schema>;

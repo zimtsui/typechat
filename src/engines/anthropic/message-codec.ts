@@ -39,7 +39,7 @@ export class MessageCodec<
         aiMessage: Engine.RoleMessage.Ai.From<fdm, vdm>,
     ): Anthropic.ContentBlockParam[] {
         if (aiMessage instanceof RoleMessage.Ai) {
-            const nativeAiMessage = aiMessage as RoleMessage.Ai<Function.Decl.From<fdm>, Verbatim.Decl.From<vdm>>;
+            const nativeAiMessage = aiMessage as RoleMessage.Ai.From<fdm, vdm>;
             return nativeAiMessage.getRaw();
         }
         const blocks: Anthropic.ContentBlockParam[] = [];
