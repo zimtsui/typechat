@@ -39,7 +39,7 @@ You can make a request through a channel in the form of
 
 ## Response from Channels
 
-The LLM user message may contain the responses of your request in the form of
+The LLM user message may contain the responses to your request in the form of
 
 <verbatim:response name="NAME OF CHANNEL"><![CDATA[RESPONSE]]></verbatim:response>
 
