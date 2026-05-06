@@ -29,8 +29,8 @@ The LLM system/user message is expected to declare all available XML Verbatim Ch
 You can make a request through a channel in the form of
 
 <verbatim:request name="NAME OF CHANNEL">
-    <verbatim:parameter name="NAME OF PARAMETER 1"><![CDATA[ARGUMENT OF THIS PARAMETER]]></verbatim:parameter>
-    <verbatim:parameter name="NAME OF PARAMETER 2"><![CDATA[ARGUMENT OF THIS PARAMETER]]></verbatim:parameter>
+    <verbatim:parameter name="NAME OF PARAMETER 1"><![CDATA[VERBATIM ARGUMENT OF THIS PARAMETER]]></verbatim:parameter>
+    <verbatim:parameter name="NAME OF PARAMETER 2"><![CDATA[VERBATIM ARGUMENT OF THIS PARAMETER]]></verbatim:parameter>
 </verbatim:request>
 
 -   The only attribute of <verbatim:request> is `name`. Additional attributes will be ignored.
@@ -41,7 +41,7 @@ You can make a request through a channel in the form of
 
 The LLM user message may contain the responses to your request in the form of
 
-<verbatim:response name="NAME OF CHANNEL"><![CDATA[RESPONSE]]></verbatim:response>
+<verbatim:response name="NAME OF CHANNEL"><![CDATA[VERBATIM RESPONSE]]></verbatim:response>
 
 Not all requests have a response.
 
@@ -49,7 +49,7 @@ Not all requests have a response.
 
 The LLM system/user message may contain verbatim quotations in the form of
 
-<verbatim:quotation author="AUTHOR OF THIS QUOTATION"><![CDATA[QUOTATION]]></verbatim:quotation>
+<verbatim:quotation author="AUTHOR OF THIS QUOTATION"><![CDATA[VERBATIM QUOTATION]]></verbatim:quotation>
 
 The attribute `author` is optional.
 
