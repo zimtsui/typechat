@@ -3,6 +3,7 @@ import { RoleMessage } from './message.ts';
 import { Function } from '../../function.ts';
 import Anthropic from '@anthropic-ai/sdk';
 import type { ToolCodec } from './tool-codec.ts';
+import { Media } from '../../media.ts';
 
 
 export class MessageCodec<
@@ -26,7 +27,12 @@ export class MessageCodec<
             else if (part instanceof Function.Response) {
                 const fres = part as Function.Response.From<fdm>;
                 blocks.push(this.toolCodec.encodeFunctionResponse(fres));
-            } else throw new Error('Unknown user message part type', { cause: part });
+            } else if (part instanceof Media.Text)
+                blocks.push({
+                    type: 'text',
+                    text: part.quote(),
+                });
+            else throw new Error('Unknown user message part type', { cause: part });
         return blocks;
     }
 

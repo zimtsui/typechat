@@ -77,6 +77,10 @@ export class MessageCodec<
                         Google.PartMediaResolutionLevel.MEDIA_RESOLUTION_MEDIUM,
                     ),
                 );
+            else if (part instanceof Media.Text)
+                apiParts.push(
+                    Google.createPartFromText(part.quote()),
+                );
             else throw new Error('Unknown user message part type', { cause: part });
         };
         return Google.createUserContent(apiParts);

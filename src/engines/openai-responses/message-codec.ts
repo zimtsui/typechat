@@ -68,6 +68,11 @@ export class MessageCodec<
                     type: 'input_text',
                     text: part.text,
                 });
+            else if (part instanceof Media.Text)
+                content.push({
+                    type: 'input_text',
+                    text: part.quote(),
+                });
             else if (part instanceof Media.Image)
                 content.push({
                     type: 'input_image',

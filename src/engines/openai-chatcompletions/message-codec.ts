@@ -2,6 +2,7 @@ import { Engine } from '../../engine.ts';
 import { Function } from '../../function.ts';
 import OpenAI from 'openai';
 import type { ToolCodec } from './tool-codec.ts';
+import { Media } from '../../media.ts';
 
 
 export class MessageCodec<
@@ -40,14 +41,23 @@ export class MessageCodec<
         for (const part of userMessage.getParts())
             if (part instanceof Function.Response) {}
             else if (part instanceof Engine.RoleMessage.User.Part.Text) {}
+            else if (part instanceof Media.Text) {}
             else throw new Error('Unsupported part type.');
-        const textParts = userMessage.getTextParts();
-        const fress = userMessage.getFunctionResponses();
+
         const apiMessages: (OpenAI.ChatCompletionUserMessageParam | OpenAI.ChatCompletionToolMessageParam)[] = [];
+
+        const fress = userMessage.getFunctionResponses();
         for (const fres of fress)
             apiMessages.push(this.toolCodec.encodeFunctionResponse(fres));
-        if (textParts.length)
-            apiMessages.push({ role: 'user', content: textParts.map(part => ({ type: 'text', text: part.text })) });
+
+        const contentParts: OpenAI.ChatCompletionContentPart[] = [];
+        for (const part of userMessage.getParts())
+            if (part instanceof Engine.RoleMessage.User.Part.Text)
+                contentParts.push({ type: 'text', text: part.text });
+            else if (part instanceof Media.Text)
+                contentParts.push({ type: 'text', text: part.quote() });
+
+        apiMessages.push({ role: 'user', content: contentParts });
         return apiMessages;
     }
 
