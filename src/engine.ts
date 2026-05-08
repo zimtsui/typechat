@@ -223,7 +223,6 @@ export namespace Engine {
                 const response = await this.stateful(wfctx, session);
                 if (response.allText()) return response.getText();
                 const pfress: Promise<Function.Response.From<fdm>>[] = [];
-                const pvress: Promise<RoleMessage.User.Part.Text>[] = [];
                 for (const part of response.getParts()) {
                     if (part instanceof RoleMessage.Ai.Part.Text) {
                         const textPart = part as Engine.RoleMessage.Ai.Part.Text;
@@ -250,8 +249,7 @@ export namespace Engine {
                     } else throw new Error();
                 }
                 const fress: Function.Response.From<fdm>[] = await Promise.all(pfress);
-                const vress: RoleMessage.User.Part.Text[] = await Promise.all(pvress);
-                session.chatMessages.push(new RoleMessage.User([...fress, ...vress]))
+                session.chatMessages.push(new RoleMessage.User([...fress]))
             }
             throw new Engine.FunctionCallLimitExceeded('Function call limit exceeded.');
         }

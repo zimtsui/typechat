@@ -11,7 +11,7 @@ export namespace DashScopeEngine {
     export class Instance<
         in out fdm extends Function.Decl.Map.Proto,
     > extends OpenAIResponsesEngine.Instance<fdm> {
-        public constructor(options: OpenAIResponsesEngine.Options<fdm>) {
+        public constructor(protected override options: DashScopeEngine.Options<fdm>) {
             super(options);
 
             this.transport = new Transport({
@@ -50,7 +50,7 @@ export namespace DashScopeEngine {
 
     export const create: Engine.Create = function<
         fdm extends Function.Decl.Map.Proto,
-    >(options: OpenAIResponsesEngine.Options<fdm>): Engine<fdm> {
+    >(options: DashScopeEngine.Options<fdm>): Engine<fdm> {
         return new Instance(options);
     }
 
