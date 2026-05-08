@@ -14,6 +14,7 @@ export namespace EndpointSpec {
             Type.Literal('openai-responses'),
             Type.Literal('google'),
             Type.Literal('anthropic'),
+            Type.Literal('dashscope'),
         ]),
         inputPrice: Type.Optional(Type.Number()),
         outputPrice: Type.Optional(Type.Number()),
