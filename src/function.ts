@@ -3,7 +3,7 @@ import { type Static, type TObject, type TSchema } from 'typebox';
 const NOMINAL = Symbol();
 
 export interface Function<in out fd extends Function.Decl.Proto> {
-    (params: Static<fd['parameters']>): Promise<string>;
+    (params: Static<fd['parameters']>, fcall: Function.Call<fd>): Promise<string>;
 }
 
 export namespace Function {
@@ -22,6 +22,10 @@ export namespace Function {
     export type Of<
         fdu extends Function.Decl.Proto,
     > = fdu extends infer fd extends Function.Decl.Proto ? Function<fd> : never;
+
+    export type From<
+        fdm extends Function.Decl.Map.Proto,
+    > = Function.Of<Function.Decl.From<fdm>>;
 
     export interface Decl<
         in out name extends string,
@@ -207,7 +211,7 @@ export namespace Function {
     }
 
     export type Map<fdm extends Function.Decl.Map.Proto> = {
-        [name in Function.Name.From<fdm>]: Function<Function.Decl.Extract<fdm, name>>;
+        [name in Function.Name.From<fdm>]: Function.Of<Function.Decl.Extract<fdm, name>>;
     };
 
     export class Error extends globalThis.Error {}

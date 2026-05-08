@@ -133,7 +133,7 @@ export namespace GoogleEngine {
                                 return Function.Response.Successful.of({
                                     id: fcall.id,
                                     name: fcall.name,
-                                    text: await f.call(fnm, fcall.args),
+                                    text: await f.call(fnm, fcall.args, fcall),
                                 } as Function.Response.Successful.Options.From<fdm>);
                             } catch (e) {
                                 if (e instanceof Function.Error) {} else throw e;

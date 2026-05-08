@@ -1,6 +1,7 @@
 import test from 'ava';
 import { Throttle } from '../../build/throttle.js';
 import { Engine } from '../../build/engine.js';
+import { Function } from '../../build/function.js';
 import { Recoverable } from '../../build/engine/recoverable.js';
 import * as VerbatimCodec from '../../build/verbatim/codec.js';
 import { RoleMessage } from '../../build/engine/message.js';
@@ -91,5 +92,50 @@ test('Engine Recoverable middleware appends validator rejection into session his
         { kind: 'invalid' },
         rejection,
         { kind: 'valid' },
+    ]);
+});
+
+test('Engine agentloop passes function call object to function handler', async t => {
+    const fcall = Function.Call.of({
+        id: 'call_1',
+        name: 'noop',
+        args: {},
+    });
+    const aiMessage = new RoleMessage.Ai([fcall]);
+    const finalMessage = new RoleMessage.Ai([
+        RoleMessage.Ai.Part.Text.paragraph('done'),
+    ]);
+    const engine = new FakeEngine([
+        aiMessage,
+        finalMessage,
+    ], {
+        validate() {},
+    }, {
+        validate() {},
+    });
+    const session = { chatMessages: [] };
+    const fnm = {
+        noop: async (args, receivedCall) => {
+            t.deepEqual(args, {});
+            t.is(receivedCall, fcall);
+            return 'ok';
+        },
+    };
+
+    const chunks = [];
+    for await (const chunk of engine.agentloop({}, session, fnm, {}, 2))
+        chunks.push(chunk);
+
+    t.deepEqual(chunks, []);
+    t.deepEqual(session.chatMessages, [
+        aiMessage,
+        new RoleMessage.User([
+            Function.Response.Successful.of({
+                id: 'call_1',
+                name: 'noop',
+                text: 'ok',
+            }),
+        ]),
+        finalMessage,
     ]);
 });
