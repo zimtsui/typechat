@@ -75,8 +75,6 @@ export namespace OpenAIResponsesEngine {
             } catch (e) {
                 if (e instanceof OpenAI.APIConnectionError)
                     throw new TypeError(undefined, { cause: e });
-                else if (e instanceof DOMException)
-                    throw new TypeError('Unknown fetch error', { cause: e });
                 else throw e;
             }
         }
