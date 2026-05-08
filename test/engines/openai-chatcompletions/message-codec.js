@@ -1,5 +1,6 @@
 import test from 'ava';
 import { MIMEType } from 'whatwg-mimetype';
+import { Function } from '../../../build/function.js';
 import { Media } from '../../../build/media.js';
 import { RoleMessage } from '../../../build/engine/message.js';
 import { ToolCodec } from '../../../build/engines/openai-chatcompletions/tool-codec.js';
@@ -27,7 +28,36 @@ test('OpenAI chat completions codec rejects media user message', t => {
 
     const error = t.throws(() => messageCodec.encodeUserMessage(userMessage));
 
-    t.is(error?.message, 'Unsupported user message type.');
+    t.is(error?.message, 'Unsupported part type.');
+});
+
+test('OpenAI chat completions codec splits mixed function responses and text', t => {
+    const messageCodec = makeCodec();
+    const userMessage = new RoleMessage.User([
+        Function.Response.Failed.of({
+            id: 'call_1',
+            name: 'noop',
+            error: 'cancelled',
+        }),
+        new RoleMessage.User.Part.Text('retry with XML verbatim\n'),
+    ]);
+
+    const encoded = messageCodec.encodeUserMessage(userMessage);
+
+    t.deepEqual(encoded, [
+        {
+            role: 'tool',
+            tool_call_id: 'call_1',
+            content: 'cancelled',
+        },
+        {
+            role: 'user',
+            content: [{
+                type: 'text',
+                text: 'retry with XML verbatim\n',
+            }],
+        },
+    ]);
 });
 
 test('OpenAI Chat Completions codec decodes text and tool calls', t => {

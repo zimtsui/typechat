@@ -43,16 +43,19 @@ export class MessageCodec<
 
     public encodeUserMessage(
         userMessage: Engine.RoleMessage.User.From<fdm>,
-    ): [OpenAI.ChatCompletionUserMessageParam] | OpenAI.ChatCompletionToolMessageParam[] {
+    ): (OpenAI.ChatCompletionUserMessageParam | OpenAI.ChatCompletionToolMessageParam)[] {
+        for (const part of userMessage.getParts())
+            if (part instanceof Function.Response) {}
+            else if (part instanceof Engine.RoleMessage.User.Part.Text) {}
+            else throw new Error('Unsupported part type.');
         const textParts = userMessage.getTextParts();
         const fress = userMessage.getFunctionResponses();
-        if (textParts.length && !fress.length)
-            return [{ role: 'user', content: textParts.map(part => ({ type: 'text', text: part.text })) }];
-        else if (!textParts.length && fress.length)
-            return fress.map(fres => this.toolCodec.encodeFunctionResponse(fres));
-        else if (textParts.length && fress.length)
-            throw new Error('Mixed text and function response parts in user message are not supported by OpenAI ChatCompletions API.');
-        else throw new Error('Unsupported user message type.');
+        const apiMessages: (OpenAI.ChatCompletionUserMessageParam | OpenAI.ChatCompletionToolMessageParam)[] = [];
+        for (const fres of fress)
+            apiMessages.push(this.toolCodec.encodeFunctionResponse(fres));
+        if (textParts.length)
+            apiMessages.push({ role: 'user', content: textParts.map(part => ({ type: 'text', text: part.text })) });
+        return apiMessages;
     }
 
     public encodeAiMessage(

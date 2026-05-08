@@ -20,6 +20,10 @@ function validate(structuringChoice, parts) {
     return validator.validate(new RoleMessage.Ai(parts));
 }
 
+function getText(rejection) {
+    return rejection.getTextParts().map(part => part.text).join('');
+}
+
 test('Structuring validator enforces required function calls', t => {
     t.throws(() => validate(StructuringChoice.TCall.REQUIRED, [chat]), {
         instanceOf: SyntaxError,
@@ -42,7 +46,7 @@ test('Structuring validator returns feedback when verbatim request is required',
     const rejection = validate(StructuringChoice.VRequest.REQUIRED, [chat]);
 
     t.truthy(rejection);
-    t.regex(getOnlyText(rejection), /Error: Verbatim request required, but not found\./);
+    t.regex(getOnlyText(rejection), /Error: XML verbatim request required, but not found\./);
     t.is(validate(StructuringChoice.VRequest.REQUIRED, [vtext]), undefined);
 });
 
@@ -52,15 +56,15 @@ test('Structuring validator enforces exactly one verbatim request for VRequest.A
         new RoleMessage.Ai.Part.Text('requests', [vreq, vreq]),
     ]);
 
-    t.regex(getOnlyText(missing), /Error: Verbatim request required, but not found\./);
-    t.regex(getOnlyText(duplicated), /Error: Only 1 verbatim request allowed, but multiple found\./);
+    t.regex(getOnlyText(missing), /Error: XML verbatim request required, but not found\./);
+    t.regex(getOnlyText(duplicated), /Error: Only 1 XML verbatim request allowed, but multiple found\./);
     t.is(validate(StructuringChoice.VRequest.ANYONE, [vtext]), undefined);
 });
 
 test('Structuring validator enforces at least one structured output for REQUIRED', t => {
     const rejection = validate(StructuringChoice.REQUIRED, [chat]);
 
-    t.regex(getOnlyText(rejection), /Error: Either function call or verbatim request required, but none found\./);
+    t.regex(getOnlyText(rejection), /Error: Either function call or XML verbatim request required, but none found\./);
     t.is(validate(StructuringChoice.REQUIRED, [fcall]), undefined);
     t.is(validate(StructuringChoice.REQUIRED, [vtext]), undefined);
 });
@@ -69,8 +73,9 @@ test('Structuring validator enforces exactly one structured output for ANYONE', 
     const missing = validate(StructuringChoice.ANYONE, [chat]);
     const duplicated = validate(StructuringChoice.ANYONE, [fcall, vtext]);
 
-    t.regex(getOnlyText(missing), /Error: Either 1 function call or 1 verbatim request required, but none found\./);
-    t.regex(getOnlyText(duplicated), /Error: Either Only 1 function call or only 1 verbatim request allowed, but multiple found\./);
+    t.regex(getOnlyText(missing), /Error: Either 1 function call or 1 XML verbatim request required, but none found\./);
+    t.regex(getText(duplicated), /Error: Either Only 1 function call or only 1 XML verbatim request allowed, but multiple found\./);
+    t.is(duplicated.getFunctionResponses()[0].error, '<verbatim:system>Cancelled by system.</verbatim:system>\n');
     t.is(validate(StructuringChoice.ANYONE, [fcall]), undefined);
     t.is(validate(StructuringChoice.ANYONE, [vtext]), undefined);
 });
@@ -78,6 +83,7 @@ test('Structuring validator enforces exactly one structured output for ANYONE', 
 test('Structuring validator rejects structured output for NONE', t => {
     const rejection = validate(StructuringChoice.NONE, [fcall]);
 
-    t.regex(getOnlyText(rejection), /Error: Neither function call nor verbatim request allowed\./);
+    t.regex(getText(rejection), /Error: Neither function call nor XML verbatim request allowed\./);
+    t.is(rejection.getFunctionResponses()[0].error, '<verbatim:system>Cancelled by system.</verbatim:system>\n');
     t.is(validate(StructuringChoice.NONE, [chat]), undefined);
 });

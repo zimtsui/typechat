@@ -16,5 +16,5 @@ test('OpenAI Responses validator returns verbatim meta feedback when request is 
     const rejection = validator.validate(aiMessage);
 
     t.truthy(rejection);
-    t.regex(getOnlyText(rejection), /<verbatim:system>Error: Verbatim request required, but not found\. Check your output format\.<\/verbatim:system>\n\n$/);
+    t.regex(getOnlyText(rejection), /<verbatim:system>Error: XML verbatim request required, but not found\. Check your output format\.<\/verbatim:system>\n\n$/);
 });
