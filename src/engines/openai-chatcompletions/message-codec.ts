@@ -56,8 +56,8 @@ export class MessageCodec<
                 contentParts.push({ type: 'text', text: part.text });
             else if (part instanceof Media.Text)
                 contentParts.push({ type: 'text', text: part.quote() });
-
-        apiMessages.push({ role: 'user', content: contentParts });
+        if (contentParts.length)
+            apiMessages.push({ role: 'user', content: contentParts });
         return apiMessages;
     }
 
