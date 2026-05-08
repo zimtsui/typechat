@@ -12,7 +12,6 @@ import './engines/anthropic/tool-codec.js';
 import './engines/google/engine.js';
 import './engines/google/message-codec.js';
 import './engines/google/tool-codec.js';
-import './engines/openai-chatcompletions/engine.js';
 import './engines/openai-chatcompletions/message-codec.js';
 import './engines/openai-chatcompletions/tool-codec.js';
 import './engines/openai-chatcompletions/transport.js';
