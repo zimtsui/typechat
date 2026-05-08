@@ -1,7 +1,6 @@
 import { Function } from '../../function.ts';
 import OpenAI from 'openai';
 import type { InferenceContext } from '../../inference-context.ts';
-import type { Verbatim } from '../../verbatim.ts';
 import { type InferenceOptions, type ProviderSpecs, Engine } from '../../engine.ts';
 import { loggers } from '../../telemetry.ts';
 import type { Billing } from './billing.ts';
@@ -15,18 +14,17 @@ import * as Undici from 'undici';
 
 export class Transport<
     in out fdm extends Function.Decl.Map.Proto,
-    in out vdm extends Verbatim.Decl.Map.Proto,
-> implements Engine.Transport<fdm, vdm> {
+> implements Engine.Transport<fdm> {
     protected client: OpenAI;
     protected inferenceParams: InferenceOptions;
     protected providerSpec: ProviderSpecs;
     protected fdm: fdm;
     protected throttle: Throttle;
     protected structuringChoice: StructuringChoice;
-    protected messageCodec: MessageCodec<fdm, vdm>;
+    protected messageCodec: MessageCodec<fdm>;
     protected toolCodec: ToolCodec<fdm>;
     protected billing: Billing;
-    public constructor(options: Transport.Options<fdm, vdm>) {
+    public constructor(options: Transport.Options<fdm>) {
         this.client = new OpenAI({
             baseURL: options.providerSpec.baseUrl,
             apiKey: options.providerSpec.apiKey,
@@ -44,7 +42,7 @@ export class Transport<
     }
 
     protected makeParams(
-        session: Engine.Session.From<fdm, vdm>,
+        session: Engine.Session.From<fdm>,
     ): OpenAI.ChatCompletionCreateParamsStreaming {
         const tools = this.toolCodec.encodeFunctionDeclarationMap();
         const messages: OpenAI.ChatCompletionMessageParam[] = [];
@@ -110,9 +108,9 @@ export class Transport<
 
     public async fetch(
         wfctx: InferenceContext,
-        session: Engine.Session.From<fdm, vdm>,
+        session: Engine.Session.From<fdm>,
         signal?: AbortSignal,
-    ): Promise<Engine.RoleMessage.Ai.From<fdm, vdm>> {
+    ): Promise<Engine.RoleMessage.Ai.From<fdm>> {
         try {
             await this.throttle.requests(wfctx);
 
@@ -203,14 +201,13 @@ export class Transport<
 export namespace Transport {
     export interface Options<
         in out fdm extends Function.Decl.Map.Proto,
-        in out vdm extends Verbatim.Decl.Map.Proto,
     > {
         inferenceParams: InferenceOptions;
         providerSpec: ProviderSpecs;
         fdm: fdm;
         throttle: Throttle;
         structuringChoice: StructuringChoice;
-        messageCodec: MessageCodec<fdm, vdm>;
+        messageCodec: MessageCodec<fdm>;
         toolCodec: ToolCodec<fdm>;
         billing: Billing;
     }

@@ -10,7 +10,6 @@ import { loggers } from '../../telemetry.ts';
 import type { MessageCodec } from './message-codec.ts';
 import type { ToolCodec } from './tool-codec.ts';
 import type { Billing } from './billing.ts';
-import type { Verbatim } from '../../verbatim.ts';
 import * as ChoiceCodec from './structuring-choice-codec.ts';
 import type { StructuringChoice } from '../../structuring-choice.ts';
 import { MIMEType } from 'whatwg-mimetype';
@@ -20,8 +19,7 @@ import { HeaderRecord } from 'undici/types/header';
 
 export class Transport<
     in out fdm extends Function.Decl.Map.Proto,
-    in out vdm extends Verbatim.Decl.Map.Proto,
-> implements Engine.Transport<fdm, vdm> {
+> implements Engine.Transport<fdm> {
     protected apiURL: URL;
     protected inferenceParams: InferenceOptions;
     protected providerSpec: ProviderSpecs;
@@ -31,11 +29,11 @@ export class Transport<
     protected codeExecution: boolean;
     protected urlContext: boolean;
     protected googleSearch: boolean;
-    protected messageCodec: MessageCodec<fdm, vdm>;
+    protected messageCodec: MessageCodec<fdm>;
     protected toolCodec: ToolCodec<fdm>;
     protected billing: Billing;
 
-    public constructor(options: GoogleNativeTransport.Options<fdm, vdm>) {
+    public constructor(options: GoogleNativeTransport.Options<fdm>) {
         this.apiURL = new URL(`${options.providerSpec.baseUrl}/v1beta/models/${options.inferenceParams.model}:generateContent`);
         this.inferenceParams = options.inferenceParams;
         this.providerSpec = options.providerSpec;
@@ -52,9 +50,9 @@ export class Transport<
 
     public async fetch(
         wfctx: InferenceContext,
-        session: Engine.Session.From<fdm, vdm>,
+        session: Engine.Session.From<fdm>,
         signal?: AbortSignal,
-    ): Promise<RoleMessage.Ai.From<fdm, vdm>> {
+    ): Promise<RoleMessage.Ai.From<fdm>> {
         await this.throttle.requests(wfctx);
 
         // Prepare request body
@@ -129,7 +127,6 @@ export class Transport<
 export namespace GoogleNativeTransport {
     export interface Options<
         in out fdm extends Function.Decl.Map.Proto,
-        in out vdm extends Verbatim.Decl.Map.Proto,
     > {
         inferenceParams: InferenceOptions;
         providerSpec: ProviderSpecs;
@@ -139,7 +136,7 @@ export namespace GoogleNativeTransport {
         codeExecution: boolean;
         urlContext: boolean;
         googleSearch: boolean;
-        messageCodec: MessageCodec<fdm, vdm>;
+        messageCodec: MessageCodec<fdm>;
         toolCodec: ToolCodec<fdm>;
         billing: Billing;
     }

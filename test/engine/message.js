@@ -18,24 +18,20 @@ test('Developer message requires only text parts for getOnlyTextParts', t => {
     t.throws(() => invalid.getOnlyTextParts());
 });
 
-test('AI message separates chat text, verbatim requests and function calls', t => {
-    const request = { name: 'note', args: { body: 'body' } };
-    const text = new RoleMessage.Ai.Part.Text('chat', []);
-    const verbatimText = new RoleMessage.Ai.Part.Text('request', [request]);
+test('AI message separates text and function calls', t => {
+    const text = new RoleMessage.Ai.Part.Text('chat');
+    const text2 = new RoleMessage.Ai.Part.Text('more');
     const call = Function.Call.of({
         id: 'call_1',
         name: 'noop',
         args: {},
     });
-    const message = new RoleMessage.Ai([text, verbatimText, call]);
+    const message = new RoleMessage.Ai([text, text2, call]);
 
-    t.false(message.allChat());
-    t.is(message.getChat(), 'chat');
-    t.is(message.getText(), 'chatrequest');
+    t.false(message.allText());
+    t.is(message.getText(), 'chatmore');
     t.deepEqual(message.getFunctionCalls(), [call]);
-    t.deepEqual(message.getVerbatimRequests(), [request]);
     t.is(message.getOnlyFunctionCall(), call);
-    t.is(message.getOnlyVerbatimRequest(), request);
 });
 
 test('AI message rejects getOnly helpers unless exactly one item exists', t => {
@@ -46,6 +42,5 @@ test('AI message rejects getOnly helpers unless exactly one item exists', t => {
     ]);
 
     t.throws(() => empty.getOnlyFunctionCall());
-    t.throws(() => empty.getOnlyVerbatimRequest());
     t.throws(() => twoCalls.getOnlyFunctionCall());
 });

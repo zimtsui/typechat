@@ -4,7 +4,7 @@
   "exports": {
     ".": "./build/exports.js",
     "./assets": "./build/assets.js",
-    "./codec": "./build/verbatim/codec.js"
+    "./xml": "./build/xml.js"
   },
   "engines": {
     "node": ">=24"

@@ -1,7 +1,6 @@
 import { Engine } from '../../engine.ts';
 import { Function } from '../../function.ts';
 import { Tool } from './tool.ts';
-import type { Verbatim } from '../../verbatim.ts';
 import OpenAI from 'openai';
 
 const NOMINAL = Symbol();
@@ -10,8 +9,7 @@ const NOMINAL = Symbol();
 export namespace RoleMessage {
     export class Ai<
         in out fdu extends Function.Decl.Proto,
-        in out vdu extends Verbatim.Decl.Proto,
-    > extends Engine.RoleMessage.Ai<fdu, vdu> {
+    > extends Engine.RoleMessage.Ai<fdu> {
         protected declare [NOMINAL]: never;
         public constructor(
             parts: unknown[],
@@ -42,8 +40,7 @@ export namespace RoleMessage {
     export namespace Ai {
         export type From<
             fdm extends Function.Decl.Map.Proto,
-            vdm extends Verbatim.Decl.Map.Proto,
-        > = Ai<Function.Decl.From<fdm>, Verbatim.Decl.From<vdm>>;
+        > = Ai<Function.Decl.From<fdm>>;
 
         export namespace Part {
             export import Text = Engine.RoleMessage.Ai.Part.Text;

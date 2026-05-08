@@ -3,14 +3,13 @@ import { Media } from '../../../build/media.js';
 import { RoleMessage } from '../../../build/engine/message.js';
 import { ToolCodec } from '../../../build/engines/anthropic/tool-codec.js';
 import { MessageCodec } from '../../../build/engines/anthropic/message-codec.js';
-import { functionDeclarationMap, verbatimDeclarationMap } from '../../helpers.js';
+import { functionDeclarationMap } from '../../helpers.js';
 
 
 function makeCodec() {
     const toolCodec = new ToolCodec({ fdm: functionDeclarationMap });
     return new MessageCodec({
         toolCodec,
-        vdm: verbatimDeclarationMap,
     });
 }
 

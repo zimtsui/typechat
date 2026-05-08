@@ -1,4 +1,4 @@
-import * as VerbatimCodec from './verbatim/codec.ts';
+import * as XmlCodec from './xml.ts';
 import { MIMEType } from 'whatwg-mimetype';
 
 const NOMINAL = Symbol();
@@ -56,7 +56,7 @@ export namespace Media {
         }
 
         public quote(): string {
-            return VerbatimCodec.Quotation.encode(this.mimeType, this.text);
+            return XmlCodec.Quotation.encode(this.mimeType, this.text);
         }
     }
     export namespace Text {

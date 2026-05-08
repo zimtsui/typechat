@@ -3,9 +3,9 @@ import { Throttle } from '../../build/throttle.js';
 import { Engine } from '../../build/engine.js';
 import { Function } from '../../build/function.js';
 import { Recoverable } from '../../build/engine/recoverable.js';
-import * as VerbatimCodec from '../../build/verbatim/codec.js';
+import * as XmlCodec from '../../build/xml.js';
 import { RoleMessage } from '../../build/engine/message.js';
-import { functionDeclarationMap, verbatimDeclarationMap } from '../helpers.js';
+import { functionDeclarationMap } from '../helpers.js';
 
 
 class FakeEngine extends Engine.Instance {
@@ -21,7 +21,6 @@ class FakeEngine extends Engine.Instance {
                 parallelToolCall: false,
             },
             functionDeclarationMap,
-            verbatimDeclarationMap,
             inferenceRetry: 1,
         });
         this.responses = responses;
@@ -43,7 +42,7 @@ class FakeEngine extends Engine.Instance {
 function rejectionMessage() {
     return new RoleMessage.User([
         RoleMessage.User.Part.Text.paragraph(
-            VerbatimCodec.System.encode('Error: Verbatim request required, but not found. Check your output format.'),
+            XmlCodec.System.encode('Error: Function call required, but not found.'),
         ),
     ]);
 }
@@ -123,7 +122,7 @@ test('Engine agentloop passes function call object to function handler', async t
     };
 
     const chunks = [];
-    for await (const chunk of engine.agentloop({}, session, fnm, {}, 2))
+    for await (const chunk of engine.agentloop({}, session, fnm, 2))
         chunks.push(chunk);
 
     t.deepEqual(chunks, []);

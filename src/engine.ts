@@ -7,7 +7,6 @@ import { type InferenceContext } from './inference-context.ts';
 import { loggers } from './telemetry.ts';
 import * as SessionModule from './engine/session.ts';
 import * as MessageModule from './engine/message.ts';
-import { Verbatim } from './verbatim.ts';
 import { PartsValidator } from './engine/parts-validator.ts';
 import { Recoverable } from './engine/recoverable.ts';
 import { Middleware } from './engine/middleware.ts';
@@ -37,26 +36,23 @@ export interface InferenceOptions {
 
 export type Engine<
     fdm extends Function.Decl.Map.Proto,
-    vdm extends Verbatim.Decl.Map.Proto,
-> = Engine.Instance<fdm, vdm>;
+> = Engine.Instance<fdm>;
 export namespace Engine {
     export abstract class Instance<
         in out fdm extends Function.Decl.Map.Proto,
-        in out vdm extends Verbatim.Decl.Map.Proto,
     > {
         protected providerSpecs: ProviderSpecs;
         protected inferenceOptions: InferenceOptions;
         public name: string;
         public pricing: Pricing;
         public fdm: fdm;
-        public vdm: vdm;
         protected throttle: Throttle;
         protected structuringChoice: StructuringChoice;
-        protected structuringValidator: Engine.StructuringValidator.From<fdm, vdm>;
-        protected partsValidator: PartsValidator.From<fdm, vdm>;
-        protected abstract transport: Engine.Transport<fdm, vdm>;
+        protected structuringValidator: Engine.StructuringValidator.From<fdm>;
+        protected partsValidator: PartsValidator.From<fdm>;
+        protected abstract transport: Engine.Transport<fdm>;
 
-        public constructor(options: Engine.Options<fdm, vdm>) {
+        public constructor(options: Engine.Options<fdm>) {
             const proxyUrl = options.endpointSpec.proxy || env.https_proxy || env.HTTPS_PROXY;
 
             const dispatcher = proxyUrl
@@ -91,7 +87,6 @@ export namespace Engine {
                 cachePrice: options.endpointSpec.cachePrice ?? options.endpointSpec.inputPrice ?? 0,
             };
             this.fdm = options.functionDeclarationMap;
-            this.vdm = options.verbatimDeclarationMap;
             this.structuringChoice = options.structuringChoice ?? StructuringChoice.AUTO;
             this.throttle = options.throttle;
             this.partsValidator = new PartsValidator();
@@ -106,8 +101,8 @@ export namespace Engine {
         */
         protected async infer(
             wfctx: InferenceContext,
-            session: Session.From<fdm, vdm>,
-        ): Promise<RoleMessage.Ai.From<fdm, vdm>> {
+            session: Session.From<fdm>,
+        ): Promise<RoleMessage.Ai.From<fdm>> {
             const signalTimeout = this.inferenceOptions.timeout ? AbortSignal.timeout(this.inferenceOptions.timeout) : null;
             const signals: AbortSignal[] = [];
             if (signalTimeout) signals.push(signalTimeout);
@@ -135,8 +130,8 @@ export namespace Engine {
         */
         public async stateless(
             wfctx: InferenceContext,
-            session: Session.From<fdm, vdm>,
-        ): Promise<RoleMessage.Ai.From<fdm, vdm>> {
+            session: Session.From<fdm>,
+        ): Promise<RoleMessage.Ai.From<fdm>> {
             const middleware = this.compose(this.middlewaresStateless);
             for (let retryProvider = 0, retryInference = 0;;) try {
                 return await middleware(wfctx, session, () => this.infer(wfctx, session));
@@ -165,8 +160,8 @@ export namespace Engine {
         */
         public async stateful(
             wfctx: InferenceContext,
-            session: Session.From<fdm, vdm>,
-        ): Promise<RoleMessage.Ai.From<fdm, vdm>> {
+            session: Session.From<fdm>,
+        ): Promise<RoleMessage.Ai.From<fdm>> {
             const middleware = this.compose(this.middlewaresStateful);
             for (let retryProvider = 0, retryInference = 0;;) try {
                 const next = async () => {
@@ -192,22 +187,22 @@ export namespace Engine {
             }
         }
 
-        public abstract clone(): Engine<fdm, vdm>;
+        public abstract clone(): Engine<fdm>;
 
-        protected middlewaresStateless: Middleware.From<fdm, vdm>[] = [];
-        public useStateless(middleware: Middleware.From<fdm, vdm>): Engine<fdm, vdm> {
+        protected middlewaresStateless: Middleware.From<fdm>[] = [];
+        public useStateless(middleware: Middleware.From<fdm>): Engine<fdm> {
             const engine = this.clone();
             engine.middlewaresStateless.push(middleware);
             return engine;
         }
-        protected middlewaresStateful: Middleware.From<fdm, vdm>[] = [];
-        public useStateful(middleware: Middleware.From<fdm, vdm>): Engine<fdm, vdm> {
+        protected middlewaresStateful: Middleware.From<fdm>[] = [];
+        public useStateful(middleware: Middleware.From<fdm>): Engine<fdm> {
             const engine = this.clone();
             engine.middlewaresStateful.push(middleware);
             return engine;
         }
-        protected compose(middlewares: Middleware.From<fdm, vdm>[]): Middleware.From<fdm, vdm> {
-            let composed: Middleware.From<fdm, vdm> = (wfctx, session, next) => next();
+        protected compose(middlewares: Middleware.From<fdm>[]): Middleware.From<fdm> {
+            let composed: Middleware.From<fdm> = (wfctx, session, next) => next();
             for (const middleware of middlewares.slice().reverse()) {
                 const nextMiddleware = composed;
                 composed = (wfctx, session, next) => middleware(wfctx, session, () => nextMiddleware(wfctx, session, next));
@@ -220,24 +215,19 @@ export namespace Engine {
          */
         public async *agentloop(
             wfctx: InferenceContext,
-            session: Session.From<fdm, vdm>,
+            session: Session.From<fdm>,
             fnm: Function.Map<fdm>,
-            vhm: Verbatim.Handler.Map<vdm>,
             limit = Number.POSITIVE_INFINITY,
         ): AsyncGenerator<string, string, void> {
             for (let i = 0; i < limit; i++) {
                 const response = await this.stateful(wfctx, session);
-                if (response.allChat()) return response.getChat();
+                if (response.allText()) return response.getText();
                 const pfress: Promise<Function.Response.From<fdm>>[] = [];
                 const pvress: Promise<RoleMessage.User.Part.Text>[] = [];
                 for (const part of response.getParts()) {
                     if (part instanceof RoleMessage.Ai.Part.Text) {
-                        const textPart = part as Engine.RoleMessage.Ai.Part.Text.From<vdm>;
+                        const textPart = part as Engine.RoleMessage.Ai.Part.Text;
                         yield textPart.text;
-                        for (const vreq of textPart.vreqs) {
-                            const vh = vhm[vreq.name];
-                            pvress.push((async () => new RoleMessage.User.Part.Text(await vh.call(vhm, vreq.args)))());
-                        }
                     } else if (part instanceof Function.Call) {
                         const fcall = part as Function.Call.From<fdm>;
                         const f = fnm[fcall.name];
@@ -272,12 +262,10 @@ export namespace Engine {
 
     export interface Options<
         in out fdm extends Function.Decl.Map.Proto,
-        in out vdm extends Verbatim.Decl.Map.Proto,
     > {
         throttle: Throttle;
         endpointSpec: EndpointSpec;
         functionDeclarationMap: fdm;
-        verbatimDeclarationMap: vdm;
         structuringChoice?: StructuringChoice;
         providerRetry?: number;
         inferenceRetry?: number;
@@ -286,8 +274,7 @@ export namespace Engine {
     export interface Create {
         <
             fdm extends Function.Decl.Map.Proto,
-            vdm extends Verbatim.Decl.Map.Proto,
-        >(options: Engine.Options<fdm, vdm>): Engine<fdm, vdm>;
+        >(options: Engine.Options<fdm>): Engine<fdm>;
     }
 
     export import Transport = EngineTransportModule.Transport;

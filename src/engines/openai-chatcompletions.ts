@@ -2,31 +2,27 @@ import { Function } from '../function.ts';
 import { Engine } from '../engine.ts';
 import { MessageCodec } from './openai-chatcompletions/message-codec.ts';
 import { Transport } from './openai-chatcompletions/transport.ts';
-import type { Verbatim } from '../verbatim.ts';
 import { ToolCodec } from './openai-chatcompletions/tool-codec.ts';
 import { Billing } from './openai-chatcompletions/billing.ts';
 
 
 export type OpenAIChatCompletionsEngine<
     fdm extends Function.Decl.Map.Proto,
-    vdm extends Verbatim.Decl.Map.Proto,
-> = OpenAIChatCompletionsEngine.Instance<fdm, vdm>;
+> = OpenAIChatCompletionsEngine.Instance<fdm>;
 export namespace OpenAIChatCompletionsEngine {
     export class Instance<
         in out fdm extends Function.Decl.Map.Proto,
-        in out vdm extends Verbatim.Decl.Map.Proto,
-    > extends Engine.Instance<fdm, vdm> {
+    > extends Engine.Instance<fdm> {
         protected toolCodec: ToolCodec<fdm>;
-        protected messageCodec: MessageCodec<fdm, vdm>;
+        protected messageCodec: MessageCodec<fdm>;
         protected billing: Billing;
-        protected override transport: Transport<fdm, vdm>;
+        protected override transport: Transport<fdm>;
 
-        public constructor(protected options: OpenAIChatCompletionsEngine.Options<fdm, vdm>) {
+        public constructor(protected options: OpenAIChatCompletionsEngine.Options<fdm>) {
             super(options);
             this.toolCodec = new ToolCodec({ fdm: this.fdm });
             this.messageCodec = new MessageCodec({
                 toolCodec: this.toolCodec,
-                vdm: this.vdm,
             });
             this.billing = new Billing({ pricing: this.pricing });
             this.transport = new Transport({
@@ -41,7 +37,7 @@ export namespace OpenAIChatCompletionsEngine {
             });
         }
 
-        public override clone(): Engine<fdm, vdm> {
+        public override clone(): Engine<fdm> {
             const engine = new OpenAIChatCompletionsEngine.Instance(this.options);
             engine.middlewaresStateless = [...this.middlewaresStateless];
             engine.middlewaresStateful = [...this.middlewaresStateful];
@@ -51,13 +47,11 @@ export namespace OpenAIChatCompletionsEngine {
 
     export interface Options<
         in out fdm extends Function.Decl.Map.Proto,
-        in out vdm extends Verbatim.Decl.Map.Proto,
-    > extends Engine.Options<fdm, vdm> {}
+    > extends Engine.Options<fdm> {}
 
     export const create: Engine.Create = function<
         fdm extends Function.Decl.Map.Proto,
-        vdm extends Verbatim.Decl.Map.Proto,
-    >(options: Engine.Options<fdm, vdm>): Engine<fdm, vdm> {
+    >(options: Engine.Options<fdm>): Engine<fdm> {
         return new Instance(options);
     }
 }

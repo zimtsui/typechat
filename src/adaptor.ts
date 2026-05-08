@@ -5,7 +5,6 @@ import { GoogleEngine } from './engines/google.ts';
 import { OpenAIResponsesEngine } from './engines/openai-responses.ts';
 import { OpenAIChatCompletionsEngine } from './engines/openai-chatcompletions.ts';
 import { AnthropicEngine } from './engines/anthropic.ts';
-import type { Verbatim } from './verbatim.ts';
 import { Engine } from './engine.ts';
 
 
@@ -24,37 +23,35 @@ export class Adaptor {
 
     public makeEngine<
         fdm extends Function.Decl.Map.Proto,
-        vdm extends Verbatim.Decl.Map.Proto,
-    >(adaptorOptions: Adaptor.Params<fdm, vdm>): Engine<fdm, vdm> {
+    >(adaptorOptions: Adaptor.Params<fdm>): Engine<fdm> {
         const endpointSpec = this.config.endpoints[adaptorOptions.endpoint];
         if (endpointSpec) {} else throw new Error();
         const throttle = this.throttles.get(adaptorOptions.endpoint);
         if (throttle) {} else throw new Error();
-        const options: Engine.Options<fdm, vdm> = {
+        const options: Engine.Options<fdm> = {
             ...adaptorOptions,
             endpointSpec,
             throttle,
         };
         if (endpointSpec.apiType === 'openai-responses')
-            return OpenAIResponsesEngine.create<fdm, vdm>(options);
+            return OpenAIResponsesEngine.create<fdm>(options);
         else if (endpointSpec.apiType === 'google')
-            return GoogleEngine.create<fdm, vdm>(options);
+            return GoogleEngine.create<fdm>(options);
         else if (endpointSpec.apiType === 'anthropic')
-            return AnthropicEngine.create<fdm, vdm>(options);
+            return AnthropicEngine.create<fdm>(options);
         else if (endpointSpec.apiType === 'openai-chatcompletions')
-            return OpenAIChatCompletionsEngine.create<fdm, vdm>(options);
+            return OpenAIChatCompletionsEngine.create<fdm>(options);
         else throw new Error();
     }
 
     public makeGoogleEngine<
         fdm extends Function.Decl.Map.Proto,
-        vdm extends Verbatim.Decl.Map.Proto,
-    >(adaptorOptions: Adaptor.GoogleParams<fdm, vdm>): GoogleEngine<fdm, vdm> {
+    >(adaptorOptions: Adaptor.GoogleParams<fdm>): GoogleEngine<fdm> {
         const endpointSpec = this.config.endpoints[adaptorOptions.endpoint];
         if (endpointSpec?.apiType === 'google') {} else throw new Error();
         const throttle = this.throttles.get(adaptorOptions.endpoint);
         if (throttle) {} else throw new Error();
-        const options: GoogleEngine.Options<fdm, vdm> = {
+        const options: GoogleEngine.Options<fdm> = {
             ...adaptorOptions,
             endpointSpec,
             throttle,
@@ -64,13 +61,12 @@ export class Adaptor {
 
     public makeOpenAIResponsesEngine<
         fdm extends Function.Decl.Map.Proto,
-        vdm extends Verbatim.Decl.Map.Proto,
-    >(adaptorOptions: Adaptor.OpenAIResponsesParams<fdm, vdm>): OpenAIResponsesEngine<fdm, vdm> {
+    >(adaptorOptions: Adaptor.OpenAIResponsesParams<fdm>): OpenAIResponsesEngine<fdm> {
         const endpointSpec = this.config.endpoints[adaptorOptions.endpoint];
         if (endpointSpec?.apiType === 'openai-responses') {} else throw new Error();
         const throttle = this.throttles.get(adaptorOptions.endpoint);
         if (throttle) {} else throw new Error();
-        const options: OpenAIResponsesEngine.Options<fdm, vdm> = {
+        const options: OpenAIResponsesEngine.Options<fdm> = {
             ...adaptorOptions,
             endpointSpec,
             throttle,
@@ -82,22 +78,19 @@ export class Adaptor {
 export namespace Adaptor {
     export interface Params<
         in out fdm extends Function.Decl.Map.Proto,
-        in out vdm extends Verbatim.Decl.Map.Proto,
-    > extends Omit<Engine.Options<fdm, vdm>, 'endpointSpec' | 'throttle'> {
+    > extends Omit<Engine.Options<fdm>, 'endpointSpec' | 'throttle'> {
         endpoint: string;
     }
 
     export interface GoogleParams<
         in out fdm extends Function.Decl.Map.Proto,
-        in out vdm extends Verbatim.Decl.Map.Proto,
-    > extends Omit<GoogleEngine.Options<fdm, vdm>, 'endpointSpec' | 'throttle'> {
+    > extends Omit<GoogleEngine.Options<fdm>, 'endpointSpec' | 'throttle'> {
         endpoint: string;
     }
 
     export interface OpenAIResponsesParams<
         in out fdm extends Function.Decl.Map.Proto,
-        in out vdm extends Verbatim.Decl.Map.Proto,
-    > extends Omit<OpenAIResponsesEngine.Options<fdm, vdm>, 'endpointSpec' | 'throttle'> {
+    > extends Omit<OpenAIResponsesEngine.Options<fdm>, 'endpointSpec' | 'throttle'> {
         endpoint: string;
     }
 }

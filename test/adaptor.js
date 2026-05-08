@@ -4,7 +4,7 @@ import { OpenAIResponsesEngine } from '../build/engines/openai-responses.js';
 import { GoogleEngine } from '../build/engines/google.js';
 import { OpenAIChatCompletionsEngine } from '../build/engines/openai-chatcompletions.js';
 import { AnthropicEngine } from '../build/engines/anthropic.js';
-import { functionDeclarationMap, verbatimDeclarationMap } from './helpers.js';
+import { functionDeclarationMap } from './helpers.js';
 
 
 test('Adaptor creates engines matching endpoint apiType', t => {
@@ -44,22 +44,18 @@ test('Adaptor creates engines matching endpoint apiType', t => {
     const openaiEngine = adaptor.makeEngine({
         endpoint: 'openai',
         functionDeclarationMap,
-        verbatimDeclarationMap,
     });
     const googleEngine = adaptor.makeEngine({
         endpoint: 'google',
         functionDeclarationMap,
-        verbatimDeclarationMap,
     });
     const openaiChatCompletionsEngine = adaptor.makeEngine({
         endpoint: 'openaiChatCompletions',
         functionDeclarationMap,
-        verbatimDeclarationMap: {},
     });
     const anthropicEngine = adaptor.makeEngine({
         endpoint: 'anthropic',
         functionDeclarationMap,
-        verbatimDeclarationMap,
     });
 
     t.true(openaiEngine instanceof OpenAIResponsesEngine.Instance);
@@ -91,12 +87,10 @@ test('Adaptor creates dedicated Google and OpenAI Responses engines', t => {
     const openaiEngine = adaptor.makeOpenAIResponsesEngine({
         endpoint: 'openai',
         functionDeclarationMap,
-        verbatimDeclarationMap,
     });
     const googleEngine = adaptor.makeGoogleEngine({
         endpoint: 'google',
         functionDeclarationMap,
-        verbatimDeclarationMap,
     });
 
     t.true(openaiEngine instanceof OpenAIResponsesEngine.Instance);
@@ -111,7 +105,6 @@ test('Adaptor rejects unknown endpoint ids', t => {
     const error = t.throws(() => adaptor.makeEngine({
         endpoint: 'missing',
         functionDeclarationMap,
-        verbatimDeclarationMap,
     }));
 
     t.truthy(error);

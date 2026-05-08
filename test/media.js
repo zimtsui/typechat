@@ -28,5 +28,5 @@ test('Media text quotes as verbatim quotation', t => {
         text: 'hello',
     });
 
-    t.is(media.quote().trim(), '<verbatim:quotation mime-type="text/plain"><![CDATA[hello]]></verbatim:quotation>');
+    t.is(media.quote().trim(), '<typechat:quotation mime-type="text/plain"><![CDATA[hello]]></typechat:quotation>');
 });

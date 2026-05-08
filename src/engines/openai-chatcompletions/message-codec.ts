@@ -2,29 +2,22 @@ import { Engine } from '../../engine.ts';
 import { Function } from '../../function.ts';
 import OpenAI from 'openai';
 import type { ToolCodec } from './tool-codec.ts';
-import type { Verbatim } from '../../verbatim.ts';
-import * as VerbatimCodec from '../../verbatim/codec.ts';
 
 
 export class MessageCodec<
     in out fdm extends Function.Decl.Map.Proto,
-    in out vdm extends Verbatim.Decl.Map.Proto,
 > {
     protected toolCodec: ToolCodec<fdm>;
-    protected vdm: vdm;
-    public constructor(options: MessageCodec.Options<fdm, vdm>) {
+    public constructor(options: MessageCodec.Options<fdm>) {
         this.toolCodec = options.toolCodec;
-        this.vdm = options.vdm;
     }
 
     public decodeAiMessage(
         message: OpenAI.ChatCompletionMessage,
-    ): Engine.RoleMessage.Ai.From<fdm, vdm> {
+    ): Engine.RoleMessage.Ai.From<fdm> {
         const parts: unknown[] = [];
-        if (message.content) {
-            const vreqs = VerbatimCodec.Request.decode(message.content, this.vdm);
-            parts.push(new Engine.RoleMessage.Ai.Part.Text(message.content, vreqs));
-        }
+        if (message.content)
+            parts.push(new Engine.RoleMessage.Ai.Part.Text(message.content));
         if (message.tool_calls)
             for (const apifc of message.tool_calls)
                 if (apifc.type === 'function')
@@ -59,14 +52,14 @@ export class MessageCodec<
     }
 
     public encodeAiMessage(
-        aiMessage: Engine.RoleMessage.Ai.From<fdm, vdm>,
+        aiMessage: Engine.RoleMessage.Ai.From<fdm>,
     ): OpenAI.ChatCompletionAssistantMessageParam {
         const parts = aiMessage.getParts();
-        const textParts: Engine.RoleMessage.Ai.Part.Text.From<vdm>[] = [];
+        const textParts: Engine.RoleMessage.Ai.Part.Text[] = [];
         const fcParts: Function.Call.From<fdm>[] = [];
         for (const part of parts) {
             if (part instanceof Engine.RoleMessage.Ai.Part.Text)
-                textParts.push(part as Engine.RoleMessage.Ai.Part.Text.From<vdm>);
+                textParts.push(part);
             else if (part instanceof Function.Call)
                 fcParts.push(part as Function.Call.From<fdm>);
         }
@@ -78,7 +71,7 @@ export class MessageCodec<
     }
 
     public encodeRoleMessage(
-        roleMessage: Engine.Session.ChatMessage.From<fdm, vdm> | Engine.RoleMessage.Developer,
+        roleMessage: Engine.Session.ChatMessage.From<fdm> | Engine.RoleMessage.Developer,
     ): OpenAI.ChatCompletionMessageParam[] {
         if (roleMessage instanceof Engine.RoleMessage.Developer)
             return [this.encodeDeveloperMessage(roleMessage)];
@@ -86,14 +79,14 @@ export class MessageCodec<
             const userMessage = roleMessage as Engine.RoleMessage.User.From<fdm>;
             return this.encodeUserMessage(userMessage);
         } else if (roleMessage instanceof Engine.RoleMessage.Ai) {
-            const aiMessage = roleMessage as Engine.RoleMessage.Ai.From<fdm, vdm>;
+            const aiMessage = roleMessage as Engine.RoleMessage.Ai.From<fdm>;
             return [this.encodeAiMessage(aiMessage)];
         }
         else throw new Error();
     }
 
     public encodeRoleMessages(
-        chatMessages: (Engine.Session.ChatMessage.From<fdm, vdm> | Engine.RoleMessage.Developer)[],
+        chatMessages: (Engine.Session.ChatMessage.From<fdm> | Engine.RoleMessage.Developer)[],
     ): OpenAI.ChatCompletionMessageParam[] {
         return chatMessages.map(chatMessage => this.encodeRoleMessage(chatMessage)).flat();
     }
@@ -102,9 +95,7 @@ export class MessageCodec<
 export namespace MessageCodec {
     export interface Options<
         in out fdm extends Function.Decl.Map.Proto,
-        in out vdm extends Verbatim.Decl.Map.Proto,
     > {
         toolCodec: ToolCodec<fdm>;
-        vdm: vdm;
     }
 }

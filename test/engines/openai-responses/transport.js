@@ -4,14 +4,13 @@ import { StructuringChoice } from '../../../build/structuring-choice.js';
 import { ToolCodec } from '../../../build/engines/openai-responses/tool-codec.js';
 import { MessageCodec } from '../../../build/engines/openai-responses/message-codec.js';
 import { Transport } from '../../../build/engines/openai-responses/transport.js';
-import { functionDeclarationMap, verbatimDeclarationMap } from '../../helpers.js';
+import { functionDeclarationMap } from '../../helpers.js';
 
 
 function makeTransport(parallelToolCall) {
     const toolCodec = new ToolCodec({ fdm: functionDeclarationMap });
     const messageCodec = new MessageCodec({
         toolCodec,
-        vdm: verbatimDeclarationMap,
     });
     return new Transport({
         inferenceParams: {

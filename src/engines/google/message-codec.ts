@@ -3,38 +3,32 @@ import { Engine } from '../../engine.ts';
 import { Function } from '../../function.ts';
 import * as Google from '@google/genai';
 import { type ToolCodec } from './tool-codec.ts';
-import type { Verbatim } from '../../verbatim.ts';
-import * as VerbatimCodec from '../../verbatim/codec.ts';
 import { Media } from '../../media.ts';
 
 
 
 export class MessageCodec<
     fdm extends Function.Decl.Map.Proto,
-    vdm extends Verbatim.Decl.Map.Proto,
 > {
     protected toolCodec: ToolCodec<fdm>;
-    protected vdm: vdm;
     protected codeExecution: boolean;
-    public constructor(options: MessageCodec.Options<fdm, vdm>) {
+    public constructor(options: MessageCodec.Options<fdm>) {
         this.toolCodec = options.toolCodec;
-        this.vdm = options.vdm;
         this.codeExecution = options.codeExecution;
     }
 
     public encodeAiMessage(
-        aiMessage: Engine.RoleMessage.Ai.From<fdm, vdm>,
+        aiMessage: Engine.RoleMessage.Ai.From<fdm>,
     ): Google.Content {
         if (aiMessage instanceof RoleMessage.Ai) {
-            const nativeAiMessage = aiMessage as RoleMessage.Ai.From<fdm, vdm>;
+            const nativeAiMessage = aiMessage as RoleMessage.Ai.From<fdm>;
             return nativeAiMessage.getRaw();
         }
         else {
             const apiParts: Google.PartUnion[] = [];
             for (const part of aiMessage.getParts()) {
                 if (part instanceof RoleMessage.Ai.Part.Text) {
-                    const textPart = part as RoleMessage.Ai.Part.Text.From<vdm>;
-                    apiParts.push(Google.createPartFromText(textPart.text));
+                    apiParts.push(Google.createPartFromText(part.text));
                 } else if (part instanceof Function.Call) {
                     const fcall = part as Function.Call.From<fdm>;
                     if (fcall.args instanceof Object) {} else throw new Error();
@@ -51,14 +45,14 @@ export class MessageCodec<
     }
 
     public encodeChatMessages(
-        chatMessages: Engine.Session.ChatMessage.From<fdm, vdm>[],
+        chatMessages: Engine.Session.ChatMessage.From<fdm>[],
     ): Google.Content[] {
         return chatMessages.map(chatMessage => {
             if (chatMessage instanceof Engine.RoleMessage.User) {
                 const userMessage = chatMessage as Engine.RoleMessage.User.From<fdm>;
                 return this.encodeUserMessage(userMessage);
             } else if (chatMessage instanceof Engine.RoleMessage.Ai) {
-                const aiMessage = chatMessage as Engine.RoleMessage.Ai.From<fdm, vdm>;
+                const aiMessage = chatMessage as Engine.RoleMessage.Ai.From<fdm>;
                 return this.encodeAiMessage(aiMessage);
             }
             else throw new Error();
@@ -97,14 +91,12 @@ export class MessageCodec<
 
     public decodeAiMessage(
         content: Google.Content,
-    ): RoleMessage.Ai.From<fdm, vdm> {
+    ): RoleMessage.Ai.From<fdm> {
         if (content.parts) {} else throw new Error();
         const parts: unknown[] = [];
         for (const part of content.parts) {
-            if (part.text) {
-                const vreqs = VerbatimCodec.Request.decode(part.text, this.vdm);
-                parts.push(new RoleMessage.Ai.Part.Text(part.text, vreqs));
-            }
+            if (part.text)
+                parts.push(new RoleMessage.Ai.Part.Text(part.text));
             if (part.functionCall)
                 parts.push(this.toolCodec.decodeFunctionCall(part.functionCall));
             if (part.executableCode) {
@@ -130,10 +122,8 @@ export class MessageCodec<
 export namespace MessageCodec {
     export interface Options<
         in out fdm extends Function.Decl.Map.Proto,
-        in out vdm extends Verbatim.Decl.Map.Proto,
     > {
         toolCodec: ToolCodec<fdm>;
-        vdm: vdm;
         codeExecution: boolean;
     }
 

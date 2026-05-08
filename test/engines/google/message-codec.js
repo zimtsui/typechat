@@ -4,14 +4,13 @@ import { RoleMessage } from '../../../build/engine/message.js';
 import { RoleMessage as GoogleRoleMessage } from '../../../build/engines/google/message.js';
 import { ToolCodec } from '../../../build/engines/google/tool-codec.js';
 import { MessageCodec } from '../../../build/engines/google/message-codec.js';
-import { functionDeclarationMap, verbatimDeclarationMap } from '../../helpers.js';
+import { functionDeclarationMap } from '../../helpers.js';
 
 
 function makeCodec(codeExecution = false) {
     const toolCodec = new ToolCodec({ fdm: functionDeclarationMap });
     return new MessageCodec({
         toolCodec,
-        vdm: verbatimDeclarationMap,
         codeExecution,
     });
 }

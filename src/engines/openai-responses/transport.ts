@@ -9,7 +9,6 @@ import { loggers } from '../../telemetry.ts';
 import type { MessageCodec } from './message-codec.ts';
 import type { ToolCodec } from './tool-codec.ts';
 import type { Billing } from './billing.ts';
-import type { Verbatim } from '../../verbatim.ts';
 import * as StructuringChoiceCodec from './structuring-choice-codec.ts';
 import { StructuringChoice } from '../../structuring-choice.ts';
 import type { Engine } from '../../engine.ts';
@@ -18,8 +17,7 @@ import * as Undici from 'undici';
 
 export class Transport<
     in out fdm extends Function.Decl.Map.Proto,
-    in out vdm extends Verbatim.Decl.Map.Proto,
-> implements Engine.Transport<fdm, vdm> {
+> implements Engine.Transport<fdm> {
     protected client: OpenAI;
     protected inferenceParams: InferenceOptions;
     protected providerSpec: ProviderSpecs;
@@ -27,11 +25,11 @@ export class Transport<
     protected throttle: Throttle;
     protected structuringChoice: StructuringChoice;
     protected applyPatch: boolean;
-    protected messageCodec: MessageCodec<fdm, vdm>;
+    protected messageCodec: MessageCodec<fdm>;
     protected toolCodec: ToolCodec<fdm>;
     protected billing: Billing;
 
-    public constructor(options: Transport.Options<fdm, vdm>) {
+    public constructor(options: Transport.Options<fdm>) {
         this.client = new OpenAI({
             baseURL: options.providerSpec.baseUrl,
             apiKey: options.providerSpec.apiKey,
@@ -50,7 +48,7 @@ export class Transport<
     }
 
     protected makeParams(
-        session: Session.From<fdm, vdm>,
+        session: Session.From<fdm>,
     ): OpenAI.Responses.ResponseCreateParamsStreaming {
         const tools: OpenAI.Responses.Tool[] = this.toolCodec.encodeFunctionDeclarationMap();
         if (this.applyPatch) tools.push({ type: 'apply_patch' });
@@ -84,9 +82,9 @@ export class Transport<
 
     public async fetch(
         wfctx: InferenceContext,
-        session: Session.From<fdm, vdm>,
+        session: Session.From<fdm>,
         signal?: AbortSignal,
-    ): Promise<RoleMessage.Ai.From<fdm, vdm>> {
+    ): Promise<RoleMessage.Ai.From<fdm>> {
         await this.throttle.requests(wfctx);
 
         const params = this.makeParams(session);
@@ -123,7 +121,6 @@ export class Transport<
 export namespace Transport {
     export interface Options<
         in out fdm extends Function.Decl.Map.Proto,
-        in out vdm extends Verbatim.Decl.Map.Proto,
     > {
         inferenceParams: InferenceOptions;
         providerSpec: ProviderSpecs;
@@ -131,7 +128,7 @@ export namespace Transport {
         throttle: Throttle;
         structuringChoice: StructuringChoice;
         applyPatch: boolean;
-        messageCodec: MessageCodec<fdm, vdm>;
+        messageCodec: MessageCodec<fdm>;
         toolCodec: ToolCodec<fdm>;
         billing: Billing;
     }

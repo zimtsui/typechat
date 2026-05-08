@@ -7,8 +7,7 @@ import { loggers } from '../../telemetry.ts';
 import type { MessageCodec } from './message-codec.ts';
 import type { Billing } from './billing.ts';
 import type { ToolCodec } from './tool-codec.ts';
-import type { Verbatim } from '../../verbatim.ts';
-import * as ChoiceCodec from './structuring-choice-codec.ts';
+import * as StructuringChoiceCodec from './structuring-choice-codec.ts';
 import type { StructuringChoice } from '../../structuring-choice.ts';
 import * as Undici from 'undici';
 import { RoleMessage } from './message.ts';
@@ -16,19 +15,18 @@ import { RoleMessage } from './message.ts';
 
 export class Transport<
     in out fdm extends Function.Decl.Map.Proto,
-    in out vdm extends Verbatim.Decl.Map.Proto,
-> implements Engine.Transport<fdm, vdm> {
+> implements Engine.Transport<fdm> {
     protected client: Anthropic;
     protected providerSpec: ProviderSpecs;
     protected inferenceParams: InferenceOptions;
     protected fdm: fdm;
     protected throttle: Throttle;
     protected structuringChoice: StructuringChoice;
-    protected messageCodec: MessageCodec<fdm, vdm>;
+    protected messageCodec: MessageCodec<fdm>;
     protected toolCodec: ToolCodec<fdm>;
     protected billing: Billing;
 
-    public constructor(options: Transport.Options<fdm, vdm>) {
+    public constructor(options: Transport.Options<fdm>) {
         this.client = new Anthropic({
             baseURL: options.providerSpec.baseUrl,
             apiKey: options.providerSpec.apiKey,
@@ -46,7 +44,7 @@ export class Transport<
     }
 
     protected makeParams(
-        session: Engine.Session.From<fdm, vdm>,
+        session: Engine.Session.From<fdm>,
     ): Anthropic.MessageCreateParamsStreaming {
         const tools = this.toolCodec.encodeFunctionDeclarationMap();
         return {
@@ -55,7 +53,7 @@ export class Transport<
             messages: session.chatMessages.map(chatMessage => this.messageCodec.encodeChatMessage(chatMessage)),
             system: session.developerMessage && this.messageCodec.encodeDeveloperMessage(session.developerMessage),
             tools: tools.length ? tools : undefined,
-            tool_choice: tools.length ? ChoiceCodec.encode(this.structuringChoice, this.inferenceParams.parallelToolCall) : undefined,
+            tool_choice: tools.length ? StructuringChoiceCodec.encode(this.structuringChoice, this.inferenceParams.parallelToolCall) : undefined,
             max_tokens: 64 * 1024,
             ...this.inferenceParams.additionalOptions,
         };
@@ -63,9 +61,9 @@ export class Transport<
 
     public async fetch(
         wfctx: InferenceContext,
-        session: Engine.Session.From<fdm, vdm>,
+        session: Engine.Session.From<fdm>,
         signal?: AbortSignal,
-    ): Promise<RoleMessage.Ai.From<fdm, vdm>> {
+    ): Promise<RoleMessage.Ai.From<fdm>> {
         await this.throttle.requests(wfctx);
 
         const params = this.makeParams(session);
@@ -148,14 +146,13 @@ export class Transport<
 export namespace Transport {
     export interface Options<
         in out fdm extends Function.Decl.Map.Proto,
-        in out vdm extends Verbatim.Decl.Map.Proto,
     > {
         providerSpec: ProviderSpecs;
         inferenceParams: InferenceOptions;
         fdm: fdm;
         throttle: Throttle;
         structuringChoice: StructuringChoice;
-        messageCodec: MessageCodec<fdm, vdm>;
+        messageCodec: MessageCodec<fdm>;
         toolCodec: ToolCodec<fdm>;
         billing: Billing;
     }

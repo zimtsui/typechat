@@ -6,14 +6,13 @@ import { RoleMessage } from '../../../build/engine/message.js';
 import { ToolCodec } from '../../../build/engines/openai-responses/tool-codec.js';
 import { MessageCodec } from '../../../build/engines/openai-responses/message-codec.js';
 import { Tool } from '../../../build/engines/openai-responses/tool.js';
-import { functionDeclarationMap, verbatimDeclarationMap } from '../../helpers.js';
+import { functionDeclarationMap } from '../../helpers.js';
 
 
 function makeCodec() {
     const toolCodec = new ToolCodec({ fdm: functionDeclarationMap });
     return new MessageCodec({
         toolCodec,
-        vdm: verbatimDeclarationMap,
     });
 }
 

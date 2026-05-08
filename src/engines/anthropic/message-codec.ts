@@ -3,19 +3,14 @@ import { RoleMessage } from './message.ts';
 import { Function } from '../../function.ts';
 import Anthropic from '@anthropic-ai/sdk';
 import type { ToolCodec } from './tool-codec.ts';
-import type { Verbatim } from '../../verbatim.ts';
-import * as VerbatimCodec from '../../verbatim/codec.ts';
 
 
 export class MessageCodec<
     in out fdm extends Function.Decl.Map.Proto,
-    in out vdm extends Verbatim.Decl.Map.Proto,
 > {
     protected toolCodec: ToolCodec<fdm>;
-    protected vdm: vdm;
-    public constructor(options: MessageCodec.Options<fdm, vdm>) {
+    public constructor(options: MessageCodec.Options<fdm>) {
         this.toolCodec = options.toolCodec;
-        this.vdm = options.vdm;
     }
 
     public encodeUserMessage(
@@ -36,10 +31,10 @@ export class MessageCodec<
     }
 
     public encodeAiMessage(
-        aiMessage: Engine.RoleMessage.Ai.From<fdm, vdm>,
+        aiMessage: Engine.RoleMessage.Ai.From<fdm>,
     ): Anthropic.ContentBlockParam[] {
         if (aiMessage instanceof RoleMessage.Ai) {
-            const nativeAiMessage = aiMessage as RoleMessage.Ai.From<fdm, vdm>;
+            const nativeAiMessage = aiMessage as RoleMessage.Ai.From<fdm>;
             return nativeAiMessage.getRaw();
         }
         const blocks: Anthropic.ContentBlockParam[] = [];
@@ -63,13 +58,13 @@ export class MessageCodec<
     }
 
     public encodeChatMessage(
-        chatMessage: Engine.Session.ChatMessage.From<fdm, vdm>,
+        chatMessage: Engine.Session.ChatMessage.From<fdm>,
     ): Anthropic.MessageParam {
         if (chatMessage instanceof Engine.RoleMessage.User) {
             const userMessage = chatMessage as Engine.RoleMessage.User.From<fdm>;
             return { role: 'user', content: this.encodeUserMessage(userMessage) };
         } else if (chatMessage instanceof Engine.RoleMessage.Ai) {
-            const aiMessage = chatMessage as Engine.RoleMessage.Ai.From<fdm, vdm>;
+            const aiMessage = chatMessage as Engine.RoleMessage.Ai.From<fdm>;
             return { role: 'assistant', content: this.encodeAiMessage(aiMessage) };
         }
         else throw new Error('Unsupported chat message type.');
@@ -77,13 +72,12 @@ export class MessageCodec<
 
     public decodeAiMessage(
         raw: Anthropic.ContentBlock[],
-    ): RoleMessage.Ai.From<fdm, vdm> {
+    ): RoleMessage.Ai.From<fdm> {
         const parts: unknown[] = [];
         for (const item of raw) {
-            if (item.type === 'text') {
-                const vreqs = VerbatimCodec.Request.decode(item.text, this.vdm);
-                parts.push(new RoleMessage.Ai.Part.Text(item.text, vreqs));
-            } else if (item.type === 'tool_use')
+            if (item.type === 'text')
+                parts.push(new RoleMessage.Ai.Part.Text(item.text));
+            else if (item.type === 'tool_use')
                 parts.push(this.toolCodec.decodeFunctionCall(item));
             else if (item.type === 'thinking') {}
             else throw new Error();
@@ -95,9 +89,7 @@ export class MessageCodec<
 export namespace MessageCodec {
     export interface Options<
         in out fdm extends Function.Decl.Map.Proto,
-        in out vdm extends Verbatim.Decl.Map.Proto,
     > {
         toolCodec: ToolCodec<fdm>;
-        vdm: vdm;
     }
 }

@@ -1,6 +1,5 @@
 import { Function } from '../../function.ts';
 import * as Google from '@google/genai';
-import { Verbatim } from '../../verbatim.ts';
 import { Engine } from '../../engine.ts';
 
 const NOMINAL = Symbol();
@@ -10,8 +9,7 @@ export namespace RoleMessage {
 
     export class Ai<
         in out fdu extends Function.Decl.Proto,
-        in out vdu extends Verbatim.Decl.Proto,
-    > extends Engine.RoleMessage.Ai<fdu, vdu> {
+    > extends Engine.RoleMessage.Ai<fdu> {
         protected declare [NOMINAL]: never;
         public constructor(
             parts: unknown[],
@@ -23,9 +21,9 @@ export namespace RoleMessage {
         public getRaw(): Google.Content {
             return this.raw;
         }
-        public override allChat(): boolean {
+        public override allText(): boolean {
             return this.parts.every(
-                part => part instanceof RoleMessage.Ai.Part.Text && !part.vreqs.length ||
+                part => part instanceof RoleMessage.Ai.Part.Text ||
                     part instanceof RoleMessage.Ai.Part.ExecutableCode ||
                     part instanceof RoleMessage.Ai.Part.CodeExecutionResult
             );
@@ -36,7 +34,7 @@ export namespace RoleMessage {
             ).text;
         }
         public static encodeCodeExecutionResultPart(part: RoleMessage.Ai.Part.CodeExecutionResult): string {
-            const textParts: RoleMessage.Ai.Part.Text<never>[] = [];
+            const textParts: RoleMessage.Ai.Part.Text[] = [];
             if (part.output) textParts.push(
                 RoleMessage.Ai.Part.Text.paragraph(
                     '```\n' + part.output + '\n```',
@@ -51,8 +49,7 @@ export namespace RoleMessage {
     export namespace Ai {
         export type From<
             fdm extends Function.Decl.Map.Proto,
-            vdm extends Verbatim.Decl.Map.Proto,
-        > = Ai<Function.Decl.From<fdm>, Verbatim.Decl.From<vdm>>;
+        > = Ai<Function.Decl.From<fdm>>;
 
         export namespace Part {
 

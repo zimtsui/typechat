@@ -1,6 +1,5 @@
 import { Engine, Middleware } from '../engine.ts';
 import { Function } from '../function.ts';
-import { Verbatim } from '../verbatim.ts';
 import { MessageCodec } from './google/message-codec.ts';
 import { ToolCodec } from './google/tool-codec.ts';
 import { Billing } from './google/billing.ts';
@@ -14,23 +13,21 @@ import * as MessageModule from './google/message.ts';
 
 export type GoogleEngine<
     fdm extends Function.Decl.Map.Proto,
-    vdm extends Verbatim.Decl.Map.Proto,
-> = GoogleEngine.Instance<fdm, vdm>;
+> = GoogleEngine.Instance<fdm>;
 export namespace GoogleEngine {
     export class Instance<
         in out fdm extends Function.Decl.Map.Proto,
-        in out vdm extends Verbatim.Decl.Map.Proto,
-    > extends Engine.Instance<fdm, vdm> {
+    > extends Engine.Instance<fdm> {
         protected toolCodec: ToolCodec<fdm>;
-        protected messageCodec: MessageCodec<fdm, vdm>;
+        protected messageCodec: MessageCodec<fdm>;
         protected billing: Billing;
-        protected override transport: Transport<fdm, vdm>;
-        protected override structuringValidator: Engine.StructuringValidator.From<fdm, vdm>;
+        protected override transport: Transport<fdm>;
+        protected override structuringValidator: Engine.StructuringValidator.From<fdm>;
         protected codeExecution: boolean;
         protected urlContext: boolean;
         protected googleSearch: boolean;
 
-        public constructor(protected options: GoogleEngine.Options<fdm, vdm>) {
+        public constructor(protected options: GoogleEngine.Options<fdm>) {
             super(options);
 
             this.codeExecution = options.codeExecution ?? false;
@@ -55,7 +52,6 @@ export namespace GoogleEngine {
             });
             this.messageCodec = new MessageCodec({
                 toolCodec: this.toolCodec,
-                vdm: this.vdm,
                 codeExecution: this.codeExecution,
             });
             this.billing = new Billing({ pricing: this.pricing });
@@ -76,30 +72,30 @@ export namespace GoogleEngine {
             this.structuringValidator = new StructuringValidator({ structuringChoice: this.structuringChoice });
         }
 
-        public override clone(): GoogleEngine<fdm, vdm> {
+        public override clone(): GoogleEngine<fdm> {
             const engine = new GoogleEngine.Instance(this.options);
             engine.middlewaresStateless = [...this.middlewaresStateless];
             engine.middlewaresStateful = [...this.middlewaresStateful];
             return engine;
         }
 
-        protected override async infer(wfctx: InferenceContext, session: Engine.Session.From<fdm, vdm>): Promise<RoleMessage.Ai.From<fdm, vdm>> {
-            return await super.infer(wfctx, session) as RoleMessage.Ai.From<fdm, vdm>;
+        protected override async infer(wfctx: InferenceContext, session: Engine.Session.From<fdm>): Promise<RoleMessage.Ai.From<fdm>> {
+            return await super.infer(wfctx, session) as RoleMessage.Ai.From<fdm>;
         }
 
-        public override async stateless(wfctx: InferenceContext, session: Engine.Session.From<fdm, vdm>): Promise<RoleMessage.Ai.From<fdm, vdm>> {
-            return await super.stateless(wfctx, session) as RoleMessage.Ai.From<fdm, vdm>;
+        public override async stateless(wfctx: InferenceContext, session: Engine.Session.From<fdm>): Promise<RoleMessage.Ai.From<fdm>> {
+            return await super.stateless(wfctx, session) as RoleMessage.Ai.From<fdm>;
         }
 
-        public override async stateful(wfctx: InferenceContext, session: Engine.Session.From<fdm, vdm>): Promise<RoleMessage.Ai.From<fdm, vdm>> {
-            return await super.stateful(wfctx, session) as RoleMessage.Ai.From<fdm, vdm>;
+        public override async stateful(wfctx: InferenceContext, session: Engine.Session.From<fdm>): Promise<RoleMessage.Ai.From<fdm>> {
+            return await super.stateful(wfctx, session) as RoleMessage.Ai.From<fdm>;
         }
 
-        public override useStateless(middleware: Middleware.From<fdm, vdm>): GoogleEngine<fdm, vdm> {
-            return super.useStateless(middleware) as GoogleEngine<fdm, vdm>;
+        public override useStateless(middleware: Middleware.From<fdm>): GoogleEngine<fdm> {
+            return super.useStateless(middleware) as GoogleEngine<fdm>;
         }
-        public override useStateful(middleware: Middleware.From<fdm, vdm>): GoogleEngine<fdm, vdm> {
-            return super.useStateful(middleware) as GoogleEngine<fdm, vdm>;
+        public override useStateful(middleware: Middleware.From<fdm>): GoogleEngine<fdm> {
+            return super.useStateful(middleware) as GoogleEngine<fdm>;
         }
 
         /**
@@ -107,24 +103,17 @@ export namespace GoogleEngine {
          */
         public override async *agentloop(
             wfctx: InferenceContext,
-            session: Engine.Session.From<fdm, vdm>,
+            session: Engine.Session.From<fdm>,
             fnm: Function.Map<fdm>,
-            vhm: Verbatim.Handler.Map<vdm>,
             limit = Number.POSITIVE_INFINITY,
         ): AsyncGenerator<string, string, void> {
             for (let i = 0; i < limit; i++) {
-                const response = await this.stateful(wfctx, session) as RoleMessage.Ai.From<fdm, vdm>;
-                if (response.allChat()) return response.getChat();
+                const response = await this.stateful(wfctx, session) as RoleMessage.Ai.From<fdm>;
+                if (response.allText()) return response.getText();
                 const pfress: Promise<Function.Response.From<fdm>>[] = [];
-                const pvress: Promise<RoleMessage.User.Part.Text>[] = [];
                 for (const part of response.getParts()) {
                     if (part instanceof Engine.RoleMessage.Ai.Part.Text) {
-                        const textPart = part as Engine.RoleMessage.Ai.Part.Text.From<vdm>;
-                        yield textPart.text;
-                        for (const vreq of textPart.vreqs) {
-                            const vh = vhm[vreq.name];
-                            pvress.push((async () => new RoleMessage.User.Part.Text(await vh.call(vhm, vreq.args)))());
-                        }
+                        yield part.text;
                     } else if (part instanceof Function.Call) {
                         const fcall = part as Function.Call.From<fdm>;
                         const f = fnm[fcall.name];
@@ -151,8 +140,7 @@ export namespace GoogleEngine {
                     } else throw new Error();
                 }
                 const fress: Function.Response.From<fdm>[] = await Promise.all(pfress);
-                const vress: RoleMessage.User.Part.Text[] = await Promise.all(pvress);
-                session.chatMessages.push(new RoleMessage.User([...fress, ...vress]));
+                session.chatMessages.push(new RoleMessage.User(fress));
             }
             throw new Engine.FunctionCallLimitExceeded('Function call limit exceeded.');
         }
@@ -161,8 +149,7 @@ export namespace GoogleEngine {
 
     export interface Options<
         in out fdm extends Function.Decl.Map.Proto,
-        in out vdm extends Verbatim.Decl.Map.Proto,
-    > extends Engine.Options<fdm, vdm> {
+    > extends Engine.Options<fdm> {
         codeExecution?: boolean;
         urlContext?: boolean;
         googleSearch?: boolean;
@@ -170,8 +157,7 @@ export namespace GoogleEngine {
 
     export const create: Engine.Create = function<
         fdm extends Function.Decl.Map.Proto,
-        vdm extends Verbatim.Decl.Map.Proto,
-    >(options: Engine.Options<fdm, vdm>): Engine<fdm, vdm> {
+    >(options: Engine.Options<fdm>): Engine<fdm> {
         return new Instance(options);
     }
 

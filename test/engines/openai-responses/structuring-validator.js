@@ -5,9 +5,9 @@ import { RoleMessage } from '../../../build/engines/openai-responses/message.js'
 import { getOnlyText } from '../../helpers.js';
 
 
-test('OpenAI Responses validator returns verbatim meta feedback when request is missing', t => {
+test('OpenAI Responses validator returns tool feedback when required call is missing', t => {
     const validator = new StructuringValidator({
-        structuringChoice: StructuringChoice.VRequest.REQUIRED,
+        structuringChoice: StructuringChoice.REQUIRED,
     });
     const aiMessage = new RoleMessage.Ai([
         RoleMessage.Ai.Part.Text.paragraph('plain text'),
@@ -16,5 +16,5 @@ test('OpenAI Responses validator returns verbatim meta feedback when request is 
     const rejection = validator.validate(aiMessage);
 
     t.truthy(rejection);
-    t.regex(getOnlyText(rejection), /<verbatim:system>Error: XML verbatim request required, but not found\. Check your output format\.<\/verbatim:system>\n\n$/);
+    t.regex(getOnlyText(rejection), /<typechat:system>Error: Tool call required, but not found\.<\/typechat:system>\n\n$/);
 });
