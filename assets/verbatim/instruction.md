@@ -2,13 +2,13 @@
 
 ## Motivation
 
-When a LLM outputs structured data in JSON format (e.g., legacy LLM function calling), if there are too many special characters in a string property (e.g., a large LaTeX document, or a complex shell command), the LLM is prone to make mistakes in JSON escaping.
+When an LLM outputs structured data in JSON format (e.g., legacy LLM function calling), if there are too many special characters in a string property (e.g., a large LaTeX document, or a complex shell command), the LLM is prone to make mistakes in JSON escaping.
 
 XML Verbatim Channel is designed to avoid escaping in LLM messages.
 
 ## Declaration of Channels
 
-The LLM system/user message is expected to declare all available XML Verbatim Channels in the form of
+LLM developer/user messages are expected to declare all available XML Verbatim Channels in the form of
 
 <verbatim:declaration name="NAME OF CHANNEL">
     <verbatim:description>DESCRIPTION OF CHANNEL</verbatim:description>
@@ -26,7 +26,7 @@ The LLM system/user message is expected to declare all available XML Verbatim Ch
 
 ## Request through Channels
 
-You can make a request through a channel in the form of
+In an LLM AI message you output, you can make a request through a specified channel in the form of
 
 <verbatim:request name="NAME OF CHANNEL">
     <verbatim:parameter name="NAME OF PARAMETER 1"><![CDATA[VERBATIM ARGUMENT OF THIS PARAMETER]]></verbatim:parameter>
@@ -39,7 +39,7 @@ You can make a request through a channel in the form of
 
 ## Response from Channels
 
-The LLM user message may contain the responses to your request in the form of
+The LLM user message following your requests may contain the responses to your requests in the form of
 
 <verbatim:response name="NAME OF CHANNEL"><![CDATA[VERBATIM RESPONSE]]></verbatim:response>
 
@@ -49,9 +49,9 @@ Not all requests have a response.
 
 ## Verbatim Quotation
 
-The LLM system/user message may contain verbatim quotations in the form of
+LLM developer/user messages may contain verbatim quotations in the form of
 
-<verbatim:quotation author="AUTHOR OF THIS QUOTATION"><![CDATA[VERBATIM QUOTATION]]></verbatim:quotation>
+<verbatim:quotation author="AUTHOR OF QUOTATION"><![CDATA[VERBATIM QUOTATION]]></verbatim:quotation>
 
 The CDATA section may directly contain `]]>`, which is not allowed in standard XML.
 
@@ -59,6 +59,6 @@ The attribute `author` is optional.
 
 ## System Information
 
-The LLM system/user message may contain system information from the AI agent framework in the form of
+LLM developer/user messages may contain system information from the AI agent framework in the form of
 
 <verbatim:system></verbatim:system>
