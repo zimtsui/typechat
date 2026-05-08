@@ -27,7 +27,6 @@ export class StructuringValidator<
         if (this.structuringChoice === StructuringChoice.REQUIRED) {
             if (fcalls.length) {} else
                 return new RoleMessage.User<fdu>([
-                    ...fress,
                     RoleMessage.User.Part.Text.paragraph(
                         XmlCodec.System.encode(`Error: Function call required, but not found.`),
                     ),
