@@ -122,6 +122,9 @@ export namespace Engine {
             } catch (e) {
                 if (signalTimeout?.aborted)
                     throw new InferenceTimeout(undefined, { cause: e });
+                else if (wfctx.signal?.aborted)
+                    // 有的推理服务商 SDK 在请求被取消时并产生自定义的异常，而非直接抛出 abort reason。
+                    throw wfctx.signal.reason;
                 else throw e;
             }
         }

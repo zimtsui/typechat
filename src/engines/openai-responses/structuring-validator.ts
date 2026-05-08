@@ -31,7 +31,7 @@ export class StructuringValidator<
             if (!vreqs.length)
                 return new RoleMessage.User<never>([
                     RoleMessage.User.Part.Text.paragraph(
-                        VerbatimCodec.System.encode(`Error: Verbatim request required, but not found. Check your output format.`),
+                        VerbatimCodec.System.encode(`Error: XML verbatim request required, but not found. Check your output format.`),
                     ),
                 ]);
 
@@ -39,13 +39,13 @@ export class StructuringValidator<
             if (!vreqs.length)
                 return new RoleMessage.User<never>([
                     RoleMessage.User.Part.Text.paragraph(
-                        VerbatimCodec.System.encode(`Error: Verbatim request required, but not found. Check your output format.`),
+                        VerbatimCodec.System.encode(`Error: XML verbatim request required, but not found. Check your output format.`),
                     ),
                 ]);
             if (vreqs.length > 1)
                 return new RoleMessage.User<never>([
                     RoleMessage.User.Part.Text.paragraph(
-                        VerbatimCodec.System.encode(`Error: Only 1 verbatim request allowed, but multiple found.`),
+                        VerbatimCodec.System.encode(`Error: Only 1 XML verbatim request allowed, but multiple found.`),
                     ),
                 ]);
 
@@ -53,7 +53,7 @@ export class StructuringValidator<
             if (tcalls.length + vreqs.length) {} else
                 return new RoleMessage.User<never>([
                     RoleMessage.User.Part.Text.paragraph(
-                        VerbatimCodec.System.encode(`Error: Either tool call or verbatim request required, but none found. Check your output format.`),
+                        VerbatimCodec.System.encode(`Error: Either tool call or XML verbatim request required, but none found. Check your output format.`),
                     ),
                 ]);
 
@@ -61,13 +61,13 @@ export class StructuringValidator<
             if (tcalls.length + vreqs.length) {} else
                 return new RoleMessage.User<never>([
                     RoleMessage.User.Part.Text.paragraph(
-                        VerbatimCodec.System.encode(`Error: Either 1 tool call or 1 verbatim request required, but none found. Check your output format.`),
+                        VerbatimCodec.System.encode(`Error: Either 1 tool call or 1 XML verbatim request required, but none found. Check your output format.`),
                     ),
                 ]);
             if (tcalls.length + vreqs.length > 1)
                 return new RoleMessage.User<never>([
                     RoleMessage.User.Part.Text.paragraph(
-                        VerbatimCodec.System.encode(`Error: Either Only 1 tool call or only 1 verbatim request allowed, but multiple found.`),
+                        VerbatimCodec.System.encode(`Error: Either Only 1 tool call or only 1 XML verbatim request allowed, but multiple found.`),
                     ),
                 ]);
 
@@ -75,7 +75,7 @@ export class StructuringValidator<
             if (tcalls.length + vreqs.length)
                 return new RoleMessage.User<never>([
                     RoleMessage.User.Part.Text.paragraph(
-                        VerbatimCodec.System.encode(`Error: Neither tool call nor verbatim request allowed.`),
+                        VerbatimCodec.System.encode(`Error: Neither tool call nor XML verbatim request allowed.`),
                     ),
                 ]);
         }
