@@ -10,6 +10,7 @@ import { InferenceContext } from '../inference-context.ts';
 import { Session } from '../engine/session.ts';
 import * as MessageModule from './openai-responses/message.ts';
 import * as ToolModule from './openai-responses/tool.ts';
+import OpenAI from 'openai';
 
 
 export type OpenAIResponsesEngine<
@@ -59,8 +60,25 @@ export namespace OpenAIResponsesEngine {
             return engine;
         }
 
-        protected override async infer(wfctx: InferenceContext, session: Session.From<fdm, vdm>): Promise<RoleMessage.Ai.From<fdm, vdm>> {
-            return await super.infer(wfctx, session) as RoleMessage.Ai.From<fdm, vdm>;
+        /**
+        * @throws {@link InferenceTimeout} 推理超时
+        * @throws {@link SyntaxError} 模型抽风
+        * @throws {@link Recoverable} 模型抽风但可恢复
+        * @throws {@link TypeError} 网络故障
+        */
+        protected override async infer(
+            wfctx: InferenceContext,
+            session: Session.From<fdm, vdm>,
+        ): Promise<RoleMessage.Ai.From<fdm, vdm>> {
+            try {
+                return await super.infer(wfctx, session) as RoleMessage.Ai.From<fdm, vdm>;
+            } catch (e) {
+                if (e instanceof OpenAI.APIConnectionError)
+                    throw new TypeError(undefined, { cause: e });
+                else if (e instanceof DOMException)
+                    throw new TypeError('Unknown fetch error', { cause: e });
+                else throw e;
+            }
         }
 
         public override async stateless(wfctx: InferenceContext, session: Session.From<fdm, vdm>): Promise<RoleMessage.Ai.From<fdm, vdm>> {
