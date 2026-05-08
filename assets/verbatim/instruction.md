@@ -35,13 +35,15 @@ You can make a request through a channel in the form of
 
 -   The only attribute of <verbatim:request> is `name`. Additional attributes will be ignored.
 -   The only attribute of <verbatim:parameter> is `name`. Additional attributes will be ignored.
--   All arguments must be wrapped in CDATA. The CDATA sections will be extracted not by standard XML parsers, but by regular expressions instead. Therefore, they can directly contain `]]>`, which is not allowed in standard CDATA.
+-   All arguments must be wrapped in CDATA. The CDATA sections will be extracted not by standard XML parsers, but by regular expressions instead. Therefore, they can directly contain `]]>`, which is not allowed in standard XML.
 
 ## Response from Channels
 
 The LLM user message may contain the responses to your request in the form of
 
 <verbatim:response name="NAME OF CHANNEL"><![CDATA[VERBATIM RESPONSE]]></verbatim:response>
+
+The CDATA section may directly contain `]]>`, which is not allowed in standard XML.
 
 Not all requests have a response.
 
@@ -50,6 +52,8 @@ Not all requests have a response.
 The LLM system/user message may contain verbatim quotations in the form of
 
 <verbatim:quotation author="AUTHOR OF THIS QUOTATION"><![CDATA[VERBATIM QUOTATION]]></verbatim:quotation>
+
+The CDATA section may directly contain `]]>`, which is not allowed in standard XML.
 
 The attribute `author` is optional.
 
