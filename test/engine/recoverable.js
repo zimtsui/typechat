@@ -9,7 +9,7 @@ import { functionDeclarationMap } from '../helpers.js';
 
 
 class FakeEngine extends Engine.Instance {
-    constructor(responses, structuringValidator, partsValidator) {
+    constructor(responses, toolChoiceValidator, partsValidator) {
         super({
             throttle: new Throttle(Number.POSITIVE_INFINITY),
             endpointSpec: {
@@ -24,7 +24,7 @@ class FakeEngine extends Engine.Instance {
             inferenceRetry: 1,
         });
         this.responses = responses;
-        this.structuringValidator = structuringValidator;
+        this.toolChoiceValidator = toolChoiceValidator;
         this.partsValidator = partsValidator;
         this.transport = {
             fetch: async () => this.responses.shift(),
@@ -32,7 +32,7 @@ class FakeEngine extends Engine.Instance {
     }
 
     clone() {
-        const engine = new FakeEngine(this.responses, this.structuringValidator, this.partsValidator);
+        const engine = new FakeEngine(this.responses, this.toolChoiceValidator, this.partsValidator);
         engine.middlewaresStateless = [...this.middlewaresStateless];
         engine.middlewaresStateful = [...this.middlewaresStateful];
         return engine;

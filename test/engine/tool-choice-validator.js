@@ -1,8 +1,8 @@
 import test from 'ava';
 import { Function } from '../../build/function.js';
 import { RoleMessage } from '../../build/engine/message.js';
-import { StructuringValidator } from '../../build/engine/structuring-validator.js';
-import { StructuringChoice } from '../../build/structuring-choice.js';
+import { ToolChoiceValidator } from '../../build/engine/tool-choice-validator.js';
+import { ToolChoice } from '../../build/tool-choice.js';
 import { getOnlyText } from '../helpers.js';
 
 
@@ -18,8 +18,8 @@ const fcall2 = Function.Call.of({
 });
 const chat = new RoleMessage.Ai.Part.Text('chat');
 
-function validate(structuringChoice, parts) {
-    const validator = new StructuringValidator({ structuringChoice });
+function validate(toolChoice, parts) {
+    const validator = new ToolChoiceValidator({ toolChoice });
     return validator.validate(new RoleMessage.Ai(parts));
 }
 
@@ -27,27 +27,27 @@ function getText(rejection) {
     return rejection.getTextParts().map(part => part.text).join('');
 }
 
-test('Structuring validator enforces at least one function call for REQUIRED', t => {
-    const rejection = validate(StructuringChoice.REQUIRED, [chat]);
+test('Tool choice validator enforces at least one function call for REQUIRED', t => {
+    const rejection = validate(ToolChoice.REQUIRED, [chat]);
 
     t.regex(getOnlyText(rejection), /Error: Function call required, but not found\./);
-    t.is(validate(StructuringChoice.REQUIRED, [fcall]), undefined);
+    t.is(validate(ToolChoice.REQUIRED, [fcall]), undefined);
 });
 
-test('Structuring validator enforces exactly one function call for ANYONE', t => {
-    const missing = validate(StructuringChoice.ANYONE, [chat]);
-    const duplicated = validate(StructuringChoice.ANYONE, [fcall, fcall2]);
+test('Tool choice validator enforces exactly one function call for ANYONE', t => {
+    const missing = validate(ToolChoice.ANYONE, [chat]);
+    const duplicated = validate(ToolChoice.ANYONE, [fcall, fcall2]);
 
     t.regex(getOnlyText(missing), /Error: Function call required, but not found\./);
     t.regex(getText(duplicated), /Error: Only 1 function call allowed, but multiple found\./);
     t.is(duplicated.getFunctionResponses()[0].error, '<typechat:system>Cancelled by system.</typechat:system>\n');
-    t.is(validate(StructuringChoice.ANYONE, [fcall]), undefined);
+    t.is(validate(ToolChoice.ANYONE, [fcall]), undefined);
 });
 
-test('Structuring validator rejects function calls for NONE', t => {
-    const rejection = validate(StructuringChoice.NONE, [fcall]);
+test('Tool choice validator rejects function calls for NONE', t => {
+    const rejection = validate(ToolChoice.NONE, [fcall]);
 
     t.regex(getText(rejection), /Error: No function call allowed\./);
     t.is(rejection.getFunctionResponses()[0].error, '<typechat:system>Cancelled by system.</typechat:system>\n');
-    t.is(validate(StructuringChoice.NONE, [chat]), undefined);
+    t.is(validate(ToolChoice.NONE, [chat]), undefined);
 });

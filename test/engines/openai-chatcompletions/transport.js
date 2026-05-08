@@ -1,6 +1,6 @@
 import test from 'ava';
 import { RoleMessage } from '../../../build/engine/message.js';
-import { StructuringChoice } from '../../../build/structuring-choice.js';
+import { ToolChoice } from '../../../build/tool-choice.js';
 import { ToolCodec } from '../../../build/engines/openai-chatcompletions/tool-codec.js';
 import { MessageCodec } from '../../../build/engines/openai-chatcompletions/message-codec.js';
 import { Transport } from '../../../build/engines/openai-chatcompletions/transport.js';
@@ -15,7 +15,7 @@ function makeTransport(parallelToolCall) {
     return new Transport({
         fdm: functionDeclarationMap,
         throttle: { requests: async () => {} },
-        structuringChoice: StructuringChoice.AUTO,
+        toolChoice: ToolChoice.AUTO,
         providerSpec: {
             baseUrl: 'https://example.invalid/openai',
             apiKey: 'test-key',

@@ -1,13 +1,13 @@
 import test from 'ava';
-import { StructuringChoice } from '../../../build/structuring-choice.js';
-import { StructuringValidator } from '../../../build/engines/openai-responses/structuring-validator.js';
+import { ToolChoice } from '../../../build/tool-choice.js';
+import { ToolChoiceValidator } from '../../../build/engines/openai-responses/tool-choice-validator.js';
 import { RoleMessage } from '../../../build/engines/openai-responses/message.js';
 import { getOnlyText } from '../../helpers.js';
 
 
 test('OpenAI Responses validator returns tool feedback when required call is missing', t => {
-    const validator = new StructuringValidator({
-        structuringChoice: StructuringChoice.REQUIRED,
+    const validator = new ToolChoiceValidator({
+        toolChoice: ToolChoice.REQUIRED,
     });
     const aiMessage = new RoleMessage.Ai([
         RoleMessage.Ai.Part.Text.paragraph('plain text'),
