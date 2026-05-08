@@ -19,6 +19,13 @@ export class StructuringValidator<
     ): RoleMessage.User<never> | void {
         const fcalls = aiMessage.getFunctionCalls();
         const vreqs = aiMessage.getVerbatimRequests();
+        const fress = fcalls.map(
+            fcall => Function.Response.Failed.of({
+                id: fcall.id,
+                name: fcall.name,
+                error: VerbatimCodec.System.encode('Cancelled by system.'),
+            } as Function.Response.Failed.Options.Of<fdu>),
+        );
 
         if (this.structuringChoice === StructuringChoice.TCall.REQUIRED) {
             if (!fcalls.length) throw new SyntaxError('Function call required.');
@@ -30,6 +37,7 @@ export class StructuringValidator<
         } else if (this.structuringChoice === StructuringChoice.VRequest.REQUIRED) {
             if (!vreqs.length)
                 return new RoleMessage.User<never>([
+                    ...fress,
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: XML verbatim request required, but not found. Check your output format.`),
                     ),
@@ -38,12 +46,14 @@ export class StructuringValidator<
         } else if (this.structuringChoice === StructuringChoice.VRequest.ANYONE) {
             if (!vreqs.length)
                 return new RoleMessage.User<never>([
+                    ...fress,
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: XML verbatim request required, but not found. Check your output format.`),
                     ),
                 ]);
             if (vreqs.length > 1)
                 return new RoleMessage.User<never>([
+                    ...fress,
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: Only 1 XML verbatim request allowed, but multiple found.`),
                     ),
@@ -52,6 +62,7 @@ export class StructuringValidator<
         } else if (this.structuringChoice === StructuringChoice.REQUIRED) {
             if (fcalls.length + vreqs.length) {} else
                 return new RoleMessage.User<never>([
+                    ...fress,
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: Either function call or XML verbatim request required, but none found. Check your output format.`),
                     ),
@@ -60,12 +71,14 @@ export class StructuringValidator<
         } else if (this.structuringChoice === StructuringChoice.ANYONE) {
             if (fcalls.length + vreqs.length) {} else
                 return new RoleMessage.User<never>([
+                    ...fress,
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: Either 1 function call or 1 XML verbatim request required, but none found. Check your output format.`),
                     ),
                 ]);
             if (fcalls.length + vreqs.length > 1)
                 return new RoleMessage.User<never>([
+                    ...fress,
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: Either Only 1 function call or only 1 XML verbatim request allowed, but multiple found.`),
                     ),
@@ -74,6 +87,7 @@ export class StructuringValidator<
         } else if (this.structuringChoice === StructuringChoice.NONE) {
             if (fcalls.length + vreqs.length)
                 return new RoleMessage.User<never>([
+                    ...fress,
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: Neither function call nor XML verbatim request allowed.`),
                     ),

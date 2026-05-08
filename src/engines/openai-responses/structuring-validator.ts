@@ -4,6 +4,7 @@ import { RoleMessage } from './message.ts';
 import * as VerbatimCodec from '../../verbatim/codec.ts';
 import { StructuringChoice } from '../../structuring-choice.ts';
 import { Engine } from '../../engine.ts';
+import { Tool } from './tool.ts';
 
 
 export class StructuringValidator<
@@ -19,6 +20,18 @@ export class StructuringValidator<
     ): RoleMessage.User<never> | void {
         const tcalls = aiMessage.getToolCalls();
         const vreqs = aiMessage.getVerbatimRequests();
+        const tress = tcalls.map(
+            tcall => tcall instanceof Tool.ApplyPatch.Call
+                ? new Tool.ApplyPatch.Response({
+                    id: tcall.raw.call_id,
+                    failure: VerbatimCodec.System.encode('Cancelled by system.'),
+                })
+                : Function.Response.Failed.of({
+                    id: tcall.id,
+                    name: tcall.name,
+                    error: VerbatimCodec.System.encode('Cancelled by system.'),
+                } as Function.Response.Failed.Options.Of<fdu>),
+        );
 
         if (this.structuringChoice === StructuringChoice.TCall.REQUIRED) {
             if (!tcalls.length) throw new SyntaxError('Tool call required.');
@@ -30,6 +43,7 @@ export class StructuringValidator<
         } else if (this.structuringChoice === StructuringChoice.VRequest.REQUIRED) {
             if (!vreqs.length)
                 return new RoleMessage.User<never>([
+                    ...tress,
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: XML verbatim request required, but not found. Check your output format.`),
                     ),
@@ -38,12 +52,14 @@ export class StructuringValidator<
         } else if (this.structuringChoice === StructuringChoice.VRequest.ANYONE) {
             if (!vreqs.length)
                 return new RoleMessage.User<never>([
+                    ...tress,
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: XML verbatim request required, but not found. Check your output format.`),
                     ),
                 ]);
             if (vreqs.length > 1)
                 return new RoleMessage.User<never>([
+                    ...tress,
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: Only 1 XML verbatim request allowed, but multiple found.`),
                     ),
@@ -52,6 +68,7 @@ export class StructuringValidator<
         } else if (this.structuringChoice === StructuringChoice.REQUIRED) {
             if (tcalls.length + vreqs.length) {} else
                 return new RoleMessage.User<never>([
+                    ...tress,
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: Either tool call or XML verbatim request required, but none found. Check your output format.`),
                     ),
@@ -60,12 +77,14 @@ export class StructuringValidator<
         } else if (this.structuringChoice === StructuringChoice.ANYONE) {
             if (tcalls.length + vreqs.length) {} else
                 return new RoleMessage.User<never>([
+                    ...tress,
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: Either 1 tool call or 1 XML verbatim request required, but none found. Check your output format.`),
                     ),
                 ]);
             if (tcalls.length + vreqs.length > 1)
                 return new RoleMessage.User<never>([
+                    ...tress,
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: Either Only 1 tool call or only 1 XML verbatim request allowed, but multiple found.`),
                     ),
@@ -74,6 +93,7 @@ export class StructuringValidator<
         } else if (this.structuringChoice === StructuringChoice.NONE) {
             if (tcalls.length + vreqs.length)
                 return new RoleMessage.User<never>([
+                    ...tress,
                     RoleMessage.User.Part.Text.paragraph(
                         VerbatimCodec.System.encode(`Error: Neither tool call nor XML verbatim request allowed.`),
                     ),
