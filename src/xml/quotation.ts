@@ -3,7 +3,7 @@ import Handlebars from './helpers.ts';
 import { MIMEType } from 'whatwg-mimetype';
 
 
-const template = Handlebars.compile<template.Input>(Assets.xml.quotation);
+const template = Handlebars.compile<template.Input>(Assets.Xml.quotation);
 namespace template {
     export interface Input {
         mimeType: string;

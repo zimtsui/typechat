@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 
 
 export default {
-    xml: {
+    Xml: {
         instruction: loadtext(fileURLToPath(import.meta.resolve('../assets/xml/instruction.md'))),
         quotation: loadtext(fileURLToPath(import.meta.resolve('../assets/xml/quotation.handlebars'))),
         system: loadtext(fileURLToPath(import.meta.resolve('../assets/xml/system.handlebars'))),
