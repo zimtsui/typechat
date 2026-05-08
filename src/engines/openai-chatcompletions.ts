@@ -30,7 +30,7 @@ export namespace OpenAIChatCompletionsEngine {
                 providerSpec: this.providerSpecs,
                 fdm: this.fdm,
                 throttle: this.throttle,
-                structuringChoice: this.structuringChoice,
+                toolChoice: this.toolChoice,
                 messageCodec: this.messageCodec,
                 toolCodec: this.toolCodec,
                 billing: this.billing,

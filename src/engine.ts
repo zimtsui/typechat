@@ -10,9 +10,9 @@ import * as MessageModule from './engine/message.ts';
 import { PartsValidator } from './engine/parts-validator.ts';
 import { Recoverable } from './engine/recoverable.ts';
 import { Middleware } from './engine/middleware.ts';
-import * as StructuringValidatorModule from './engine/structuring-validator.ts';
+import * as ToolChoiceValidatorModule from './engine/tool-choice-validator.ts';
 import * as EngineTransportModule from './engine/transport.ts';
-import { StructuringChoice } from './structuring-choice.ts';
+import { ToolChoice } from './tool-choice.ts';
 
 
 export interface Pricing {
@@ -47,8 +47,8 @@ export namespace Engine {
         public pricing: Pricing;
         public fdm: fdm;
         protected throttle: Throttle;
-        protected structuringChoice: StructuringChoice;
-        protected structuringValidator: Engine.StructuringValidator.From<fdm>;
+        protected toolChoice: ToolChoice;
+        protected toolChoiceValidator: Engine.ToolChoiceValidator.From<fdm>;
         protected partsValidator: PartsValidator.From<fdm>;
         protected abstract transport: Engine.Transport<fdm>;
 
@@ -87,10 +87,10 @@ export namespace Engine {
                 cachePrice: options.endpointSpec.cachePrice ?? options.endpointSpec.inputPrice ?? 0,
             };
             this.fdm = options.functionDeclarationMap;
-            this.structuringChoice = options.structuringChoice ?? StructuringChoice.AUTO;
+            this.toolChoice = options.toolChoice ?? ToolChoice.AUTO;
             this.throttle = options.throttle;
             this.partsValidator = new PartsValidator();
-            this.structuringValidator = new StructuringValidator({ structuringChoice: this.structuringChoice });
+            this.toolChoiceValidator = new ToolChoiceValidator({ toolChoice: this.toolChoice });
         }
 
         /**
@@ -111,7 +111,7 @@ export namespace Engine {
             try {
                 const aiMessage = await this.transport.fetch(wfctx, session, signal);
                 this.partsValidator.validate(aiMessage);
-                const rejection = this.structuringValidator.validate(aiMessage);
+                const rejection = this.toolChoiceValidator.validate(aiMessage);
                 if (rejection) throw new Recoverable(aiMessage, rejection);
                 return aiMessage;
             } catch (e) {
@@ -266,7 +266,7 @@ export namespace Engine {
         throttle: Throttle;
         endpointSpec: EndpointSpec;
         functionDeclarationMap: fdm;
-        structuringChoice?: StructuringChoice;
+        toolChoice?: ToolChoice;
         providerRetry?: number;
         inferenceRetry?: number;
     }
@@ -278,7 +278,7 @@ export namespace Engine {
     }
 
     export import Transport = EngineTransportModule.Transport;
-    export import StructuringValidator = StructuringValidatorModule.StructuringValidator;
+    export import ToolChoiceValidator = ToolChoiceValidatorModule.ToolChoiceValidator;
     export import Session = SessionModule.Session;
     export import RoleMessage = MessageModule.RoleMessage;
 }

@@ -7,8 +7,8 @@ import type { Billing } from './billing.ts';
 import type { ToolCodec } from './tool-codec.ts';
 import { Throttle } from '../../throttle.ts';
 import { type MessageCodec } from './message-codec.ts';
-import type { StructuringChoice } from '../../structuring-choice.ts';
-import * as StructuringChoiceCodec from './structuring-choice-codec.ts';
+import type { ToolChoice } from '../../tool-choice.ts';
+import * as ToolChoiceCodec from './tool-choice-codec.ts';
 import * as Undici from 'undici';
 
 
@@ -20,7 +20,7 @@ export class Transport<
     protected providerSpec: ProviderSpecs;
     protected fdm: fdm;
     protected throttle: Throttle;
-    protected structuringChoice: StructuringChoice;
+    protected toolChoice: ToolChoice;
     protected messageCodec: MessageCodec<fdm>;
     protected toolCodec: ToolCodec<fdm>;
     protected billing: Billing;
@@ -35,7 +35,7 @@ export class Transport<
         this.providerSpec = options.providerSpec;
         this.fdm = options.fdm;
         this.throttle = options.throttle;
-        this.structuringChoice = options.structuringChoice;
+        this.toolChoice = options.toolChoice;
         this.messageCodec = options.messageCodec;
         this.toolCodec = options.toolCodec;
         this.billing = options.billing;
@@ -52,7 +52,7 @@ export class Transport<
             model: this.inferenceParams.model,
             messages,
             tools: tools.length ? tools : undefined,
-            tool_choice: tools.length ? StructuringChoiceCodec.encode(this.structuringChoice) : undefined,
+            tool_choice: tools.length ? ToolChoiceCodec.encode(this.toolChoice) : undefined,
             parallel_tool_calls: tools.length ? this.inferenceParams.parallelToolCall : undefined,
             stream: true,
             stream_options: {
@@ -206,7 +206,7 @@ export namespace Transport {
         providerSpec: ProviderSpecs;
         fdm: fdm;
         throttle: Throttle;
-        structuringChoice: StructuringChoice;
+        toolChoice: ToolChoice;
         messageCodec: MessageCodec<fdm>;
         toolCodec: ToolCodec<fdm>;
         billing: Billing;

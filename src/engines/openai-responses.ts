@@ -3,7 +3,7 @@ import { Function } from '../function.ts';
 import { MessageCodec } from './openai-responses/message-codec.ts';
 import { ToolCodec } from './openai-responses/tool-codec.ts';
 import { Billing } from './openai-responses/billing.ts';
-import { StructuringValidator } from './openai-responses/structuring-validator.ts';
+import { ToolChoiceValidator } from './openai-responses/tool-choice-validator.ts';
 import { Transport } from './openai-responses/transport.ts';
 import { InferenceContext } from '../inference-context.ts';
 import { Session } from '../engine/session.ts';
@@ -23,7 +23,7 @@ export namespace OpenAIResponsesEngine {
         protected messageCodec: MessageCodec<fdm>;
         protected billing: Billing;
         protected override transport: Transport<fdm>;
-        protected override structuringValidator: StructuringValidator.From<fdm>;
+        protected override toolChoiceValidator: ToolChoiceValidator.From<fdm>;
         protected applyPatch: boolean;
 
         public constructor(protected options: OpenAIResponsesEngine.Options<fdm>) {
@@ -40,13 +40,13 @@ export namespace OpenAIResponsesEngine {
                 providerSpec: this.providerSpecs,
                 fdm: this.fdm,
                 throttle: this.throttle,
-                structuringChoice: this.structuringChoice,
+                toolChoice: this.toolChoice,
                 applyPatch: this.applyPatch,
                 messageCodec: this.messageCodec,
                 toolCodec: this.toolCodec,
                 billing: this.billing,
             });
-            this.structuringValidator = new StructuringValidator({ structuringChoice: this.structuringChoice });
+            this.toolChoiceValidator = new ToolChoiceValidator({ toolChoice: this.toolChoice });
         }
 
         public override clone(): OpenAIResponsesEngine<fdm> {

@@ -5,7 +5,7 @@ import { ToolCodec } from './google/tool-codec.ts';
 import { Billing } from './google/billing.ts';
 import { env } from 'node:process';
 import { Agent, ProxyAgent } from 'undici';
-import { StructuringValidator } from '../engine/structuring-validator.ts';
+import { ToolChoiceValidator } from '../engine/tool-choice-validator.ts';
 import { Transport } from './google/transport.ts';
 import { InferenceContext } from '../inference-context.ts';
 import * as MessageModule from './google/message.ts';
@@ -22,7 +22,7 @@ export namespace GoogleEngine {
         protected messageCodec: MessageCodec<fdm>;
         protected billing: Billing;
         protected override transport: Transport<fdm>;
-        protected override structuringValidator: Engine.StructuringValidator.From<fdm>;
+        protected override toolChoiceValidator: Engine.ToolChoiceValidator.From<fdm>;
         protected codeExecution: boolean;
         protected urlContext: boolean;
         protected googleSearch: boolean;
@@ -60,7 +60,7 @@ export namespace GoogleEngine {
                 providerSpec: this.providerSpecs,
                 fdm: this.fdm,
                 throttle: this.throttle,
-                structuringChoice: this.structuringChoice,
+                toolChoice: this.toolChoice,
                 codeExecution: this.codeExecution,
                 urlContext: this.urlContext,
                 googleSearch: this.googleSearch,
@@ -69,7 +69,7 @@ export namespace GoogleEngine {
                 billing: this.billing,
             });
 
-            this.structuringValidator = new StructuringValidator({ structuringChoice: this.structuringChoice });
+            this.toolChoiceValidator = new ToolChoiceValidator({ toolChoice: this.toolChoice });
         }
 
         public override clone(): GoogleEngine<fdm> {

@@ -9,8 +9,8 @@ import { loggers } from '../../telemetry.ts';
 import type { MessageCodec } from './message-codec.ts';
 import type { ToolCodec } from './tool-codec.ts';
 import type { Billing } from './billing.ts';
-import * as StructuringChoiceCodec from './structuring-choice-codec.ts';
-import { StructuringChoice } from '../../structuring-choice.ts';
+import * as ToolChoiceCodec from './tool-choice-codec.ts';
+import { ToolChoice } from '../../tool-choice.ts';
 import type { Engine } from '../../engine.ts';
 import * as Undici from 'undici';
 
@@ -23,7 +23,7 @@ export class Transport<
     protected providerSpec: ProviderSpecs;
     protected fdm: fdm;
     protected throttle: Throttle;
-    protected structuringChoice: StructuringChoice;
+    protected toolChoice: ToolChoice;
     protected applyPatch: boolean;
     protected messageCodec: MessageCodec<fdm>;
     protected toolCodec: ToolCodec<fdm>;
@@ -40,7 +40,7 @@ export class Transport<
         this.providerSpec = options.providerSpec;
         this.fdm = options.fdm;
         this.throttle = options.throttle;
-        this.structuringChoice = options.structuringChoice;
+        this.toolChoice = options.toolChoice;
         this.applyPatch = options.applyPatch;
         this.messageCodec = options.messageCodec;
         this.toolCodec = options.toolCodec;
@@ -60,7 +60,7 @@ export class Transport<
             input: session.chatMessages.flatMap(chatMessage => this.messageCodec.encodeChatMessage(chatMessage)),
             instructions: session.developerMessage && this.messageCodec.encodeDeveloperMessage(session.developerMessage),
             tools: tools.length ? tools : undefined,
-            tool_choice: tools.length ? StructuringChoiceCodec.encode(this.structuringChoice) : undefined,
+            tool_choice: tools.length ? ToolChoiceCodec.encode(this.toolChoice) : undefined,
             parallel_tool_calls: tools.length ? this.inferenceParams.parallelToolCall : undefined,
             ...this.inferenceParams.additionalOptions,
         };
@@ -126,7 +126,7 @@ export namespace Transport {
         providerSpec: ProviderSpecs;
         fdm: fdm;
         throttle: Throttle;
-        structuringChoice: StructuringChoice;
+        toolChoice: ToolChoice;
         applyPatch: boolean;
         messageCodec: MessageCodec<fdm>;
         toolCodec: ToolCodec<fdm>;

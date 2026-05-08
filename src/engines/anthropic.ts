@@ -30,7 +30,7 @@ export namespace AnthropicEngine {
                 inferenceParams: this.inferenceOptions,
                 fdm: this.fdm,
                 throttle: this.throttle,
-                structuringChoice: this.structuringChoice,
+                toolChoice: this.toolChoice,
                 messageCodec: this.messageCodec,
                 toolCodec: this.toolCodec,
                 billing: this.billing,

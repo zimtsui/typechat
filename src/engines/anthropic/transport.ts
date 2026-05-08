@@ -7,8 +7,8 @@ import { loggers } from '../../telemetry.ts';
 import type { MessageCodec } from './message-codec.ts';
 import type { Billing } from './billing.ts';
 import type { ToolCodec } from './tool-codec.ts';
-import * as StructuringChoiceCodec from './structuring-choice-codec.ts';
-import type { StructuringChoice } from '../../structuring-choice.ts';
+import * as ToolChoiceCodec from './tool-choice-codec.ts';
+import type { ToolChoice } from '../../tool-choice.ts';
 import * as Undici from 'undici';
 import { RoleMessage } from './message.ts';
 
@@ -21,7 +21,7 @@ export class Transport<
     protected inferenceParams: InferenceOptions;
     protected fdm: fdm;
     protected throttle: Throttle;
-    protected structuringChoice: StructuringChoice;
+    protected toolChoice: ToolChoice;
     protected messageCodec: MessageCodec<fdm>;
     protected toolCodec: ToolCodec<fdm>;
     protected billing: Billing;
@@ -37,7 +37,7 @@ export class Transport<
         this.inferenceParams = options.inferenceParams;
         this.fdm = options.fdm;
         this.throttle = options.throttle;
-        this.structuringChoice = options.structuringChoice;
+        this.toolChoice = options.toolChoice;
         this.messageCodec = options.messageCodec;
         this.toolCodec = options.toolCodec;
         this.billing = options.billing;
@@ -53,7 +53,7 @@ export class Transport<
             messages: session.chatMessages.map(chatMessage => this.messageCodec.encodeChatMessage(chatMessage)),
             system: session.developerMessage && this.messageCodec.encodeDeveloperMessage(session.developerMessage),
             tools: tools.length ? tools : undefined,
-            tool_choice: tools.length ? StructuringChoiceCodec.encode(this.structuringChoice, this.inferenceParams.parallelToolCall) : undefined,
+            tool_choice: tools.length ? ToolChoiceCodec.encode(this.toolChoice, this.inferenceParams.parallelToolCall) : undefined,
             max_tokens: 64 * 1024,
             ...this.inferenceParams.additionalOptions,
         };
@@ -151,7 +151,7 @@ export namespace Transport {
         inferenceParams: InferenceOptions;
         fdm: fdm;
         throttle: Throttle;
-        structuringChoice: StructuringChoice;
+        toolChoice: ToolChoice;
         messageCodec: MessageCodec<fdm>;
         toolCodec: ToolCodec<fdm>;
         billing: Billing;

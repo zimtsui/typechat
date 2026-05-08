@@ -6,7 +6,7 @@ export * from './inference-context.ts';
 export * from './endpoint-spec.ts';
 export * from './engine.ts';
 export * from './media.ts';
-export * from './structuring-choice.ts';
+export * from './tool-choice.ts';
 
 export * from './engines/google.ts';
 export * from './engines/openai-responses.ts';

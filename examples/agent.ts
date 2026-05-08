@@ -1,4 +1,4 @@
-import { Adaptor, Function, Engine, StructuringChoice } from '@zimtsui/typechat';
+import { Adaptor, Function, Engine, ToolChoice } from '@zimtsui/typechat';
 import { Type } from 'typebox';
 import { config } from './config.ts';
 
@@ -50,7 +50,7 @@ const adaptor = Adaptor.create(config);
 const engine = adaptor.makeOpenAIResponsesEngine<fdm>({
     endpoint: 'gpt-5.4-mini',
     functionDeclarationMap: fdm,
-    structuringChoice: StructuringChoice.REQUIRED,
+    toolChoice: ToolChoice.REQUIRED,
 });
 
 // 使用 agentloop 驱动智能体循环，最多 8 轮对话

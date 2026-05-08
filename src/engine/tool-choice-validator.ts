@@ -1,15 +1,15 @@
-import { StructuringChoice } from '../structuring-choice.ts';
+import { ToolChoice } from '../tool-choice.ts';
 import { Function } from '../function.ts';
 import { RoleMessage } from './message.ts';
 import * as XmlCodec from '../xml.ts';
 
 
-export class StructuringValidator<
+export class ToolChoiceValidator<
     in out fdu extends Function.Decl.Proto,
 > {
-    protected structuringChoice: StructuringChoice;
-    public constructor(options: StructuringValidator.Options) {
-        this.structuringChoice = options.structuringChoice;
+    protected toolChoice: ToolChoice;
+    public constructor(options: ToolChoiceValidator.Options) {
+        this.toolChoice = options.toolChoice;
     }
 
     public validate(
@@ -24,7 +24,7 @@ export class StructuringValidator<
             } as Function.Response.Failed.Options.Of<fdu>),
         );
 
-        if (this.structuringChoice === StructuringChoice.REQUIRED) {
+        if (this.toolChoice === ToolChoice.REQUIRED) {
             if (fcalls.length) {} else
                 return new RoleMessage.User<fdu>([
                     RoleMessage.User.Part.Text.paragraph(
@@ -32,7 +32,7 @@ export class StructuringValidator<
                     ),
                 ]);
 
-        } else if (this.structuringChoice === StructuringChoice.ANYONE) {
+        } else if (this.toolChoice === ToolChoice.ANYONE) {
             if (!fcalls.length)
                 return new RoleMessage.User<never>([
                     RoleMessage.User.Part.Text.paragraph(
@@ -47,7 +47,7 @@ export class StructuringValidator<
                     ),
                 ]);
 
-        } else if (this.structuringChoice === StructuringChoice.NONE) {
+        } else if (this.toolChoice === ToolChoice.NONE) {
             if (fcalls.length)
                 return new RoleMessage.User<fdu>([
                     ...fress,
@@ -58,12 +58,12 @@ export class StructuringValidator<
         }
     }
 }
-export namespace StructuringValidator {
+export namespace ToolChoiceValidator {
     export type From<
         fdm extends Function.Decl.Map.Proto,
-    > = StructuringValidator<Function.Decl.From<fdm>>;
+    > = ToolChoiceValidator<Function.Decl.From<fdm>>;
 
     export interface Options {
-        structuringChoice: StructuringChoice;
+        toolChoice: ToolChoice;
     }
 }

@@ -10,8 +10,8 @@ import { loggers } from '../../telemetry.ts';
 import type { MessageCodec } from './message-codec.ts';
 import type { ToolCodec } from './tool-codec.ts';
 import type { Billing } from './billing.ts';
-import * as ChoiceCodec from './structuring-choice-codec.ts';
-import type { StructuringChoice } from '../../structuring-choice.ts';
+import * as ChoiceCodec from './tool-choice-codec.ts';
+import type { ToolChoice } from '../../tool-choice.ts';
 import { MIMEType } from 'whatwg-mimetype';
 import { HeaderRecord } from 'undici/types/header';
 
@@ -25,7 +25,7 @@ export class Transport<
     protected providerSpec: ProviderSpecs;
     protected fdm: fdm;
     protected throttle: Throttle;
-    protected structuringChoice: StructuringChoice;
+    protected toolChoice: ToolChoice;
     protected codeExecution: boolean;
     protected urlContext: boolean;
     protected googleSearch: boolean;
@@ -39,7 +39,7 @@ export class Transport<
         this.providerSpec = options.providerSpec;
         this.fdm = options.fdm;
         this.throttle = options.throttle;
-        this.structuringChoice = options.structuringChoice;
+        this.toolChoice = options.toolChoice;
         this.codeExecution = options.codeExecution;
         this.urlContext = options.urlContext;
         this.googleSearch = options.googleSearch;
@@ -65,7 +65,7 @@ export class Transport<
         if (this.googleSearch) apiTools.push({ googleSearch: {} });
         if (this.codeExecution) apiTools.push({ codeExecution: {} });
         const apiToolConfig: Google.ToolConfig = {};
-        if (apiFds.length) apiToolConfig.functionCallingConfig = ChoiceCodec.encode(this.structuringChoice);
+        if (apiFds.length) apiToolConfig.functionCallingConfig = ChoiceCodec.encode(this.toolChoice);
         const reqbody: RestfulRequest = {
             contents,
             tools: apiTools.length ? apiTools : undefined,
@@ -132,7 +132,7 @@ export namespace GoogleNativeTransport {
         providerSpec: ProviderSpecs;
         fdm: fdm;
         throttle: Throttle;
-        structuringChoice: StructuringChoice;
+        toolChoice: ToolChoice;
         codeExecution: boolean;
         urlContext: boolean;
         googleSearch: boolean;
