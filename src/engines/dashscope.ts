@@ -1,6 +1,6 @@
 import { Engine, Middleware } from '../engine.ts';
 import { Function } from '../function.ts';
-import { Transport } from './openai-responses/transport.ts';
+import { Transport } from './dashscope/transport.ts';
 import { OpenAIResponsesEngine } from './openai-responses.ts';
 
 
