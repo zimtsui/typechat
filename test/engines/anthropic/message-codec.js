@@ -1,4 +1,5 @@
 import test from 'ava';
+import { MIMEType } from 'whatwg-mimetype';
 import { Media } from '../../../build/media.js';
 import { RoleMessage } from '../../../build/engine/message.js';
 import { ToolCodec } from '../../../build/engines/anthropic/tool-codec.js';
@@ -22,6 +23,23 @@ test('Anthropic codec rejects media user message', t => {
     const error = t.throws(() => messageCodec.encodeUserMessage(userMessage));
 
     t.truthy(error);
+});
+
+test('Anthropic codec encodes text media as quoted text', t => {
+    const messageCodec = makeCodec();
+    const userMessage = new RoleMessage.User([
+        new Media.Text({
+            mimeType: new MIMEType('text/plain'),
+            text: 'hello',
+        }),
+    ]);
+
+    const encoded = messageCodec.encodeUserMessage(userMessage);
+
+    t.deepEqual(encoded, [{
+        type: 'text',
+        text: '<typechat:quotation mime-type="text/plain"><![CDATA[hello]]></typechat:quotation>\n',
+    }]);
 });
 
 test('Anthropic codec decodes text and tool use blocks', t => {

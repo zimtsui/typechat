@@ -81,6 +81,27 @@ test('OpenAI responses codec encodes PDF file input as raw base64', t => {
     }]);
 });
 
+test('OpenAI responses codec encodes text media as quoted text', t => {
+    const messageCodec = makeCodec();
+    const userMessage = new RoleMessage.User([
+        new Media.Text({
+            mimeType: new MIMEType('text/plain'),
+            text: 'hello',
+        }),
+    ]);
+
+    const encoded = messageCodec.encodeUserMessage(userMessage);
+
+    t.deepEqual(encoded, [{
+        type: 'message',
+        role: 'user',
+        content: [{
+            type: 'input_text',
+            text: '<typechat:quotation mime-type="text/plain"><![CDATA[hello]]></typechat:quotation>\n',
+        }],
+    }]);
+});
+
 test('OpenAI responses codec omits empty user message for pure tool responses', t => {
     const messageCodec = makeCodec();
     const userMessage = new RoleMessage.User([

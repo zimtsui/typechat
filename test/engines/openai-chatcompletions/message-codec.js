@@ -59,6 +59,45 @@ test('OpenAI chat completions codec splits mixed function responses and text', t
     ]);
 });
 
+test('OpenAI chat completions codec omits empty user message for pure tool responses', t => {
+    const messageCodec = makeCodec();
+    const userMessage = new RoleMessage.User([
+        Function.Response.Successful.of({
+            id: 'call_1',
+            name: 'noop',
+            text: 'done',
+        }),
+    ]);
+
+    const encoded = messageCodec.encodeUserMessage(userMessage);
+
+    t.deepEqual(encoded, [{
+        role: 'tool',
+        tool_call_id: 'call_1',
+        content: 'done',
+    }]);
+});
+
+test('OpenAI chat completions codec encodes text media as quoted text', t => {
+    const messageCodec = makeCodec();
+    const userMessage = new RoleMessage.User([
+        new Media.Text({
+            mimeType: new MIMEType('text/plain'),
+            text: 'hello',
+        }),
+    ]);
+
+    const encoded = messageCodec.encodeUserMessage(userMessage);
+
+    t.deepEqual(encoded, [{
+        role: 'user',
+        content: [{
+            type: 'text',
+            text: '<typechat:quotation mime-type="text/plain"><![CDATA[hello]]></typechat:quotation>\n',
+        }],
+    }]);
+});
+
 test('OpenAI Chat Completions codec decodes text and tool calls', t => {
     const messageCodec = makeCodec();
 

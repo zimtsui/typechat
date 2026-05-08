@@ -4,6 +4,7 @@ import { OpenAIResponsesEngine } from '../build/engines/openai-responses.js';
 import { GoogleEngine } from '../build/engines/google.js';
 import { OpenAIChatCompletionsEngine } from '../build/engines/openai-chatcompletions.js';
 import { AnthropicEngine } from '../build/engines/anthropic.js';
+import { DashScopeEngine } from '../build/engines/dashscope.js';
 import { functionDeclarationMap } from './helpers.js';
 
 
@@ -38,6 +39,13 @@ test('Adaptor creates engines matching endpoint apiType', t => {
                 model: 'test-model',
                 name: 'Anthropic',
             },
+            dashscope: {
+                apiType: 'dashscope',
+                baseUrl: 'https://example.invalid/dashscope',
+                apiKey: 'test-key',
+                model: 'test-model',
+                name: 'DashScope',
+            },
         },
     });
 
@@ -57,11 +65,52 @@ test('Adaptor creates engines matching endpoint apiType', t => {
         endpoint: 'anthropic',
         functionDeclarationMap,
     });
+    const dashScopeEngine = adaptor.makeEngine({
+        endpoint: 'dashscope',
+        functionDeclarationMap,
+    });
 
     t.true(openaiEngine instanceof OpenAIResponsesEngine.Instance);
     t.true(googleEngine instanceof GoogleEngine.Instance);
     t.true(openaiChatCompletionsEngine instanceof OpenAIChatCompletionsEngine.Instance);
     t.true(anthropicEngine instanceof AnthropicEngine.Instance);
+    t.true(dashScopeEngine instanceof DashScopeEngine.Instance);
+});
+
+test('Adaptor applies cache price fallback and override', t => {
+    const adaptor = Adaptor.create({
+        endpoints: {
+            fallback: {
+                apiType: 'openai-responses',
+                baseUrl: 'https://example.invalid/openai',
+                apiKey: 'test-key',
+                model: 'test-model',
+                name: 'OpenAI Responses',
+                inputPrice: 1.25,
+            },
+            explicit: {
+                apiType: 'openai-responses',
+                baseUrl: 'https://example.invalid/openai',
+                apiKey: 'test-key',
+                model: 'test-model',
+                name: 'OpenAI Responses',
+                inputPrice: 1.25,
+                cachePrice: 0.125,
+            },
+        },
+    });
+
+    const fallback = adaptor.makeEngine({
+        endpoint: 'fallback',
+        functionDeclarationMap,
+    });
+    const explicit = adaptor.makeEngine({
+        endpoint: 'explicit',
+        functionDeclarationMap,
+    });
+
+    t.is(fallback.pricing.cachePrice, 1.25);
+    t.is(explicit.pricing.cachePrice, 0.125);
 });
 
 test('Adaptor creates dedicated Google and OpenAI Responses engines', t => {

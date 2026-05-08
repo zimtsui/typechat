@@ -1,4 +1,5 @@
 import test from 'ava';
+import { MIMEType } from 'whatwg-mimetype';
 import { Media } from '../../../build/media.js';
 import { RoleMessage } from '../../../build/engine/message.js';
 import { RoleMessage as GoogleRoleMessage } from '../../../build/engines/google/message.js';
@@ -32,6 +33,23 @@ test('Google codec encodes PDF user message', t => {
         mediaResolution: {
             level: 'MEDIA_RESOLUTION_MEDIUM',
         },
+    }]);
+});
+
+test('Google codec encodes text media as quoted text', t => {
+    const messageCodec = makeCodec();
+    const userMessage = new RoleMessage.User([
+        new Media.Text({
+            mimeType: new MIMEType('text/plain'),
+            text: 'hello',
+        }),
+    ]);
+
+    const encoded = messageCodec.encodeUserMessage(userMessage);
+
+    t.is(encoded.role, 'user');
+    t.deepEqual(encoded.parts, [{
+        text: '<typechat:quotation mime-type="text/plain"><![CDATA[hello]]></typechat:quotation>\n',
     }]);
 });
 
