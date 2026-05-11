@@ -15,16 +15,6 @@ export class MessageCodec<
         this.toolCodec = options.toolCodec;
     }
 
-    protected encodeImageResolution(
-        resolution: Media.Image.Resolution,
-    ): OpenAI.Responses.ResponseInputImage['detail'] {
-        if (resolution === Media.Image.Resolution.LOW) return 'low';
-        else if (resolution === Media.Image.Resolution.HIGH) return 'high';
-        else if (resolution === Media.Image.Resolution.HIGHEST) return 'original';
-        else if (resolution === Media.Image.Resolution.AUTO) return 'auto';
-        else throw new Error();
-    }
-
     public decodeAiMessage(
         raw: OpenAI.Responses.Response,
     ): RoleMessage.Ai.From<fdm> {
@@ -77,7 +67,7 @@ export class MessageCodec<
                 content.push({
                     type: 'input_image',
                     image_url: `data:${part.mimeType};base64,${part.base64}`,
-                    detail: this.encodeImageResolution(part.resolution),
+                    detail: 'high',
                 });
             else if (part instanceof Media.Pdf)
                 content.push({

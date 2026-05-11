@@ -90,8 +90,6 @@ export class Transport<
                 loggers.inference.info(item.content.map(part => part.text).join(''));
             } else if (item.type === 'function_call')
                 loggers.message.info(item);
-            else if (item.type === 'apply_patch_call')
-                loggers.message.info(item);
             else if (item.type === 'reasoning') {}
             else loggers.message.info(item);
     }

@@ -13,27 +13,18 @@ export namespace Media {
     export class Image extends Media {
         public override mimeType: MIMEType;
         public base64: string;
-        public resolution: Media.Image.Resolution;
         public constructor(options: Media.Image.Options) {
             super();
             if (options.mimeType.type === 'image') {} else
                 throw new TypeError('Major MIME type of image must be `image`.');
             this.mimeType = options.mimeType;
             this.base64 = options.base64;
-            this.resolution = options.resolution;
         }
     }
     export namespace Image {
         export interface Options {
             mimeType: MIMEType;
             base64: string;
-            resolution: Media.Image.Resolution;
-        }
-        export const enum Resolution {
-            AUTO,
-            LOW,
-            HIGH,
-            HIGHEST,
         }
     }
 
