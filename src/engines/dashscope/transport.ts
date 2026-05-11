@@ -69,7 +69,6 @@ export class Transport<
         }
         return {
             model: this.inferenceParams.model,
-            include: ['reasoning.encrypted_content'],
             store: true,
             stream: true,
             input,

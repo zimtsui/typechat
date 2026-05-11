@@ -66,11 +66,6 @@ export class MessageCodec<
                     image_url: `data:${part.mimeType};base64,${part.base64}`,
                     detail: 'auto',
                 });
-            else if (part instanceof Media.Pdf)
-                content.push({
-                    type: 'input_file',
-                    file_data: `data:${part.mimeType};base64,${part.base64}`,
-                });
             else if (part instanceof Function.Response) {
                 const fres = part as Function.Response.From<fdm>;
                 flush();
