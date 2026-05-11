@@ -13,12 +13,12 @@ export namespace RoleMessage {
         protected declare [NOMINAL]: never;
         public constructor(
             parts: unknown[],
-            protected raw: OpenAI.Responses.ResponseOutputItem[],
+            protected raw: OpenAI.Responses.Response,
         ) {
             super(parts);
         }
 
-        public getRaw(): OpenAI.Responses.ResponseOutputItem[] {
+        public getRaw(): OpenAI.Responses.Response {
             return this.raw;
         }
         public getToolCalls(): Tool.Call.Of<fdu>[] {
@@ -41,12 +41,9 @@ export namespace RoleMessage {
         export type From<
             fdm extends Function.Decl.Map.Proto,
         > = Ai<Function.Decl.From<fdm>>;
-
-        export namespace Part {
-            export import Text = Engine.RoleMessage.Ai.Part.Text;
-        }
     }
 
+    export import Part = Engine.RoleMessage.Part;
     export import User = Engine.RoleMessage.User;
     export import Developer = Engine.RoleMessage.Developer;
 }

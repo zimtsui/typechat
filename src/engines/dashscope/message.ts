@@ -1,6 +1,6 @@
 import { Engine } from '../../engine.ts';
 import { Function } from '../../function.ts';
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 
 const NOMINAL = Symbol();
 
@@ -10,18 +10,18 @@ export namespace RoleMessage {
         in out fdu extends Function.Decl.Proto,
     > extends Engine.RoleMessage.Ai<fdu> {
         protected declare [NOMINAL]: never;
-
         public constructor(
             parts: unknown[],
-            protected raw: Anthropic.ContentBlock[],
+            protected raw: OpenAI.Responses.Response,
         ) {
             super(parts);
         }
 
-        public getRaw(): Anthropic.ContentBlock[] {
+        public getRaw(): OpenAI.Responses.Response {
             return this.raw;
         }
     }
+
     export namespace Ai {
         export type From<
             fdm extends Function.Decl.Map.Proto,

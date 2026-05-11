@@ -27,7 +27,7 @@ export class ToolChoiceValidator<
         if (this.toolChoice === ToolChoice.REQUIRED) {
             if (fcalls.length) {} else
                 return new RoleMessage.User<fdu>([
-                    RoleMessage.User.Part.Text.paragraph(
+                    RoleMessage.Part.Text.paragraph(
                         XmlCodec.System.encode(`Error: Function call required, but not found.`),
                     ),
                 ]);
@@ -35,14 +35,14 @@ export class ToolChoiceValidator<
         } else if (this.toolChoice === ToolChoice.ANYONE) {
             if (!fcalls.length)
                 return new RoleMessage.User<never>([
-                    RoleMessage.User.Part.Text.paragraph(
+                    RoleMessage.Part.Text.paragraph(
                         XmlCodec.System.encode(`Error: Function call required, but not found.`),
                     ),
                 ]);
             if (fcalls.length > 1)
                 return new RoleMessage.User<fdu>([
                     ...fress,
-                    RoleMessage.User.Part.Text.paragraph(
+                    RoleMessage.Part.Text.paragraph(
                         XmlCodec.System.encode(`Error: Only 1 function call allowed, but multiple found.`),
                     ),
                 ]);
@@ -51,7 +51,7 @@ export class ToolChoiceValidator<
             if (fcalls.length)
                 return new RoleMessage.User<fdu>([
                     ...fress,
-                    RoleMessage.User.Part.Text.paragraph(
+                    RoleMessage.Part.Text.paragraph(
                         XmlCodec.System.encode(`Error: No function call allowed.`),
                     ),
                 ]);

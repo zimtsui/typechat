@@ -4,25 +4,36 @@ const NOMINAL = Symbol();
 
 
 export namespace RoleMessage {
+    export namespace Part {
+        export class Text {
+            protected declare [NOMINAL]: never;
+            public static paragraph(text: string): Text {
+                return new RoleMessage.Part.Text(text.trimEnd() + '\n\n');
+            }
+            public constructor(
+                public text: string,
+            ) {}
+        }
+    }
 
     export class Developer {
         protected declare [NOMINAL]: never;
 
         public constructor(protected parts: unknown[]) {}
         public allTextParts(): boolean {
-            return this.parts.every(part => part instanceof RoleMessage.Developer.Part.Text);
+            return this.parts.every(part => part instanceof RoleMessage.Part.Text);
         }
         public getParts(): unknown[] {
             return this.parts;
         }
-        public getOnlyTextParts(): RoleMessage.Developer.Part.Text[] {
+        public getOnlyTextParts(): RoleMessage.Part.Text[] {
             if (this.allTextParts()) {} else throw new Error();
             return this.getTextParts();
         }
-        public getTextParts(): RoleMessage.Developer.Part.Text[] {
-            const textParts: RoleMessage.Developer.Part.Text[] = [];
+        public getTextParts(): RoleMessage.Part.Text[] {
+            const textParts: RoleMessage.Part.Text[] = [];
             for (const part of this.parts)
-                if (part instanceof RoleMessage.Developer.Part.Text) {
+                if (part instanceof RoleMessage.Part.Text) {
                     const textPart = part;
                     textParts.push(textPart);
                 }
@@ -30,19 +41,6 @@ export namespace RoleMessage {
         }
         public getText(): string {
             return this.getTextParts().map(part => part.text).join('');
-        }
-    }
-    export namespace Developer {
-        export namespace Part {
-            export class Text {
-                protected declare [NOMINAL]: never;
-                public static paragraph(text: string): Text {
-                    return new Text(text.trimEnd() + '\n\n');
-                }
-                public constructor(
-                    public text: string,
-                ) {}
-            }
         }
     }
 
@@ -57,10 +55,10 @@ export namespace RoleMessage {
             return this.parts;
         }
         public allText(): boolean {
-            return this.parts.every(part => part instanceof RoleMessage.Ai.Part.Text);
+            return this.parts.every(part => part instanceof RoleMessage.Part.Text);
         }
-        public getTextParts(): RoleMessage.Ai.Part.Text[] {
-            return this.parts.filter(part => part instanceof RoleMessage.Ai.Part.Text) as RoleMessage.Ai.Part.Text[];
+        public getTextParts(): RoleMessage.Part.Text[] {
+            return this.parts.filter(part => part instanceof RoleMessage.Part.Text) as RoleMessage.Part.Text[];
         }
         public getText(): string {
             return this.getTextParts().map(part => part.text).join('');
@@ -86,17 +84,7 @@ export namespace RoleMessage {
         > = RoleMessage.Ai<
             Function.Decl.From<fdm>
         >;
-        export namespace Part {
-            export class Text {
-                protected declare [NOMINAL]: never;
-                public static paragraph(text: string): Text {
-                    return new RoleMessage.Ai.Part.Text(text.trimEnd() + '\n\n');
-                }
-                public constructor(
-                    public text: string,
-                ) {}
-            }
-        }
+
     }
 
     export class User<
@@ -124,25 +112,13 @@ export namespace RoleMessage {
             const fres = part as Function.Response.Of<fdu>;
             return fres;
         }
-        public getTextParts(): RoleMessage.User.Part.Text[] {
-            return this.parts.filter(part => part instanceof RoleMessage.User.Part.Text);
+        public getTextParts(): RoleMessage.Part.Text[] {
+            return this.parts.filter(part => part instanceof RoleMessage.Part.Text);
         }
     }
     export namespace User {
         export type From<
             fdm extends Function.Decl.Map.Proto,
         > = RoleMessage.User<Function.Decl.From<fdm>>;
-
-        export namespace Part {
-            export class Text {
-                protected declare [NOMINAL]: never;
-                public static paragraph(text: string): Text {
-                    return new RoleMessage.User.Part.Text(text.trimEnd() + '\n\n');
-                }
-                public constructor(
-                    public text: string,
-                ) {}
-            }
-        }
     }
 }

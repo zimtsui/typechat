@@ -33,7 +33,7 @@ export class ToolChoiceValidator<
         if (this.toolChoice === ToolChoice.REQUIRED) {
             if (tcalls.length) {} else
                 return new RoleMessage.User<never>([
-                    RoleMessage.User.Part.Text.paragraph(
+                    RoleMessage.Part.Text.paragraph(
                         XmlCodec.System.encode(`Error: Tool call required, but not found.`),
                     ),
                 ]);
@@ -41,14 +41,14 @@ export class ToolChoiceValidator<
         } else if (this.toolChoice === ToolChoice.ANYONE) {
             if (tcalls.length) {} else
                 return new RoleMessage.User<never>([
-                    RoleMessage.User.Part.Text.paragraph(
+                    RoleMessage.Part.Text.paragraph(
                         XmlCodec.System.encode(`Error: Tool call required, but not found.`),
                     ),
                 ]);
             if (tcalls.length > 1)
                 return new RoleMessage.User<fdu>([
                     ...tress,
-                    RoleMessage.User.Part.Text.paragraph(
+                    RoleMessage.Part.Text.paragraph(
                         XmlCodec.System.encode(`Error: Only 1 tool call allowed, but multiple found.`),
                     ),
                 ]);
@@ -56,7 +56,7 @@ export class ToolChoiceValidator<
         } else if (this.toolChoice === ToolChoice.NONE) {
             if (tcalls.length)
                 return new RoleMessage.User<fdu>([
-                    RoleMessage.User.Part.Text.paragraph(
+                    RoleMessage.Part.Text.paragraph(
                         XmlCodec.System.encode(`Error: No tool call allowed.`),
                     ),
                 ]);

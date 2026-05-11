@@ -114,7 +114,7 @@ export class Transport<
         wfctx.cost?.(this.billing.charge(response.usage));
         loggers.message.info(response.usage);
 
-        return this.messageCodec.decodeAiMessage(response.output);
+        return this.messageCodec.decodeAiMessage(response);
     }
 }
 

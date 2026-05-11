@@ -23,11 +23,12 @@ export class Recoverable<
 
     public static async recover<
         fdu extends Function.Decl.Proto,
+        aim extends RoleMessage.Ai<fdu>,
     >(
         wfctx: InferenceContext,
         session: Session<fdu>,
-        next: () => Promise<RoleMessage.Ai<fdu>>,
-    ): Promise<RoleMessage.Ai<fdu>> {
+        next: () => Promise<aim>,
+    ): Promise<aim> {
         try {
             return await next();
         } catch (e) {

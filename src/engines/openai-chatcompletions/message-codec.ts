@@ -18,7 +18,7 @@ export class MessageCodec<
     ): Engine.RoleMessage.Ai.From<fdm> {
         const parts: unknown[] = [];
         if (message.content)
-            parts.push(new Engine.RoleMessage.Ai.Part.Text(message.content));
+            parts.push(new Engine.RoleMessage.Part.Text(message.content));
         if (message.tool_calls)
             for (const apifc of message.tool_calls)
                 if (apifc.type === 'function')
@@ -40,7 +40,7 @@ export class MessageCodec<
     ): (OpenAI.ChatCompletionUserMessageParam | OpenAI.ChatCompletionToolMessageParam)[] {
         for (const part of userMessage.getParts())
             if (part instanceof Function.Response) {}
-            else if (part instanceof Engine.RoleMessage.User.Part.Text) {}
+            else if (part instanceof Engine.RoleMessage.Part.Text) {}
             else if (part instanceof Media.Text) {}
             else throw new Error('Unsupported part type.');
 
@@ -52,7 +52,7 @@ export class MessageCodec<
 
         const contentParts: OpenAI.ChatCompletionContentPart[] = [];
         for (const part of userMessage.getParts())
-            if (part instanceof Engine.RoleMessage.User.Part.Text)
+            if (part instanceof Engine.RoleMessage.Part.Text)
                 contentParts.push({ type: 'text', text: part.text });
             else if (part instanceof Media.Text)
                 contentParts.push({ type: 'text', text: part.quote() });
@@ -65,10 +65,10 @@ export class MessageCodec<
         aiMessage: Engine.RoleMessage.Ai.From<fdm>,
     ): OpenAI.ChatCompletionAssistantMessageParam {
         const parts = aiMessage.getParts();
-        const textParts: Engine.RoleMessage.Ai.Part.Text[] = [];
+        const textParts: Engine.RoleMessage.Part.Text[] = [];
         const fcParts: Function.Call.From<fdm>[] = [];
         for (const part of parts) {
-            if (part instanceof Engine.RoleMessage.Ai.Part.Text)
+            if (part instanceof Engine.RoleMessage.Part.Text)
                 textParts.push(part);
             else if (part instanceof Function.Call)
                 fcParts.push(part as Function.Call.From<fdm>);

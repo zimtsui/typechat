@@ -1,4 +1,4 @@
-import { Adaptor, Function, Engine, ToolChoice } from '@zimtsui/typechat';
+import { Adaptor, Function, Engine, ToolChoice, Recoverable } from '@zimtsui/typechat';
 import { Type } from 'typebox';
 import { config } from './config.ts';
 
@@ -38,10 +38,10 @@ const fnm: Function.Map<fdm> = {
 // 创建会话
 const session: Engine.Session<fdu> = {
     developerMessage: new Engine.RoleMessage.Developer([
-        Engine.RoleMessage.Developer.Part.Text.paragraph('你的工作是为用户查询天气，并给出穿衣建议。调用工具提交最终结果'),
+        Engine.RoleMessage.Part.Text.paragraph('你的工作是为用户查询天气，并给出穿衣建议。调用工具提交最终结果'),
     ]),
     chatMessages: [
-        new Engine.RoleMessage.User([ Engine.RoleMessage.User.Part.Text.paragraph('请查询现在北京的天气，并给穿衣建议。') ]),
+        new Engine.RoleMessage.User([ Engine.RoleMessage.Part.Text.paragraph('请查询现在北京的天气，并给穿衣建议。') ]),
     ],
 };
 

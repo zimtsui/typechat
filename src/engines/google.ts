@@ -6,7 +6,7 @@ import { Billing } from './google/billing.ts';
 import { env } from 'node:process';
 import { Agent, ProxyAgent } from 'undici';
 import { ToolChoiceValidator } from '../engine/tool-choice-validator.ts';
-import { Transport } from './google/transport.ts';
+import * as TransportModule from './google/transport.ts';
 import { InferenceContext } from '../inference-context.ts';
 import * as MessageModule from './google/message.ts';
 
@@ -112,7 +112,7 @@ export namespace GoogleEngine {
                 if (response.allText()) return response.getText();
                 const pfress: Promise<Function.Response.From<fdm>>[] = [];
                 for (const part of response.getParts()) {
-                    if (part instanceof Engine.RoleMessage.Ai.Part.Text) {
+                    if (part instanceof Engine.RoleMessage.Part.Text) {
                         yield part.text;
                     } else if (part instanceof Function.Call) {
                         const fcall = part as Function.Call.From<fdm>;
@@ -162,5 +162,5 @@ export namespace GoogleEngine {
     }
 
     export import RoleMessage = MessageModule.RoleMessage;
-
+    export import Transport = TransportModule.Transport;
 }

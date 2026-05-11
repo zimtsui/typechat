@@ -3,7 +3,8 @@ import { Function } from '../function.ts';
 import { ToolCodec } from './anthropic/tool-codec.ts';
 import { Billing } from './anthropic/billing.ts';
 import { MessageCodec } from './anthropic/message-codec.ts';
-import { Transport } from './anthropic/transport.ts';
+import * as TransportModule from './anthropic/transport.ts';
+import * as MessageModule from './anthropic/message.ts';
 
 
 export type AnthropicEngine<
@@ -54,4 +55,7 @@ export namespace AnthropicEngine {
     >(options: Engine.Options<fdm>): Engine<fdm> {
         return new Instance(options);
     }
+
+    export import Transport = TransportModule.Transport;
+    export import RoleMessage = MessageModule.RoleMessage;
 }

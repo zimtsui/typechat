@@ -11,7 +11,7 @@ import { PartsValidator } from './engine/parts-validator.ts';
 import { Recoverable } from './engine/recoverable.ts';
 import { Middleware } from './engine/middleware.ts';
 import * as ToolChoiceValidatorModule from './engine/tool-choice-validator.ts';
-import * as EngineTransportModule from './engine/transport.ts';
+import * as TransportModule from './engine/transport.ts';
 import { ToolChoice } from './tool-choice.ts';
 
 
@@ -224,8 +224,8 @@ export namespace Engine {
                 if (response.allText()) return response.getText();
                 const pfress: Promise<Function.Response.From<fdm>>[] = [];
                 for (const part of response.getParts()) {
-                    if (part instanceof RoleMessage.Ai.Part.Text) {
-                        const textPart = part as Engine.RoleMessage.Ai.Part.Text;
+                    if (part instanceof RoleMessage.Part.Text) {
+                        const textPart = part as Engine.RoleMessage.Part.Text;
                         yield textPart.text;
                     } else if (part instanceof Function.Call) {
                         const fcall = part as Function.Call.From<fdm>;
@@ -275,7 +275,7 @@ export namespace Engine {
         >(options: Engine.Options<fdm>): Engine<fdm>;
     }
 
-    export import Transport = EngineTransportModule.Transport;
+    export import Transport = TransportModule.Transport;
     export import ToolChoiceValidator = ToolChoiceValidatorModule.ToolChoiceValidator;
     export import Session = SessionModule.Session;
     export import RoleMessage = MessageModule.RoleMessage;

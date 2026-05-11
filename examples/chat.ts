@@ -4,10 +4,10 @@ import { config } from './config.ts';
 // 创建会话
 const session: Engine.Session<never> = {
     developerMessage: new Engine.RoleMessage.Developer([
-        Engine.RoleMessage.Developer.Part.Text.paragraph('You are a helpful assistant.'),
+        Engine.RoleMessage.Part.Text.paragraph('You are a helpful assistant.'),
     ]),
     chatMessages: [
-        new Engine.RoleMessage.User([ Engine.RoleMessage.User.Part.Text.paragraph('Hello!') ]),
+        new Engine.RoleMessage.User([ Engine.RoleMessage.Part.Text.paragraph('Hello!') ]),
     ],
 };
 

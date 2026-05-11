@@ -7,11 +7,11 @@ import { RoleMessage } from './message.ts';
 export interface Middleware<
     in out fdu extends Function.Decl.Proto,
 > {
-    (
+    <aim extends RoleMessage.Ai<fdu>>(
         wfctx: InferenceContext,
         session: Session<fdu>,
-        next: () => Promise<RoleMessage.Ai<fdu>>,
-    ): Promise<RoleMessage.Ai<fdu>>;
+        next: () => Promise<aim>,
+    ): Promise<aim>;
 }
 export namespace Middleware {
     export type From<

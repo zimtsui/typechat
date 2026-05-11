@@ -23,25 +23,25 @@ export namespace RoleMessage {
         }
         public override allText(): boolean {
             return this.parts.every(
-                part => part instanceof RoleMessage.Ai.Part.Text ||
+                part => part instanceof RoleMessage.Part.Text ||
                     part instanceof RoleMessage.Ai.Part.ExecutableCode ||
                     part instanceof RoleMessage.Ai.Part.CodeExecutionResult
             );
         }
         public static encodeExecutableCodePart(part: RoleMessage.Ai.Part.ExecutableCode): string {
-            return RoleMessage.Ai.Part.Text.paragraph(
+            return RoleMessage.Part.Text.paragraph(
                 '```' + (part.language ?? '') + '\n' + part.code + '\n```',
             ).text;
         }
         public static encodeCodeExecutionResultPart(part: RoleMessage.Ai.Part.CodeExecutionResult): string {
-            const textParts: RoleMessage.Ai.Part.Text[] = [];
+            const textParts: RoleMessage.Part.Text[] = [];
             if (part.output) textParts.push(
-                RoleMessage.Ai.Part.Text.paragraph(
+                RoleMessage.Part.Text.paragraph(
                     '```\n' + part.output + '\n```',
                 ),
             );
             textParts.push(
-                RoleMessage.Ai.Part.Text.paragraph(part.outcome),
+                RoleMessage.Part.Text.paragraph(part.outcome),
             );
             return textParts.map(part => part.text).join('');
         }
@@ -52,8 +52,6 @@ export namespace RoleMessage {
         > = Ai<Function.Decl.From<fdm>>;
 
         export namespace Part {
-
-            export import Text = Engine.RoleMessage.Ai.Part.Text;
 
             export class ExecutableCode {
                 protected declare [NOMINAL]: never;
@@ -67,6 +65,7 @@ export namespace RoleMessage {
         }
     }
 
+    export import Part = Engine.RoleMessage.Part;
     export import User = Engine.RoleMessage.User;
     export import Developer = Engine.RoleMessage.Developer;
 }

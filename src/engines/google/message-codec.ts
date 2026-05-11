@@ -27,7 +27,7 @@ export class MessageCodec<
         else {
             const apiParts: Google.PartUnion[] = [];
             for (const part of aiMessage.getParts()) {
-                if (part instanceof RoleMessage.Ai.Part.Text) {
+                if (part instanceof RoleMessage.Part.Text) {
                     apiParts.push(Google.createPartFromText(part.text));
                 } else if (part instanceof Function.Call) {
                     const fcall = part as Function.Call.From<fdm>;
@@ -64,7 +64,7 @@ export class MessageCodec<
     ): Google.Content {
         const apiParts: Google.PartUnion[] = [];
         for (const part of userMessage.getParts()) {
-            if (part instanceof Engine.RoleMessage.User.Part.Text)
+            if (part instanceof Engine.RoleMessage.Part.Text)
                 apiParts.push(Google.createPartFromText(part.text));
             else if (part instanceof Function.Response) {
                 const fres = part as Function.Response.From<fdm>;
@@ -100,7 +100,7 @@ export class MessageCodec<
         const parts: unknown[] = [];
         for (const part of content.parts) {
             if (part.text)
-                parts.push(new RoleMessage.Ai.Part.Text(part.text));
+                parts.push(new RoleMessage.Part.Text(part.text));
             if (part.functionCall)
                 parts.push(this.toolCodec.decodeFunctionCall(part.functionCall));
             if (part.executableCode) {

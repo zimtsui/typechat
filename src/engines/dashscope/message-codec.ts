@@ -1,9 +1,8 @@
 import { Engine } from '../../engine.ts';
 import { RoleMessage } from './message.ts';
 import { Function } from '../../function.ts';
-import { Tool } from './tool.ts';
 import OpenAI from 'openai';
-import type { ToolCodec } from './tool-codec.ts';
+import { ToolCodec } from '../openai-responses/tool-codec.ts';
 import { Media } from '../../media.ts';
 
 
@@ -13,16 +12,6 @@ export class MessageCodec<
     protected toolCodec: ToolCodec<fdm>;
     public constructor(options: MessageCodec.Options<fdm>) {
         this.toolCodec = options.toolCodec;
-    }
-
-    protected encodeImageResolution(
-        resolution: Media.Image.Resolution,
-    ): OpenAI.Responses.ResponseInputImage['detail'] {
-        if (resolution === Media.Image.Resolution.LOW) return 'low';
-        else if (resolution === Media.Image.Resolution.HIGH) return 'high';
-        else if (resolution === Media.Image.Resolution.HIGHEST) return 'original';
-        else if (resolution === Media.Image.Resolution.AUTO) return 'auto';
-        else throw new Error();
     }
 
     public decodeAiMessage(
@@ -40,8 +29,6 @@ export class MessageCodec<
             else if (item.type === 'function_call')
                 parts.push(this.toolCodec.decodeFunctionCall(item));
             else if (item.type === 'reasoning') {}
-            else if (item.type === 'apply_patch_call')
-                parts.push(new Tool.ApplyPatch.Call(item));
             else throw new Error();
         }
         return new RoleMessage.Ai(parts, raw);
@@ -77,7 +64,7 @@ export class MessageCodec<
                 content.push({
                     type: 'input_image',
                     image_url: `data:${part.mimeType};base64,${part.base64}`,
-                    detail: this.encodeImageResolution(part.resolution),
+                    detail: 'auto',
                 });
             else if (part instanceof Media.Pdf)
                 content.push({
@@ -88,14 +75,6 @@ export class MessageCodec<
                 const fres = part as Function.Response.From<fdm>;
                 flush();
                 responseInput.push(this.toolCodec.encodeFunctionResponse(fres));
-            } else if (part instanceof Tool.ApplyPatch.Response) {
-                flush();
-                responseInput.push({
-                    type: 'apply_patch_call_output',
-                    call_id: part.id,
-                    status: part.failure ? 'failed' : 'completed',
-                    output: part.failure || undefined,
-                });
             } else throw new Error('Unknown user message part type', { cause: part });
         }
         flush();

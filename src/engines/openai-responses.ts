@@ -4,9 +4,8 @@ import { MessageCodec } from './openai-responses/message-codec.ts';
 import { ToolCodec } from './openai-responses/tool-codec.ts';
 import { Billing } from './openai-responses/billing.ts';
 import { ToolChoiceValidator } from './openai-responses/tool-choice-validator.ts';
-import { Transport } from './openai-responses/transport.ts';
+import * as TransportModule from './openai-responses/transport.ts';
 import { InferenceContext } from '../inference-context.ts';
-import { Session } from '../engine/session.ts';
 import * as MessageModule from './openai-responses/message.ts';
 import * as ToolModule from './openai-responses/tool.ts';
 import OpenAI from 'openai';
@@ -64,7 +63,7 @@ export namespace OpenAIResponsesEngine {
         */
         protected override async infer(
             wfctx: InferenceContext,
-            session: Session.From<fdm>,
+            session: Engine.Session.From<fdm>,
         ): Promise<RoleMessage.Ai.From<fdm>> {
             try {
                 return await super.infer(wfctx, session) as RoleMessage.Ai.From<fdm>;
@@ -75,11 +74,11 @@ export namespace OpenAIResponsesEngine {
             }
         }
 
-        public override async stateless(wfctx: InferenceContext, session: Session.From<fdm>): Promise<RoleMessage.Ai.From<fdm>> {
+        public override async stateless(wfctx: InferenceContext, session: Engine.Session.From<fdm>): Promise<RoleMessage.Ai.From<fdm>> {
             return await super.stateless(wfctx, session) as RoleMessage.Ai.From<fdm>;
         }
 
-        public override async stateful(wfctx: InferenceContext, session: Session.From<fdm>): Promise<RoleMessage.Ai.From<fdm>> {
+        public override async stateful(wfctx: InferenceContext, session: Engine.Session.From<fdm>): Promise<RoleMessage.Ai.From<fdm>> {
             return await super.stateful(wfctx, session) as RoleMessage.Ai.From<fdm>;
         }
 
@@ -95,7 +94,7 @@ export namespace OpenAIResponsesEngine {
          */
         public override async *agentloop(
             wfctx: InferenceContext,
-            session: Session.From<fdm>,
+            session: Engine.Session.From<fdm>,
             fnm: Function.Map<fdm>,
             limit = Number.POSITIVE_INFINITY,
             applyPatch?: Tool.ApplyPatch,
@@ -106,7 +105,7 @@ export namespace OpenAIResponsesEngine {
                 const pfress: Promise<Function.Response.From<fdm>>[] = [];
                 const papress: Promise<Tool.ApplyPatch.Response>[] = [];
                 for (const part of response.getParts()) {
-                    if (part instanceof Engine.RoleMessage.Ai.Part.Text) {
+                    if (part instanceof Engine.RoleMessage.Part.Text) {
                         yield part.text;
                     } else if (part instanceof Function.Call) {
                         const fcall = part as Function.Call.From<fdm>;
@@ -157,4 +156,5 @@ export namespace OpenAIResponsesEngine {
 
     export import Tool = ToolModule.Tool;
     export import RoleMessage = MessageModule.RoleMessage;
+    export import Transport = TransportModule.Transport;
 }

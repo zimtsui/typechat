@@ -19,7 +19,7 @@ export class MessageCodec<
     ): Anthropic.ContentBlockParam[] {
         const blocks: Anthropic.ContentBlockParam[] = [];
         for (const part of userMessage.getParts())
-            if (part instanceof Engine.RoleMessage.User.Part.Text)
+            if (part instanceof Engine.RoleMessage.Part.Text)
                 blocks.push({
                     type: 'text',
                     text: part.text,
@@ -45,7 +45,7 @@ export class MessageCodec<
         }
         const blocks: Anthropic.ContentBlockParam[] = [];
         for (const part of aiMessage.getParts())
-            if (part instanceof Engine.RoleMessage.Ai.Part.Text)
+            if (part instanceof Engine.RoleMessage.Part.Text)
                 blocks.push({
                     type: 'text',
                     text: part.text,
@@ -82,7 +82,7 @@ export class MessageCodec<
         const parts: unknown[] = [];
         for (const item of raw) {
             if (item.type === 'text')
-                parts.push(new RoleMessage.Ai.Part.Text(item.text));
+                parts.push(new RoleMessage.Part.Text(item.text));
             else if (item.type === 'tool_use')
                 parts.push(this.toolCodec.decodeFunctionCall(item));
             else if (item.type === 'thinking') {}
