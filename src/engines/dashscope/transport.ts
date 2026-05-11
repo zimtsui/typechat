@@ -37,7 +37,7 @@ export class Transport<
             fetch: Undici.fetch as typeof globalThis.fetch,
             fetchOptions: { dispatcher: options.providerSpec.dispatcher },
             defaultHeaders: new Headers({
-                'X-Dashscope-Session-Cache': 'enable',
+                'x-dashscope-session-cache': 'enable',
             }),
         });
         this.inferenceParams = options.inferenceParams;
