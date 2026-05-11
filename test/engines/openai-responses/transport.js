@@ -37,7 +37,7 @@ test('OpenAI Responses transport reads parallelToolCall from inference params', 
     const transport = makeTransport(true);
     const session = {
         chatMessages: [new RoleMessage.User([
-            new RoleMessage.User.Part.Text('Hello.\n'),
+            new RoleMessage.Part.Text('Hello.\n'),
         ])],
     };
 
@@ -50,7 +50,7 @@ test('OpenAI Responses transport reads disabled parallelToolCall from inferenceP
     const transport = makeTransport(false);
     const session = {
         chatMessages: [new RoleMessage.User([
-            new RoleMessage.User.Part.Text('Hello.\n'),
+            new RoleMessage.Part.Text('Hello.\n'),
         ])],
     };
 
@@ -75,7 +75,7 @@ test('OpenAI Responses transport throws on stream error event', async t => {
     };
     const session = {
         chatMessages: [new RoleMessage.User([
-            new RoleMessage.User.Part.Text('Hello.\n'),
+            new RoleMessage.Part.Text('Hello.\n'),
         ])],
     };
 

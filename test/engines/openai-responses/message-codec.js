@@ -19,11 +19,10 @@ function makeCodec() {
 test('OpenAI responses codec encodes multimodal user message', t => {
     const messageCodec = makeCodec();
     const userMessage = new RoleMessage.User([
-        new RoleMessage.User.Part.Text('Hello.\n'),
+        new RoleMessage.Part.Text('Hello.\n'),
         new Media.Image({
             mimeType: new MIMEType('image/png'),
             base64: 'aGVsbG8=',
-            resolution: 2,
         }),
         new Media.Pdf('cGRm'),
         Function.Response.Successful.of({
@@ -123,42 +122,50 @@ test('OpenAI responses codec omits empty user message for pure tool responses', 
 
 test('OpenAI responses codec decodes text, function calls and apply patch calls', t => {
     const messageCodec = makeCodec();
-    const aiMessage = messageCodec.decodeAiMessage([
-        {
-            type: 'message',
-            id: 'msg_1',
-            role: 'assistant',
-            status: 'completed',
-            content: [{
-                type: 'output_text',
-                text: 'hello',
-                annotations: [],
-            }],
-        },
-        {
-            type: 'function_call',
-            id: 'fc_1',
-            call_id: 'call_1',
-            name: 'noop',
-            arguments: '{}',
-            status: 'completed',
-        },
-        {
-            type: 'apply_patch_call',
-            id: 'ap_1',
-            call_id: 'patch_1',
-            status: 'completed',
-            input: {
-                operation: {
-                    type: 'update_file',
-                    path: 'a.txt',
-                    diff: 'diff',
+    const raw = {
+        id: 'resp_1',
+        object: 'response',
+        created_at: 0,
+        model: 'test-model',
+        output: [
+            {
+                type: 'message',
+                id: 'msg_1',
+                role: 'assistant',
+                status: 'completed',
+                content: [{
+                    type: 'output_text',
+                    text: 'hello',
+                    annotations: [],
+                }],
+            },
+            {
+                type: 'function_call',
+                id: 'fc_1',
+                call_id: 'call_1',
+                name: 'noop',
+                arguments: '{}',
+                status: 'completed',
+            },
+            {
+                type: 'apply_patch_call',
+                id: 'ap_1',
+                call_id: 'patch_1',
+                status: 'completed',
+                input: {
+                    operation: {
+                        type: 'update_file',
+                        path: 'a.txt',
+                        diff: 'diff',
+                    },
                 },
             },
-        },
-    ]);
+        ],
+    };
+    const aiMessage = messageCodec.decodeAiMessage(raw);
 
     t.is(aiMessage.getText(), 'hello');
+    t.is(aiMessage.getRaw(), raw);
     t.is(aiMessage.getFunctionCalls()[0].name, 'noop');
     t.true(aiMessage.getToolCalls()[0] instanceof Function.Call);
     t.true(aiMessage.getToolCalls()[1] instanceof Tool.ApplyPatch.Call);

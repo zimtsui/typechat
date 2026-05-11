@@ -36,7 +36,7 @@ test('OpenAI Chat Completions transport reads parallelToolCall from inferencePar
     const transport = makeTransport(true);
     const session = {
         chatMessages: [new RoleMessage.User([
-            new RoleMessage.User.Part.Text('Hello.\n'),
+            new RoleMessage.Part.Text('Hello.\n'),
         ])],
     };
 
@@ -50,7 +50,7 @@ test('OpenAI Chat Completions transport streams usage by default', t => {
     const transport = makeTransport(false);
     const session = {
         chatMessages: [new RoleMessage.User([
-            new RoleMessage.User.Part.Text('Hello.\n'),
+            new RoleMessage.Part.Text('Hello.\n'),
         ])],
     };
 

@@ -21,7 +21,6 @@ test('OpenAI chat completions codec rejects media user message', t => {
         new Media.Image({
             mimeType: new MIMEType('image/png'),
             base64: 'aGVsbG8=',
-            resolution: 0,
         }),
     ]);
 
@@ -38,7 +37,7 @@ test('OpenAI chat completions codec splits mixed function responses and text', t
             name: 'noop',
             error: 'cancelled',
         }),
-        new RoleMessage.User.Part.Text('retry with XML verbatim\n'),
+        new RoleMessage.Part.Text('retry with XML verbatim\n'),
     ]);
 
     const encoded = messageCodec.encodeUserMessage(userMessage);

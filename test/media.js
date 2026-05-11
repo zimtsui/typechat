@@ -7,7 +7,6 @@ test('Media image rejects non-image MIME type', t => {
     const error = t.throws(() => new Media.Image({
         mimeType: new MIMEType('text/plain'),
         base64: 'aGVsbG8=',
-        resolution: 0,
     }));
 
     t.is(error?.message, 'Major MIME type of image must be `image`.');

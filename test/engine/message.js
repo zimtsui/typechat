@@ -4,13 +4,11 @@ import { RoleMessage } from '../../build/engine/message.js';
 
 
 test('RoleMessage paragraph helpers trim trailing whitespace and append paragraph break', t => {
-    t.is(RoleMessage.Developer.Part.Text.paragraph('hello  ').text, 'hello\n\n');
-    t.is(RoleMessage.Ai.Part.Text.paragraph('hello  ').text, 'hello\n\n');
-    t.is(RoleMessage.User.Part.Text.paragraph('hello  ').text, 'hello\n\n');
+    t.is(RoleMessage.Part.Text.paragraph('hello  ').text, 'hello\n\n');
 });
 
 test('Developer message requires only text parts for getOnlyTextParts', t => {
-    const text = new RoleMessage.Developer.Part.Text('hello');
+    const text = new RoleMessage.Part.Text('hello');
     const valid = new RoleMessage.Developer([text]);
     const invalid = new RoleMessage.Developer([text, { kind: 'unknown' }]);
 
@@ -19,8 +17,8 @@ test('Developer message requires only text parts for getOnlyTextParts', t => {
 });
 
 test('AI message separates text and function calls', t => {
-    const text = new RoleMessage.Ai.Part.Text('chat');
-    const text2 = new RoleMessage.Ai.Part.Text('more');
+    const text = new RoleMessage.Part.Text('chat');
+    const text2 = new RoleMessage.Part.Text('more');
     const call = Function.Call.of({
         id: 'call_1',
         name: 'noop',

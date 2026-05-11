@@ -37,7 +37,7 @@ test('DashScope transport downgrades required tool choice to auto', t => {
     const transport = makeTransport(ToolChoice.REQUIRED);
     const session = {
         chatMessages: [new RoleMessage.User([
-            new RoleMessage.User.Part.Text('Hello.\n'),
+            new RoleMessage.Part.Text('Hello.\n'),
         ])],
     };
 
@@ -50,7 +50,7 @@ test('DashScope transport downgrades anyone tool choice to auto', t => {
     const transport = makeTransport(ToolChoice.ANYONE);
     const session = {
         chatMessages: [new RoleMessage.User([
-            new RoleMessage.User.Part.Text('Hello.\n'),
+            new RoleMessage.Part.Text('Hello.\n'),
         ])],
     };
 

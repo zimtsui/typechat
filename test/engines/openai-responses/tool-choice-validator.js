@@ -10,8 +10,8 @@ test('OpenAI Responses validator returns tool feedback when required call is mis
         toolChoice: ToolChoice.REQUIRED,
     });
     const aiMessage = new RoleMessage.Ai([
-        RoleMessage.Ai.Part.Text.paragraph('plain text'),
-    ], []);
+        RoleMessage.Part.Text.paragraph('plain text'),
+    ], { id: 'resp_1', output: [] });
 
     const rejection = validator.validate(aiMessage);
 

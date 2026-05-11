@@ -41,7 +41,7 @@ class FakeEngine extends Engine.Instance {
 
 function rejectionMessage() {
     return new RoleMessage.User([
-        RoleMessage.User.Part.Text.paragraph(
+        RoleMessage.Part.Text.paragraph(
             XmlCodec.System.encode('Error: Function call required, but not found.'),
         ),
     ]);
@@ -102,7 +102,7 @@ test('Engine agentloop passes function call object to function handler', async t
     });
     const aiMessage = new RoleMessage.Ai([fcall]);
     const finalMessage = new RoleMessage.Ai([
-        RoleMessage.Ai.Part.Text.paragraph('done'),
+        RoleMessage.Part.Text.paragraph('done'),
     ]);
     const engine = new FakeEngine([
         aiMessage,

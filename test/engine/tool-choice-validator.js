@@ -16,7 +16,7 @@ const fcall2 = Function.Call.of({
     name: 'noop',
     args: {},
 });
-const chat = new RoleMessage.Ai.Part.Text('chat');
+const chat = new RoleMessage.Part.Text('chat');
 
 function validate(toolChoice, parts) {
     const validator = new ToolChoiceValidator({ toolChoice });
