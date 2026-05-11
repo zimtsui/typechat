@@ -57,20 +57,23 @@ test('OpenAI Responses transport reads disabled parallelToolCall from inferenceP
     const params = transport.makeParams(session);
 
     t.is(params.parallel_tool_calls, false);
-    t.true(params.stream);
+    t.false(params.stream);
 });
 
-test('OpenAI Responses transport throws on stream error event', async t => {
+test('OpenAI Responses transport throws on abnormal response status', async t => {
     const transport = makeTransport(true);
     transport.client = {
         responses: {
-            create: async function* () {
-                yield {
-                    type: 'error',
-                    code: 'test_error',
-                    message: 'stream failed',
-                };
-            },
+            create: async () => ({
+                id: 'resp_1',
+                status: 'failed',
+                output: [],
+                usage: {
+                    input_tokens: 0,
+                    output_tokens: 0,
+                    total_tokens: 0,
+                },
+            }),
         },
     };
     const session = {
@@ -81,5 +84,5 @@ test('OpenAI Responses transport throws on stream error event', async t => {
 
     const error = await t.throwsAsync(() => transport.fetch({}, session));
 
-    t.is(error?.message, 'Response stream error');
+    t.is(error?.message, 'Abnormal response status');
 });

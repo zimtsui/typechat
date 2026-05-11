@@ -49,14 +49,14 @@ export class Transport<
 
     protected makeParams(
         session: Session.From<fdm>,
-    ): OpenAI.Responses.ResponseCreateParamsStreaming {
+    ): OpenAI.Responses.ResponseCreateParamsNonStreaming {
         const tools: OpenAI.Responses.Tool[] = this.toolCodec.encodeFunctionDeclarationMap();
         if (this.applyPatch) tools.push({ type: 'apply_patch' });
         return {
             model: this.inferenceParams.model,
             include: ['reasoning.encrypted_content'],
             store: false,
-            stream: true,
+            stream: false,
             input: session.chatMessages.flatMap(chatMessage => this.messageCodec.encodeChatMessage(chatMessage)),
             instructions: session.developerMessage && this.messageCodec.encodeDeveloperMessage(session.developerMessage),
             tools: tools.length ? tools : undefined,
@@ -90,19 +90,7 @@ export class Transport<
         const params = this.makeParams(session);
         loggers.message.debug(params);
 
-        let response: OpenAI.Responses.Response | null = null;
-        const stream = await this.client.responses.create(params, { signal });
-        for await (const event of stream) {
-            loggers.stream.trace(event);
-            if (event.type === 'response.completed')
-                response = event.response;
-            else if (event.type === 'response.incomplete')
-                response = event.response;
-            else if (event.type === 'response.failed')
-                response = event.response;
-            else if (event.type === 'error')
-                throw new SyntaxError('Response stream error', { cause: event });
-        }
+        const response = await this.client.responses.create(params, { signal });
 
         if (response) {} else throw new Error();
         loggers.message.debug(response);
