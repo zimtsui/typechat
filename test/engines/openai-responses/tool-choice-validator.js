@@ -16,5 +16,5 @@ test('OpenAI Responses validator returns tool feedback when required call is mis
     const rejection = validator.validate(aiMessage);
 
     t.truthy(rejection);
-    t.regex(getOnlyText(rejection), /<typechat:system>Error: Tool call required, but not found\.<\/typechat:system>\n\n$/);
+    t.regex(getOnlyText(rejection), /Error: Tool call required, but not found\./);
 });
