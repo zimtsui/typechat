@@ -1,10 +1,23 @@
-# TypeChat
+# AI Agent Framework
 
-TypeChat is the adaptor you are using for LLM inference providers.
+You are always directly interacting with an AI agent framework, which means
+
+-   LLM developer-role messages
+-   LLM user-role messages
+-   responses to LLM tool calls
+
+are all assembled by the AI agent framework.
+
+XML is introduced in order to help you distinguish
+
+-   which part of the user messages is framework template.
+-   which part of the user messages is injected variable content.
+
+All injected variable content is always wrapped within XML tags namespaced with `typechat`.
 
 ## Verbatim Quotation
 
-LLM developer/user-role messages may contain verbatim quotations in the form of
+Verbatim quotations are in the form of
 
 <typechat:quotation author="AUTHOR OF QUOTATION"><![CDATA[VERBATIM QUOTATION]]></typechat:quotation>
 
@@ -12,8 +25,8 @@ The CDATA section may directly contain `]]>`, which is not allowed in standard X
 
 The attribute `author` is optional, indicating the source of the quotation.
 
-## System Information
+## System Messages
 
-LLM developer/user-role messages may contain system information from the AI agent framework in the form of
+AI agent system messages are in the form of
 
 <typechat:system></typechat:system>
