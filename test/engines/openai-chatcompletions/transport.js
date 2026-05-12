@@ -7,7 +7,7 @@ import { Transport } from '../../../build/engines/openai-chatcompletions/transpo
 import { functionDeclarationMap } from '../../helpers.js';
 
 
-function makeTransport(parallelToolCall) {
+function makeTransport(parallelToolCall, additionalHeaders) {
     const toolCodec = new ToolCodec({ fdm: functionDeclarationMap });
     const messageCodec = new MessageCodec({
         toolCodec,
@@ -23,6 +23,7 @@ function makeTransport(parallelToolCall) {
         },
         inferenceParams: {
             model: 'test-model',
+            additionalHeaders,
             parallelToolCall,
             retry: 3,
         },
@@ -61,4 +62,12 @@ test('OpenAI Chat Completions transport streams usage by default', t => {
     t.deepEqual(params.stream_options, {
         include_usage: true,
     });
+});
+
+test('OpenAI Chat Completions transport forwards additional headers', t => {
+    const transport = makeTransport(false, {
+        'x-provider-feature': 'enabled',
+    });
+
+    t.is(transport.client._options.defaultHeaders.get('x-provider-feature'), 'enabled');
 });

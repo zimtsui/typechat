@@ -12,4 +12,4 @@ export * from './engines/google.ts';
 export * from './engines/openai-responses.ts';
 export * from './engines/openai-chatcompletions.ts';
 export * from './engines/anthropic.ts';
-export * from './engines/dashscope.ts';
+export * from './engines/openai-compatible.ts';

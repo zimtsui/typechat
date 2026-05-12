@@ -36,9 +36,7 @@ export class Transport<
             apiKey: options.providerSpec.apiKey,
             fetch: Undici.fetch as typeof globalThis.fetch,
             fetchOptions: { dispatcher: options.providerSpec.dispatcher },
-            defaultHeaders: new Headers({
-                'x-dashscope-session-cache': 'enable',
-            }),
+            defaultHeaders: new Headers(options.inferenceParams.additionalHeaders),
         });
         this.inferenceParams = options.inferenceParams;
         this.providerSpec = options.providerSpec;
@@ -69,6 +67,7 @@ export class Transport<
         }
         return {
             model: this.inferenceParams.model,
+            include: ['reasoning.encrypted_content'],
             store: true,
             stream: true,
             input,

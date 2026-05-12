@@ -1,18 +1,18 @@
 import { Engine, Middleware } from '../engine.ts';
 import { Function } from '../function.ts';
-import { MessageCodec } from './dashscope/message-codec.ts';
+import { MessageCodec } from './openai-compatible/message-codec.ts';
 import { ToolCodec } from './openai-responses/tool-codec.ts';
 import { Billing } from './openai-responses/billing.ts';
-import * as TransportModule from './dashscope/transport.ts';
+import * as TransportModule from './openai-compatible/transport.ts';
 import { InferenceContext } from '../inference-context.ts';
-import * as MessageModule from './dashscope/message.ts';
+import * as MessageModule from './openai-compatible/message.ts';
 import OpenAI from 'openai';
 
 
-export type DashScopeEngine<
+export type OpenAICompatibleEngine<
     fdm extends Function.Decl.Map.Proto,
-> = DashScopeEngine.Instance<fdm>;
-export namespace DashScopeEngine {
+> = OpenAICompatibleEngine.Instance<fdm>;
+export namespace OpenAICompatibleEngine {
     export class Instance<
         in out fdm extends Function.Decl.Map.Proto,
     > extends Engine.Instance<fdm> {
@@ -21,7 +21,7 @@ export namespace DashScopeEngine {
         protected billing: Billing;
         protected override transport: Transport<fdm>;
 
-        public constructor(protected options: DashScopeEngine.Options<fdm>) {
+        public constructor(protected options: OpenAICompatibleEngine.Options<fdm>) {
             super(options);
 
             this.toolCodec = new ToolCodec({ fdm: this.fdm });
@@ -41,8 +41,8 @@ export namespace DashScopeEngine {
             });
         }
 
-        public override clone(): DashScopeEngine<fdm> {
-            const engine = new DashScopeEngine.Instance(this.options);
+        public override clone(): OpenAICompatibleEngine<fdm> {
+            const engine = new OpenAICompatibleEngine.Instance(this.options);
             engine.middlewaresStateless = [...this.middlewaresStateless];
             engine.middlewaresStateful = [...this.middlewaresStateful];
             return engine;
@@ -75,11 +75,11 @@ export namespace DashScopeEngine {
             return await super.stateful(wfctx, session) as RoleMessage.Ai.From<fdm>;
         }
 
-        public override useStateless(middleware: Middleware.From<fdm>): DashScopeEngine<fdm> {
-            return super.useStateless(middleware) as DashScopeEngine<fdm>;
+        public override useStateless(middleware: Middleware.From<fdm>): OpenAICompatibleEngine<fdm> {
+            return super.useStateless(middleware) as OpenAICompatibleEngine<fdm>;
         }
-        public override useStateful(middleware: Middleware.From<fdm>): DashScopeEngine<fdm> {
-            return super.useStateful(middleware) as DashScopeEngine<fdm>;
+        public override useStateful(middleware: Middleware.From<fdm>): OpenAICompatibleEngine<fdm> {
+            return super.useStateful(middleware) as OpenAICompatibleEngine<fdm>;
         }
 
     }

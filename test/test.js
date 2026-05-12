@@ -10,7 +10,7 @@ import './engine/tool-choice-validator.js';
 import './engines/anthropic/message-codec.js';
 import './engines/anthropic/tool-choice-codec.js';
 import './engines/anthropic/tool-codec.js';
-import './engines/dashscope/transport.js';
+import './engines/openai-compatible/transport.js';
 import './engines/google/engine.js';
 import './engines/google/message-codec.js';
 import './engines/google/tool-codec.js';

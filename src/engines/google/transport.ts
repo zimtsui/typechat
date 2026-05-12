@@ -83,7 +83,8 @@ export class Transport<
                 headers: {
                     'Content-Type': 'application/json',
                     'x-goog-api-key': this.providerSpec.apiKey,
-                } satisfies HeaderRecord,
+                    ...this.inferenceParams.additionalHeaders,
+                },
                 body: JSON.stringify(reqbody),
                 dispatcher: this.providerSpec.dispatcher,
                 signal,

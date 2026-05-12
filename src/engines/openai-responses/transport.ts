@@ -35,6 +35,7 @@ export class Transport<
             apiKey: options.providerSpec.apiKey,
             fetch: Undici.fetch as typeof globalThis.fetch,
             fetchOptions: { dispatcher: options.providerSpec.dispatcher },
+            defaultHeaders: new Headers(options.inferenceParams.additionalHeaders),
         });
         this.inferenceParams = options.inferenceParams;
         this.providerSpec = options.providerSpec;

@@ -4,7 +4,7 @@ import { OpenAIResponsesEngine } from '../build/engines/openai-responses.js';
 import { GoogleEngine } from '../build/engines/google.js';
 import { OpenAIChatCompletionsEngine } from '../build/engines/openai-chatcompletions.js';
 import { AnthropicEngine } from '../build/engines/anthropic.js';
-import { DashScopeEngine } from '../build/engines/dashscope.js';
+import { OpenAICompatibleEngine } from '../build/engines/openai-compatible.js';
 import { functionDeclarationMap } from './helpers.js';
 
 
@@ -39,12 +39,12 @@ test('Adaptor creates engines matching endpoint apiType', t => {
                 model: 'test-model',
                 name: 'Anthropic',
             },
-            dashscope: {
-                apiType: 'dashscope',
-                baseUrl: 'https://example.invalid/dashscope',
+            openaiCompatible: {
+                apiType: 'openai-compatible',
+                baseUrl: 'https://example.invalid/openai-compatible',
                 apiKey: 'test-key',
                 model: 'test-model',
-                name: 'DashScope',
+                name: 'OpenAI Compatible',
             },
         },
     });
@@ -65,8 +65,8 @@ test('Adaptor creates engines matching endpoint apiType', t => {
         endpoint: 'anthropic',
         functionDeclarationMap,
     });
-    const dashScopeEngine = adaptor.makeEngine({
-        endpoint: 'dashscope',
+    const openAICompatibleEngine = adaptor.makeEngine({
+        endpoint: 'openaiCompatible',
         functionDeclarationMap,
     });
 
@@ -74,7 +74,7 @@ test('Adaptor creates engines matching endpoint apiType', t => {
     t.true(googleEngine instanceof GoogleEngine.Instance);
     t.true(openaiChatCompletionsEngine instanceof OpenAIChatCompletionsEngine.Instance);
     t.true(anthropicEngine instanceof AnthropicEngine.Instance);
-    t.true(dashScopeEngine instanceof DashScopeEngine.Instance);
+    t.true(openAICompatibleEngine instanceof OpenAICompatibleEngine.Instance);
 });
 
 test('Adaptor applies cache price fallback and override', t => {

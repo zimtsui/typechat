@@ -30,6 +30,7 @@ export interface ProviderSpecs {
 }
 export interface InferenceOptions {
     model: string;
+    additionalHeaders?: Record<string, string>;
     additionalOptions?: Record<string, unknown>;
     parallelToolCall?: boolean;
     timeout?: number;
@@ -77,6 +78,7 @@ export namespace Engine {
             this.name = options.endpointSpec.name;
             this.inferenceOptions = {
                 model: options.endpointSpec.model,
+                additionalHeaders: options.endpointSpec.additionalHeaders,
                 additionalOptions: options.endpointSpec.additionalOptions,
                 timeout: options.endpointSpec.timeout,
                 parallelToolCall: options.endpointSpec.parallelToolCall,
