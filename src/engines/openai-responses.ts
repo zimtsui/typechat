@@ -10,6 +10,7 @@ import * as MessageModule from './openai-responses/message.ts';
 import * as ToolModule from './openai-responses/tool.ts';
 import OpenAI from 'openai';
 import { Media } from '../media.ts';
+import * as XmlCodec from '../xml.ts';
 
 
 export type OpenAIResponsesEngine<
@@ -125,7 +126,7 @@ export namespace OpenAIResponsesEngine {
                                 const fr = Function.Response.Successful.of({
                                     id: fc.id,
                                     name: fc.name,
-                                    text: '',
+                                    text: XmlCodec.System.encode('The image will be loaded in next LLM user-role message.'),
                                 } as Function.Response.Successful.Options.From<fdm>);
                                 frs.push(fr);
                                 images.push(rawfr);

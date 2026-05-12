@@ -10,6 +10,7 @@ import * as TransportModule from './google/transport.ts';
 import { InferenceContext } from '../inference-context.ts';
 import * as MessageModule from './google/message.ts';
 import { Media } from '../media.ts';
+import * as XmlCodec from '../xml.ts';
 
 
 export type GoogleEngine<
@@ -132,7 +133,7 @@ export namespace GoogleEngine {
                                 const fr = Function.Response.Successful.of({
                                     id: fc.id,
                                     name: fc.name,
-                                    text: '',
+                                    text: XmlCodec.System.encode('The image will be loaded in next LLM user-role message.'),
                                 } as Function.Response.Successful.Options.From<fdm>);
                                 frs.push(fr);
                                 images.push(rawfr);
