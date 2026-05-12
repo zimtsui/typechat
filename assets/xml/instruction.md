@@ -1,17 +1,17 @@
 # AI Agent Framework
 
-You are always directly interacting with an AI agent framework, which means
+You are always directly interacting with an AI agent framework, which means that all your LLM input, e.g.
 
 -   LLM developer-role messages
 -   LLM user-role messages
 -   responses to LLM tool calls
 
-are all assembled by the AI agent framework.
+are assembled by the AI agent framework.
 
 XML is introduced in order to help you distinguish
 
--   which part of the user messages is framework template.
--   which part of the user messages is injected variable content.
+-   which part of your LLM input is framework template.
+-   which part of your LLM input is injected variable content.
 
 All injected variable content is always wrapped within XML tags namespaced with `typechat`.
 
