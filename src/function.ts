@@ -1,9 +1,10 @@
 import { type Static, type TObject, type TSchema } from 'typebox';
+import { Media } from './media.ts';
 
 const NOMINAL = Symbol();
 
 export interface Function<in out fd extends Function.Decl.Proto> {
-    (params: Static<fd['parameters']>, fcall: Function.Call<fd>): Promise<string>;
+    (params: Static<fd['parameters']>, fc: Function.Call<fd>): Promise<string | Media>;
 }
 
 export namespace Function {
@@ -97,15 +98,15 @@ export namespace Function {
         public id?: string;
         public name: fd['name'];
         public args: Static<fd['parameters']>;
-        protected constructor(fcall: Omit<Call<fd>, never>) {
-            this.id = fcall.id;
-            this.name = fcall.name;
-            this.args = fcall.args;
+        protected constructor(fc: Omit<Call<fd>, never>) {
+            this.id = fc.id;
+            this.name = fc.name;
+            this.args = fc.args;
         }
         public static of<fdu extends Function.Decl.Proto>(
-            fcall: Function.Call.Options.Of<fdu>,
+            fc: Function.Call.Options.Of<fdu>,
         ): Function.Call.Of<fdu> {
-            return new Function.Call(fcall) as Function.Call.Of<fdu>;
+            return new Function.Call(fc) as Function.Call.Of<fdu>;
         }
 
     }
@@ -132,9 +133,9 @@ export namespace Function {
     export abstract class Response<in out fd extends Function.Decl.Proto> {
         public id?: string;
         public name: fd['name'];
-        protected constructor(fres: Omit<Function.Response<fd>, never>) {
-            this.id = fres.id;
-            this.name = fres.name;
+        protected constructor(fr: Omit<Function.Response<fd>, never>) {
+            this.id = fr.id;
+            this.name = fr.name;
         }
     }
     export namespace Response {
@@ -148,14 +149,14 @@ export namespace Function {
         export class Successful<in out fd extends Function.Decl.Proto> extends Function.Response<fd> {
             protected declare [NOMINAL]: never;
             public text: string;
-            protected constructor(fres: Function.Response.Successful.Options<fd>) {
-                super(fres);
-                this.text = fres.text;
+            protected constructor(fr: Function.Response.Successful.Options<fd>) {
+                super(fr);
+                this.text = fr.text;
             }
             public static of<fdu extends Function.Decl.Proto>(
-                fres: Function.Response.Successful.Options.Of<fdu>,
+                fr: Function.Response.Successful.Options.Of<fdu>,
             ): Function.Response.Successful.Of<fdu> {
-                return new Function.Response.Successful(fres) as Function.Response.Successful.Of<fdu>;
+                return new Function.Response.Successful(fr) as Function.Response.Successful.Of<fdu>;
             }
         }
         export namespace Successful {
@@ -180,14 +181,14 @@ export namespace Function {
         export class Failed<in out fd extends Function.Decl.Proto> extends Function.Response<fd> {
             protected declare [NOMINAL]: never;
             public error: string;
-            protected constructor(fres: Function.Response.Failed.Options<fd>) {
-                super(fres);
-                this.error = fres.error;
+            protected constructor(fr: Function.Response.Failed.Options<fd>) {
+                super(fr);
+                this.error = fr.error;
             }
             public static of<fdu extends Function.Decl.Proto>(
-                fres: Function.Response.Failed.Options.Of<fdu>,
+                fr: Function.Response.Failed.Options.Of<fdu>,
             ): Function.Response.Failed.Of<fdu> {
-                return new Function.Response.Failed(fres) as Function.Response.Failed.Of<fdu>;
+                return new Function.Response.Failed(fr) as Function.Response.Failed.Of<fdu>;
             }
         }
         export namespace Failed {

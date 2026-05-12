@@ -75,9 +75,9 @@ export class MessageCodec<
                     file_data: `data:${part.mimeType};base64,${part.base64}`,
                 });
             else if (part instanceof Function.Response) {
-                const fres = part as Function.Response.From<fdm>;
+                const fr = part as Function.Response.From<fdm>;
                 flush();
-                responseInput.push(this.toolCodec.encodeFunctionResponse(fres));
+                responseInput.push(this.toolCodec.encodeFunctionResponse(fr));
             } else if (part instanceof Tool.ApplyPatch.Response) {
                 flush();
                 responseInput.push({
@@ -110,8 +110,8 @@ export class MessageCodec<
                     content: part.text,
                 });
             else if (part instanceof Function.Call) {
-                const fcall = part as Function.Call.From<fdm>;
-                responseInput.push(this.toolCodec.encodeFunctionCall(fcall));
+                const fc = part as Function.Call.From<fdm>;
+                responseInput.push(this.toolCodec.encodeFunctionCall(fc));
             } else throw new Error('Unknown AI message part type', { cause: part });
         }
         return responseInput;

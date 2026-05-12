@@ -18,20 +18,20 @@ export class ToolCodec<
     }
 
     public encodeFunctionResponse(
-        fres: Function.Response.From<fdm>,
+        fr: Function.Response.From<fdm>,
     ): OpenAI.Responses.ResponseInputItem.FunctionCallOutput {
-        if (fres.id) {} else throw new Error();
-        if (fres instanceof Function.Response.Successful)
+        if (fr.id) {} else throw new Error();
+        if (fr instanceof Function.Response.Successful)
             return {
                 type: 'function_call_output',
-                call_id: fres.id,
-                output: fres.text,
+                call_id: fr.id,
+                output: fr.text,
             };
-        else if (fres instanceof Function.Response.Failed)
+        else if (fr instanceof Function.Response.Failed)
             return {
                 type: 'function_call_output',
-                call_id: fres.id,
-                output: fres.error,
+                call_id: fr.id,
+                output: fr.error,
             };
         else throw new Error();
     }
@@ -79,14 +79,14 @@ export class ToolCodec<
     }
 
     public encodeFunctionCall(
-        fcall: Function.Call.From<fdm>,
+        fc: Function.Call.From<fdm>,
     ): OpenAI.Responses.ResponseFunctionToolCall {
-        if (fcall.id) {} else throw new Error();
+        if (fc.id) {} else throw new Error();
         return {
             type: 'function_call',
-            call_id: fcall.id,
-            name: fcall.name,
-            arguments: JSON.stringify(fcall.args),
+            call_id: fc.id,
+            name: fc.name,
+            arguments: JSON.stringify(fc.args),
         };
     }
 }

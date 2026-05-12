@@ -46,9 +46,9 @@ export class MessageCodec<
 
         const apiMessages: (OpenAI.ChatCompletionUserMessageParam | OpenAI.ChatCompletionToolMessageParam)[] = [];
 
-        const fress = userMessage.getFunctionResponses();
-        for (const fres of fress)
-            apiMessages.push(this.toolCodec.encodeFunctionResponse(fres));
+        const frs = userMessage.getFunctionResponses();
+        for (const fr of frs)
+            apiMessages.push(this.toolCodec.encodeFunctionResponse(fr));
 
         const contentParts: OpenAI.ChatCompletionContentPart[] = [];
         for (const part of userMessage.getParts())
@@ -76,7 +76,7 @@ export class MessageCodec<
         return {
             role: 'assistant',
             content: textParts.length ? textParts.map(part => part.text).join('') : undefined,
-            tool_calls: fcParts.length ? fcParts.map(fcall => this.toolCodec.encodeFunctionCall(fcall)) : undefined,
+            tool_calls: fcParts.length ? fcParts.map(fc => this.toolCodec.encodeFunctionCall(fc)) : undefined,
         };
     }
 

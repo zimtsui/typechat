@@ -64,18 +64,18 @@ export namespace RoleMessage {
             return this.getTextParts().map(part => part.text).join('');
         }
         public getFunctionCalls(): Function.Call.Of<fdu>[] {
-            const fcalls: Function.Call.Of<fdu>[] = [];
+            const fcs: Function.Call.Of<fdu>[] = [];
             for (const part of this.parts)
                 if (part instanceof Function.Call) {
-                    const fcall = part as Function.Call.Of<fdu>;
-                    fcalls.push(fcall);
+                    const fc = part as Function.Call.Of<fdu>;
+                    fcs.push(fc);
                 }
-            return fcalls;
+            return fcs;
         }
         public getOnlyFunctionCall(): Function.Call.Of<fdu> {
-            const fcalls = this.getFunctionCalls();
-            if (fcalls.length === 1) {} else throw new Error();
-            return fcalls[0]!;
+            const fcs = this.getFunctionCalls();
+            if (fcs.length === 1) {} else throw new Error();
+            return fcs[0]!;
         }
     }
     export namespace Ai {
@@ -97,20 +97,20 @@ export namespace RoleMessage {
             return this.parts;
         }
         public getFunctionResponses(): Function.Response.Of<fdu>[] {
-            const fress: Function.Response.Of<fdu>[] = [];
+            const frs: Function.Response.Of<fdu>[] = [];
             for (const part of this.parts)
                 if (part instanceof Function.Response) {
-                    const fres = part as Function.Response.Of<fdu>;
-                    fress.push(fres);
+                    const fr = part as Function.Response.Of<fdu>;
+                    frs.push(fr);
                 }
-            return fress;
+            return frs;
         }
         public getOnlyFunctionResponse(): Function.Response.Of<fdu> {
             if (this.parts.length === 1) {} else throw new Error();
             const part = this.parts[0]!;
             if (part instanceof Function.Response) {} else throw new Error();
-            const fres = part as Function.Response.Of<fdu>;
-            return fres;
+            const fr = part as Function.Response.Of<fdu>;
+            return fr;
         }
         public getTextParts(): RoleMessage.Part.Text[] {
             return this.parts.filter(part => part instanceof RoleMessage.Part.Text);

@@ -15,17 +15,17 @@ export class ToolChoiceValidator<
     public validate(
         aiMessage: RoleMessage.Ai<fdu>,
     ): RoleMessage.User<fdu> | void {
-        const fcalls = aiMessage.getFunctionCalls();
-        const fress = fcalls.map(
-            fcall => Function.Response.Failed.of({
-                id: fcall.id,
-                name: fcall.name,
+        const fcs = aiMessage.getFunctionCalls();
+        const frs = fcs.map(
+            fc => Function.Response.Failed.of({
+                id: fc.id,
+                name: fc.name,
                 error: XmlCodec.System.encode('Cancelled by system.'),
             } as Function.Response.Failed.Options.Of<fdu>),
         );
 
         if (this.toolChoice === ToolChoice.REQUIRED) {
-            if (fcalls.length) {} else
+            if (fcs.length) {} else
                 return new RoleMessage.User<fdu>([
                     new RoleMessage.Part.Text(
                         XmlCodec.System.encode(`Error: Function call required, but not found.`),
@@ -33,24 +33,24 @@ export class ToolChoiceValidator<
                 ]);
 
         } else if (this.toolChoice === ToolChoice.ANYONE) {
-            if (!fcalls.length)
+            if (!fcs.length)
                 return new RoleMessage.User<never>([
                     new RoleMessage.Part.Text(
                         XmlCodec.System.encode(`Error: Function call required, but not found.`),
                     ),
                 ]);
-            if (fcalls.length > 1)
+            if (fcs.length > 1)
                 return new RoleMessage.User<fdu>([
-                    ...fress,
+                    ...frs,
                     new RoleMessage.Part.Text(
                         XmlCodec.System.encode(`Error: Only 1 function call allowed, but multiple found.`),
                     ),
                 ]);
 
         } else if (this.toolChoice === ToolChoice.NONE) {
-            if (fcalls.length)
+            if (fcs.length)
                 return new RoleMessage.User<fdu>([
-                    ...fress,
+                    ...frs,
                     new RoleMessage.Part.Text(
                         XmlCodec.System.encode(`Error: No function call allowed.`),
                     ),

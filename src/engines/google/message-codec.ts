@@ -30,12 +30,12 @@ export class MessageCodec<
                 if (part instanceof RoleMessage.Part.Text) {
                     apiParts.push(Google.createPartFromText(part.text));
                 } else if (part instanceof Function.Call) {
-                    const fcall = part as Function.Call.From<fdm>;
-                    if (fcall.args instanceof Object) {} else throw new Error();
+                    const fc = part as Function.Call.From<fdm>;
+                    if (fc.args instanceof Object) {} else throw new Error();
                     apiParts.push(
                         Google.createPartFromFunctionCall(
-                            fcall.name,
-                            fcall.args satisfies Record<string, unknown>,
+                            fc.name,
+                            fc.args satisfies Record<string, unknown>,
                         ),
                     );
                 } else throw new Error('Unknown AI message part type', { cause: part });
@@ -67,8 +67,8 @@ export class MessageCodec<
             if (part instanceof Engine.RoleMessage.Part.Text)
                 apiParts.push(Google.createPartFromText(part.text));
             else if (part instanceof Function.Response) {
-                const fres = part as Function.Response.From<fdm>;
-                apiParts.push(this.toolCodec.encodeFunctionResponse(fres));
+                const fr = part as Function.Response.From<fdm>;
+                apiParts.push(this.toolCodec.encodeFunctionResponse(fr));
             }
             else if (part instanceof Media.Pdf)
                 apiParts.push(

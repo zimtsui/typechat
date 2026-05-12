@@ -13,6 +13,7 @@ import { Middleware } from './engine/middleware.ts';
 import * as ToolChoiceValidatorModule from './engine/tool-choice-validator.ts';
 import * as TransportModule from './engine/transport.ts';
 import { ToolChoice } from './tool-choice.ts';
+import { Media } from './media.ts';
 
 
 export interface Pricing {
@@ -222,34 +223,52 @@ export namespace Engine {
             for (let i = 0; i < limit; i++) {
                 const response = await this.stateful(wfctx, session);
                 if (response.allText()) return response.getText();
-                const pfress: Promise<Function.Response.From<fdm>>[] = [];
+                const frs: Function.Response.From<fdm>[] = [];
+                const images: Media.Image[] = [];
                 for (const part of response.getParts()) {
                     if (part instanceof RoleMessage.Part.Text) {
                         const textPart = part as Engine.RoleMessage.Part.Text;
                         yield textPart.text;
                     } else if (part instanceof Function.Call) {
-                        const fcall = part as Function.Call.From<fdm>;
-                        const f = fnm[fcall.name];
-                        pfress.push((async () => {
-                            try {
-                                return Function.Response.Successful.of({
-                                    id: fcall.id,
-                                    name: fcall.name,
-                                    text: await f.call(fnm, fcall.args, fcall),
+                        const fc = part as Function.Call.From<fdm>;
+                        const f = fnm[fc.name];
+                        try {
+                            const rawfr = await f.call(fnm, fc.args, fc);
+                            if (typeof rawfr === 'string') {
+                                const fr = Function.Response.Successful.of({
+                                    id: fc.id,
+                                    name: fc.name,
+                                    text: rawfr,
                                 } as Function.Response.Successful.Options.From<fdm>);
-                            } catch (e) {
-                                if (e instanceof Function.Error) {} else throw e;
-                                return Function.Response.Failed.of({
-                                    id: fcall.id,
-                                    name: fcall.name,
-                                    error: e.message,
-                                } as Function.Response.Failed.Options.From<fdm>);
-                            }
-                        })());
+                                frs.push(fr);
+                            } else if (rawfr instanceof Media.Image) {
+                                const fr = Function.Response.Successful.of({
+                                    id: fc.id,
+                                    name: fc.name,
+                                    text: '',
+                                } as Function.Response.Successful.Options.From<fdm>);
+                                frs.push(fr);
+                                images.push(rawfr);
+                            } else if (rawfr instanceof Media.Text) {
+                                const fr = Function.Response.Successful.of({
+                                    id: fc.id,
+                                    name: fc.name,
+                                    text: rawfr.quote(),
+                                } as Function.Response.Successful.Options.From<fdm>);
+                                frs.push(fr);
+                            } else throw new Error('Unsupported function response type');
+                        } catch (e) {
+                            if (e instanceof Function.Error) {} else throw e;
+                            const fr = Function.Response.Failed.of({
+                                id: fc.id,
+                                name: fc.name,
+                                error: e.message,
+                            } as Function.Response.Failed.Options.From<fdm>);
+                            frs.push(fr);
+                        }
                     } else throw new Error();
                 }
-                const fress: Function.Response.From<fdm>[] = await Promise.all(pfress);
-                session.chatMessages.push(new RoleMessage.User([...fress]))
+                session.chatMessages.push(new RoleMessage.User([...frs, ...images]));
             }
             throw new Engine.FunctionCallLimitExceeded('Function call limit exceeded.');
         }
