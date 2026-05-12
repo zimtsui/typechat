@@ -1,6 +1,9 @@
 import OpenAI from 'openai';
 import { Function } from '../../function.ts';
 import { Parse, ParseError } from 'typebox/schema';
+import assert from 'node:assert';
+import { addAdditionalProperties } from '../../function/parameters.ts';
+
 
 
 export class ToolCodec<
@@ -39,7 +42,7 @@ export class ToolCodec<
         return {
             name: fdentry[0],
             description: fdentry[1].description,
-            parameters: fdentry[1].parameters as unknown as OpenAI.FunctionParameters,
+            parameters: addAdditionalProperties(fdentry[1].parameters) as OpenAI.FunctionParameters,
             strict: true,
             type: 'function',
         };

@@ -1,5 +1,6 @@
 import './adaptor.js';
 import './function.js';
+import './function/parameters.js';
 import './media.js';
 import './throttle.js';
 import './engine/message.js';

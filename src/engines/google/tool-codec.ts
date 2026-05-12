@@ -1,6 +1,7 @@
 import { Function } from '../../function.ts';
 import * as Google from '@google/genai';
 import { Parse, ParseError } from 'typebox/schema';
+import { removeAdditionalProperties } from '../../function/parameters.ts';
 
 
 
@@ -33,9 +34,10 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
         return {
             name: fdentry[0],
             description: fdentry[1].description,
-            parameters: fdentry[1].parameters as unknown as Google.Schema,
+            parameters: removeAdditionalProperties(fdentry[1].parameters) as Google.Schema,
         };
     }
+
 
     public decodeFunctionCall(
         googlefc: Google.FunctionCall,
