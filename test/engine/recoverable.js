@@ -2,7 +2,6 @@ import test from 'ava';
 import { Throttle } from '../../build/throttle.js';
 import { Engine } from '../../build/engine.js';
 import { Function } from '../../build/function.js';
-import { Recoverable } from '../../build/engine/recoverable.js';
 import * as XmlCodec from '../../build/xml.js';
 import { RoleMessage } from '../../build/engine/message.js';
 import { functionDeclarationMap } from '../helpers.js';
@@ -81,7 +80,7 @@ test('Engine Recoverable middleware appends validator rejection into session his
     }, {
         validate() {},
     });
-    const recoveringEngine = engine.useStateful(Recoverable.recover);
+    const recoveringEngine = engine.useStateful(Engine.Exceptions.InferenceError.Recoverable.recover);
     const session = { chatMessages: [] };
 
     const response = await recoveringEngine.stateful({}, session);

@@ -1,4 +1,5 @@
 import test from 'ava';
+import { Engine } from '../../../build/engine.js';
 import { Function } from '../../../build/function.js';
 import { ToolCodec } from '../../../build/engines/anthropic/tool-codec.js';
 import { functionDeclarationMapWithArgs } from '../../helpers.js';
@@ -43,13 +44,13 @@ test('Anthropic tool codec rejects invalid function calls', t => {
         type: 'tool_use',
         name: 'missing',
         input: {},
-    }), { instanceOf: SyntaxError, message: 'Unknown function call' });
+    }), { instanceOf: Engine.Exceptions.InferenceError, message: 'Unknown function call' });
     t.throws(() => codec.decodeFunctionCall({
         id: 'call_1',
         type: 'tool_use',
         name: 'echo',
         input: {},
-    }), { instanceOf: SyntaxError, message: 'Invalid arguments of function call.' });
+    }), { instanceOf: Engine.Exceptions.InferenceError, message: 'Invalid arguments of function call.' });
 });
 
 test('Anthropic tool codec encodes function responses and requires ids', t => {

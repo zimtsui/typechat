@@ -1,4 +1,5 @@
 import test from 'ava';
+import { Engine } from '../../../build/engine.js';
 import { Function } from '../../../build/function.js';
 import { ToolCodec } from '../../../build/engines/openai-chatcompletions/tool-codec.js';
 import { functionDeclarationMapWithArgs } from '../../helpers.js';
@@ -53,7 +54,7 @@ test('OpenAI Chat Completions tool codec rejects invalid function calls', t => {
             name: 'missing',
             arguments: '{}',
         },
-    }), { instanceOf: SyntaxError, message: 'Unknown function call' });
+    }), { instanceOf: Engine.Exceptions.InferenceError, message: 'Unknown function call' });
     t.throws(() => codec.decodeFunctionCall({
         id: 'call_1',
         type: 'function',
@@ -61,7 +62,7 @@ test('OpenAI Chat Completions tool codec rejects invalid function calls', t => {
             name: 'echo',
             arguments: '{',
         },
-    }), { instanceOf: SyntaxError, message: 'Invalid JSON of function call' });
+    }), { instanceOf: Engine.Exceptions.InferenceError, message: 'Invalid JSON of function call' });
     t.throws(() => codec.decodeFunctionCall({
         id: 'call_1',
         type: 'function',
@@ -69,7 +70,7 @@ test('OpenAI Chat Completions tool codec rejects invalid function calls', t => {
             name: 'echo',
             arguments: '{}',
         },
-    }), { instanceOf: SyntaxError, message: 'Invalid arguments of function call.' });
+    }), { instanceOf: Engine.Exceptions.InferenceError, message: 'Invalid arguments of function call.' });
 });
 
 test('OpenAI Chat Completions tool codec encodes function responses and requires ids', t => {

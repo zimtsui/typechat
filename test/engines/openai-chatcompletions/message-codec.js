@@ -2,7 +2,9 @@ import test from 'ava';
 import { MIMEType } from 'whatwg-mimetype';
 import { Function } from '../../../build/function.js';
 import { Media } from '../../../build/media.js';
+import { Engine } from '../../../build/engine.js';
 import { RoleMessage } from '../../../build/engine/message.js';
+import { OpenAIChatCompletionsEngine } from '../../../build/engines/openai-chatcompletions.js';
 import { ToolCodec } from '../../../build/engines/openai-chatcompletions/tool-codec.js';
 import { MessageCodec } from '../../../build/engines/openai-chatcompletions/message-codec.js';
 import { functionDeclarationMap } from '../../helpers.js';
@@ -113,8 +115,10 @@ test('OpenAI Chat Completions codec decodes text and tool calls', t => {
         }],
     });
 
+    t.true(aiMessage instanceof OpenAIChatCompletionsEngine.RoleMessage.Ai);
     t.is(aiMessage.getText(), 'hello');
     t.is(aiMessage.getOnlyFunctionCall().name, 'noop');
+    t.deepEqual(messageCodec.encodeAiMessage(aiMessage), aiMessage.getRaw());
 });
 
 test('OpenAI Chat Completions codec rejects empty assistant message', t => {
@@ -123,7 +127,7 @@ test('OpenAI Chat Completions codec rejects empty assistant message', t => {
     t.throws(() => messageCodec.decodeAiMessage({
         role: 'assistant',
     }), {
-        instanceOf: SyntaxError,
+        instanceOf: Engine.Exceptions.InferenceError,
         message: 'Content or tool calls not found in Response',
     });
 });

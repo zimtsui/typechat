@@ -1,5 +1,6 @@
 import test from 'ava';
 import { MIMEType } from 'whatwg-mimetype';
+import { Engine } from '../../../build/engine.js';
 import { Media } from '../../../build/media.js';
 import { RoleMessage } from '../../../build/engine/message.js';
 import { RoleMessage as GoogleRoleMessage } from '../../../build/engines/google/message.js';
@@ -99,5 +100,5 @@ test('Google codec rejects unexpected code execution parts when disabled', t => 
                 language: 'PYTHON',
             },
         }],
-    }), { instanceOf: SyntaxError, message: 'Unexpected code execution' });
+    }), { instanceOf: Engine.Exceptions.InferenceError, message: 'Unexpected code execution' });
 });
