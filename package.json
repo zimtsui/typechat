@@ -22,7 +22,7 @@
     "url": "git+https://github.com/zimtsui/typechat.git"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.90.0",
+    "@anthropic-ai/sdk": "^0.96.0",
     "@google/genai": "^1.33.0",
     "@types/node": "^24.12.2",
     "@zimtsui/node-loaders": "^0.0.4",
@@ -33,13 +33,13 @@
   },
   "peerDependencies": {
     "@types/whatwg-mimetype": "^5.0.0",
-    "@zimtsui/typelemetry": "^0.0.52",
+    "@zimtsui/typelemetry": "^0.0.53",
     "@zimtsui/typelocks": "^0.0.28",
     "typebox": "^1.1.31",
     "whatwg-mimetype": "^5.0.0"
   },
   "devDependencies": {
-    "ava": "^7.0.0",
+    "ava": "^8.0.0",
     "typescript": "^6.0.2"
   },
   "ava": {
