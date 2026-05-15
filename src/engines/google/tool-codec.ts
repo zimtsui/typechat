@@ -2,6 +2,7 @@ import { Function } from '../../function.ts';
 import * as Google from '@google/genai';
 import { Parse, ParseError } from 'typebox/schema';
 import { removeAdditionalProperties } from '../../function/parameters.ts';
+import { Engine } from '../../engine.ts';
 
 
 
@@ -44,12 +45,12 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
     ): Function.Call.From<fdm> {
         if (googlefc.name) {} else throw new Error();
         const fditem = this.fdm[googlefc.name];
-        if (fditem) {} else throw new SyntaxError('Unknown function call', { cause: googlefc });
+        if (fditem) {} else throw new Engine.Exceptions.InferenceError('Unknown function call', { cause: googlefc });
         try {
             Parse(fditem.parameters, googlefc.args);
         } catch (e) {
             if (e instanceof ParseError)
-                throw new SyntaxError('Invalid arguments of function call.', { cause: e });
+                throw new Engine.Exceptions.InferenceError('Invalid arguments of function call.', { cause: e });
             else throw e;
         }
         return Function.Call.of({

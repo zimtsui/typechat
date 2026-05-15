@@ -70,73 +70,78 @@ export class Transport<
         const params = this.makeParams(session);
         loggers.message.debug(params);
 
-        const stream = this.client.messages.stream(
-            params,
-            {
-                signal,
-                fetchOptions: { dispatcher: this.providerSpec.dispatcher },
-            },
-        );
-
         let response: Anthropic.Message | null = null;
-        for await (const event of stream) {
-            loggers.stream.trace(event);
-            if (event.type === 'message_start') {
-                response = structuredClone(event.message);
-            } else {
-                if (response) {} else throw new Error();
-                if (event.type === 'message_delta') {
-                    response.stop_sequence = event.delta.stop_sequence ?? response.stop_sequence;
-                    response.stop_reason = event.delta.stop_reason ?? response.stop_reason;
-                    response.usage.input_tokens = event.usage.input_tokens ?? response.usage.input_tokens;
-                    response.usage.output_tokens = event.usage.output_tokens;
-                    response.usage.cache_read_input_tokens = event.usage.cache_read_input_tokens ?? response.usage.cache_read_input_tokens;
-                    response.usage.cache_creation_input_tokens = event.usage.cache_creation_input_tokens ?? response.usage.cache_creation_input_tokens;
-                    response.usage.server_tool_use = event.usage.server_tool_use ?? response.usage.server_tool_use;
-                } else if (event.type === 'message_stop') {
-                } else if (event.type === 'content_block_start') {
-                    const contentBlock = structuredClone(event.content_block);
-                    response.content.push(contentBlock);
-                    if (contentBlock.type === 'tool_use') contentBlock.input = '';
-                } else if (event.type === 'content_block_delta') {
-                    const contentBlock = response.content[event.index];
-                    if (event.delta.type === 'text_delta') {
-                        if (contentBlock?.type === 'text') {} else throw new Error();
-                        contentBlock.text += event.delta.text;
-                    } else if (event.delta.type === 'thinking_delta') {
-                        if (contentBlock?.type === 'thinking') {} else throw new Error();
-                        contentBlock.thinking += event.delta.thinking;
-                    } else if (event.delta.type === 'signature_delta') {
-                        if (contentBlock?.type === 'thinking') {} else throw new Error();
-                        contentBlock.signature += event.delta.signature;
-                    } else if (event.delta.type === 'input_json_delta') {
-                        if (contentBlock?.type === 'tool_use') {} else throw new Error();
-                        if (typeof contentBlock.input === 'string') {} else throw new Error();
-                        contentBlock.input += event.delta.partial_json;
-                    } else throw new Error('Unknown type of content block delta', { cause: event.delta });
-                } else if (event.type === 'content_block_stop') {
-                    const contentBlock = response.content[event.index];
-                    if (contentBlock?.type === 'text') loggers.inference.info(contentBlock.text);
-                    else if (contentBlock?.type === 'thinking') loggers.inference.debug(contentBlock.thinking);
-                    if (contentBlock?.type === 'tool_use') {
-                        if (typeof contentBlock.input === 'string') {} else throw new Error();
-                        try {
-                            contentBlock.input = JSON.parse(contentBlock.input);
-                        } catch (e) {
-                            throw new SyntaxError('Invalid JSON of tool use input', { cause: contentBlock.input });
+        try {
+            const stream = this.client.messages.stream(
+                params,
+                {
+                    signal,
+                    fetchOptions: { dispatcher: this.providerSpec.dispatcher },
+                },
+            );
+            for await (const event of stream) {
+                loggers.stream.trace(event);
+                if (event.type === 'message_start') {
+                    response = structuredClone(event.message);
+                } else {
+                    if (response) {} else throw new Error();
+                    if (event.type === 'message_delta') {
+                        response.stop_sequence = event.delta.stop_sequence ?? response.stop_sequence;
+                        response.stop_reason = event.delta.stop_reason ?? response.stop_reason;
+                        response.usage.input_tokens = event.usage.input_tokens ?? response.usage.input_tokens;
+                        response.usage.output_tokens = event.usage.output_tokens;
+                        response.usage.cache_read_input_tokens = event.usage.cache_read_input_tokens ?? response.usage.cache_read_input_tokens;
+                        response.usage.cache_creation_input_tokens = event.usage.cache_creation_input_tokens ?? response.usage.cache_creation_input_tokens;
+                        response.usage.server_tool_use = event.usage.server_tool_use ?? response.usage.server_tool_use;
+                    } else if (event.type === 'message_stop') {
+                    } else if (event.type === 'content_block_start') {
+                        const contentBlock = structuredClone(event.content_block);
+                        response.content.push(contentBlock);
+                        if (contentBlock.type === 'tool_use') contentBlock.input = '';
+                    } else if (event.type === 'content_block_delta') {
+                        const contentBlock = response.content[event.index];
+                        if (event.delta.type === 'text_delta') {
+                            if (contentBlock?.type === 'text') {} else throw new Error();
+                            contentBlock.text += event.delta.text;
+                        } else if (event.delta.type === 'thinking_delta') {
+                            if (contentBlock?.type === 'thinking') {} else throw new Error();
+                            contentBlock.thinking += event.delta.thinking;
+                        } else if (event.delta.type === 'signature_delta') {
+                            if (contentBlock?.type === 'thinking') {} else throw new Error();
+                            contentBlock.signature += event.delta.signature;
+                        } else if (event.delta.type === 'input_json_delta') {
+                            if (contentBlock?.type === 'tool_use') {} else throw new Error();
+                            if (typeof contentBlock.input === 'string') {} else throw new Error();
+                            contentBlock.input += event.delta.partial_json;
+                        } else throw new Error('Unknown type of content block delta', { cause: event.delta });
+                    } else if (event.type === 'content_block_stop') {
+                        const contentBlock = response.content[event.index];
+                        if (contentBlock?.type === 'text') loggers.inference.info(contentBlock.text);
+                        else if (contentBlock?.type === 'thinking') loggers.inference.debug(contentBlock.thinking);
+                        if (contentBlock?.type === 'tool_use') {
+                            if (typeof contentBlock.input === 'string') {} else throw new Error();
+                            try {
+                                contentBlock.input = JSON.parse(contentBlock.input);
+                            } catch (e) {
+                                throw new Engine.Exceptions.InferenceError('Invalid JSON of tool use input', { cause: contentBlock.input });
+                            }
+                            loggers.message.info(contentBlock);
                         }
-                        loggers.message.info(contentBlock);
-                    }
-                } else throw new Error('Unknown stream event', { cause: event });
+                    } else throw new Error('Unknown stream event', { cause: event });
+                }
             }
+        } catch (e) {
+            if (e instanceof Anthropic.APIConnectionError)
+                throw new Engine.Exceptions.ConnectionError(undefined, { cause: e });
+            throw e;
         }
 
         if (response) {} else throw new Error();
         loggers.message.debug(response);
         if (response.stop_reason === 'max_tokens')
-            throw new SyntaxError('Token limit exceeded.', { cause: response });
+            throw new Engine.Exceptions.InferenceError('Token limit exceeded.', { cause: response });
         if (response.stop_reason === 'end_turn' || response.stop_reason === 'tool_use') {} else
-            throw new SyntaxError('Abnormal stop reason', { cause: response });
+            throw new Engine.Exceptions.InferenceError('Abnormal stop reason', { cause: response });
         loggers.message.info(response.usage);
         wfctx.cost?.(this.billing.charge(response.usage));
 

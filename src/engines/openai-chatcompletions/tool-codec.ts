@@ -1,6 +1,7 @@
 import { Parse, ParseError } from 'typebox/schema';
 import { Function } from '../../function.ts';
 import OpenAI from 'openai';
+import { Engine } from '../../engine.ts';
 
 
 export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
@@ -30,19 +31,19 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
         apifc: OpenAI.ChatCompletionMessageFunctionToolCall,
     ): Function.Call.From<fdm> {
         const fditem = this.fdm[apifc.function.name];
-        if (fditem) {} else throw new SyntaxError('Unknown function call', { cause: apifc });
+        if (fditem) {} else throw new Engine.Exceptions.InferenceError('Unknown function call', { cause: apifc });
         const args = (() => {
             try {
                 return JSON.parse(apifc.function.arguments);
             } catch (e) {
-                throw new SyntaxError('Invalid JSON of function call', { cause: apifc });
+                throw new Engine.Exceptions.InferenceError('Invalid JSON of function call', { cause: apifc });
             }
         })();
         try {
             Parse(fditem.parameters, args);
         } catch (e) {
             if (e instanceof ParseError)
-                throw new SyntaxError('Invalid arguments of function call.', { cause: e });
+                throw new Engine.Exceptions.InferenceError('Invalid arguments of function call.', { cause: e });
             else throw e;
         }
         return Function.Call.of({

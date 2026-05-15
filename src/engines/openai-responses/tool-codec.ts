@@ -1,8 +1,8 @@
 import OpenAI from 'openai';
 import { Function } from '../../function.ts';
 import { Parse, ParseError } from 'typebox/schema';
-import assert from 'node:assert';
 import { addAdditionalProperties } from '../../function/parameters.ts';
+import { Engine } from '../../engine.ts';
 
 
 
@@ -56,19 +56,19 @@ export class ToolCodec<
         apifc: OpenAI.Responses.ResponseFunctionToolCall,
     ): Function.Call.From<fdm> {
         const fditem = this.fdm[apifc.name];
-        if (fditem) {} else throw new SyntaxError('Unknown function call', { cause: apifc });
+        if (fditem) {} else throw new Engine.Exceptions.InferenceError('Unknown function call', { cause: apifc });
         const args = (() => {
             try {
                 return JSON.parse(apifc.arguments);
             } catch (e) {
-                throw new SyntaxError('Invalid JSON of function call', { cause: apifc });
+                throw new Engine.Exceptions.InferenceError('Invalid JSON of function call', { cause: apifc });
             }
         })();
         try {
             Parse(fditem.parameters, args);
         } catch (e) {
             if (e instanceof ParseError)
-                throw new SyntaxError('Invalid arguments of function call.', { cause: e });
+                throw new Engine.Exceptions.InferenceError('Invalid arguments of function call.', { cause: e });
             else throw e;
         }
         return Function.Call.of({

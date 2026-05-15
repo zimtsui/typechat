@@ -67,8 +67,8 @@ export class Transport<
         apifc: OpenAI.ChatCompletionChunk.Choice.Delta.ToolCall,
     ): OpenAI.ChatCompletionMessageToolCall {
         if (apifc.id) {} else throw new Error();
-        if (apifc.function?.name) {} else throw new SyntaxError('Function name missing.', { cause: apifc });
-        if (apifc.function?.arguments) {} else throw new SyntaxError('Function arguments missing.', { cause: apifc });
+        if (apifc.function?.name) {} else throw new Engine.Exceptions.InferenceError('Function name missing.', { cause: apifc });
+        if (apifc.function?.arguments) {} else throw new Engine.Exceptions.InferenceError('Function arguments missing.', { cause: apifc });
         return {
             id: apifc.id,
             type: 'function',
@@ -83,7 +83,7 @@ export class Transport<
         stock: OpenAI.ChatCompletionChunk,
     ): OpenAI.ChatCompletion {
         const stockChoice = stock?.choices[0];
-        if (stockChoice?.finish_reason) {} else throw new SyntaxError('Finish reason missing', { cause: stock });
+        if (stockChoice?.finish_reason) {} else throw new Engine.Exceptions.InferenceError('Finish reason missing', { cause: stock });
 
         return {
             id: stock.id,
@@ -112,15 +112,15 @@ export class Transport<
         session: Engine.Session.From<fdm>,
         signal?: AbortSignal,
     ): Promise<Engine.RoleMessage.Ai.From<fdm>> {
+        await this.throttle.requests(wfctx);
+
+        const params = this.makeParams(session);
+        loggers.message.debug(params);
+
+
+        let stock: OpenAI.ChatCompletionChunk | null = null;
         try {
-            await this.throttle.requests(wfctx);
-
-            const params = this.makeParams(session);
-            loggers.message.debug(params);
-
             const stream = await this.client.chat.completions.create(params, { signal });
-
-            let stock: OpenAI.ChatCompletionChunk | null = null;
             for await (const chunk of stream) {
                 loggers.stream.trace(chunk);
 
@@ -168,34 +168,32 @@ export class Transport<
 
                 stock.usage ??= chunk.usage;
             }
-
-            if (stock) {} else throw new Error();
-            const completion = this.mergeCompletion(stock);
-            loggers.message.debug(completion);
-
-            const choice = completion.choices[0];
-            if (choice) {} else throw new SyntaxError('Content missing', { cause: completion });
-            if (choice.message.content) loggers.inference.info(choice.message.content);
-
-            if (choice.finish_reason === 'length') throw new SyntaxError('Token limit exceeded.', { cause: completion });
-            if (['stop', 'tool_calls'].includes(choice.finish_reason)) {}
-            else throw new SyntaxError('Abnormal finish reason', { cause: choice.finish_reason });
-
-            if (completion.usage) {} else throw new Error();
-            const cost = this.billing.charge(completion.usage);
-
-            if (choice.message.tool_calls) loggers.message.info(choice.message.tool_calls);
-            loggers.message.info(completion.usage);
-            wfctx.cost?.(cost);
-
-            return this.messageCodec.decodeAiMessage(choice.message);
         } catch (e) {
-            if (e instanceof OpenAI.InternalServerError)
-                throw new TypeError('OpenAI internal server error', { cause: e });
-            else if (e instanceof OpenAI.APIConnectionError)
-                throw new TypeError('OpenAI API connection error', { cause: e });
-            else throw e;
+            if (e instanceof OpenAI.APIConnectionError)
+                throw new Engine.Exceptions.ConnectionError(undefined, { cause: e });
+            throw e;
         }
+
+        if (stock) {} else throw new Error();
+        const completion = this.mergeCompletion(stock);
+        loggers.message.debug(completion);
+
+        const choice = completion.choices[0];
+        if (choice) {} else throw new Engine.Exceptions.InferenceError('Content missing', { cause: completion });
+        if (choice.message.content) loggers.inference.info(choice.message.content);
+
+        if (choice.finish_reason === 'length') throw new Engine.Exceptions.InferenceError('Token limit exceeded.', { cause: completion });
+        if (['stop', 'tool_calls'].includes(choice.finish_reason)) {}
+        else throw new Engine.Exceptions.InferenceError('Abnormal finish reason', { cause: choice.finish_reason });
+
+        if (completion.usage) {} else throw new Error();
+        const cost = this.billing.charge(completion.usage);
+
+        if (choice.message.tool_calls) loggers.message.info(choice.message.tool_calls);
+        loggers.message.info(completion.usage);
+        wfctx.cost?.(cost);
+
+        return this.messageCodec.decodeAiMessage(choice.message);
     }
 }
 

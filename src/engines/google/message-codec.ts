@@ -111,7 +111,7 @@ export class MessageCodec<
             if (part.functionCall)
                 parts.push(this.toolCodec.decodeFunctionCall(part.functionCall));
             if (part.executableCode) {
-                if (this.codeExecution) {} else throw new SyntaxError('Unexpected code execution', { cause: content });
+                if (this.codeExecution) {} else throw new Engine.Exceptions.InferenceError('Unexpected code execution', { cause: content });
                 if (part.executableCode.code) {} else throw new Error();
                 if (part.executableCode.language) {} else throw new Error();
                 parts.push(new RoleMessage.Ai.Part.ExecutableCode(
@@ -120,7 +120,7 @@ export class MessageCodec<
                 ));
             }
             if (part.codeExecutionResult) {
-                if (this.codeExecution) {} else throw new SyntaxError('Unexpected code execution result', { cause: content });
+                if (this.codeExecution) {} else throw new Engine.Exceptions.InferenceError('Unexpected code execution result', { cause: content });
                 if (part.codeExecutionResult.outcome) {} else throw new Error();
                 parts.push(new RoleMessage.Ai.Part.CodeExecutionResult(part.codeExecutionResult.outcome, part.codeExecutionResult.output));
             }

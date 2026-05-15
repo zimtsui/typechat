@@ -5,6 +5,8 @@ import { Billing } from './anthropic/billing.ts';
 import { MessageCodec } from './anthropic/message-codec.ts';
 import * as TransportModule from './anthropic/transport.ts';
 import * as MessageModule from './anthropic/message.ts';
+import { InferenceContext } from '../inference-context.ts';
+import Anthropic from '@anthropic-ai/sdk';
 
 
 export type AnthropicEngine<
@@ -19,7 +21,7 @@ export namespace AnthropicEngine {
         protected billing: Billing;
         protected override transport: Transport<fdm>;
 
-        public constructor(protected options: AnthropicEngine.Options<fdm>) {
+        public constructor(protected options: Engine.Options<fdm>) {
             super(options);
             this.toolCodec = new ToolCodec({ fdm: this.fdm });
             this.messageCodec = new MessageCodec({
@@ -46,11 +48,7 @@ export namespace AnthropicEngine {
         }
     }
 
-    export interface Options<
-        in out fdm extends Function.Decl.Map.Proto,
-    > extends Engine.Options<fdm> {}
-
-    export const create: Engine.Create = function<
+    export function createEngine<
         fdm extends Function.Decl.Map.Proto,
     >(options: Engine.Options<fdm>): Engine<fdm> {
         return new Instance(options);

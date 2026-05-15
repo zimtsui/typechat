@@ -35,15 +35,15 @@ export class Adaptor {
             throttle,
         };
         if (endpointSpec.apiType === 'openai-responses')
-            return OpenAIResponsesEngine.create<fdm>(options);
+            return OpenAIResponsesEngine.createEngine<fdm>(options);
         else if (endpointSpec.apiType === 'google')
-            return GoogleEngine.create<fdm>(options);
+            return GoogleEngine.createEngine<fdm>(options);
         else if (endpointSpec.apiType === 'anthropic')
-            return AnthropicEngine.create<fdm>(options);
+            return AnthropicEngine.createEngine<fdm>(options);
         else if (endpointSpec.apiType === 'openai-chatcompletions')
-            return OpenAIChatCompletionsEngine.create<fdm>(options);
+            return OpenAIChatCompletionsEngine.createEngine<fdm>(options);
         else if (endpointSpec.apiType === 'openai-compatible')
-            return OpenAICompatibleEngine.create<fdm>(options);
+            return OpenAICompatibleEngine.createEngine<fdm>(options);
         else throw new Error();
     }
 

@@ -3,6 +3,7 @@ import { Function } from '../../function.ts';
 import OpenAI from 'openai';
 import type { ToolCodec } from './tool-codec.ts';
 import { Media } from '../../media.ts';
+import { RoleMessage } from './message.ts';
 
 
 export class MessageCodec<
@@ -15,7 +16,7 @@ export class MessageCodec<
 
     public decodeAiMessage(
         message: OpenAI.ChatCompletionMessage,
-    ): Engine.RoleMessage.Ai.From<fdm> {
+    ): RoleMessage.Ai.From<fdm> {
         const parts: unknown[] = [];
         if (message.content)
             parts.push(new Engine.RoleMessage.Part.Text(message.content));
@@ -24,8 +25,8 @@ export class MessageCodec<
                 if (apifc.type === 'function')
                     parts.push(this.toolCodec.decodeFunctionCall(apifc));
                 else throw new Error();
-        if (parts.length) return new Engine.RoleMessage.Ai(parts);
-        else throw new SyntaxError('Content or tool calls not found in Response', { cause: message });
+        if (parts.length) return new RoleMessage.Ai(parts, message);
+        else throw new Engine.Exceptions.InferenceError('Content or tool calls not found in Response', { cause: message });
     }
 
     public encodeDeveloperMessage(developerMessage: Engine.RoleMessage.Developer): OpenAI.ChatCompletionSystemMessageParam {
@@ -64,6 +65,7 @@ export class MessageCodec<
     public encodeAiMessage(
         aiMessage: Engine.RoleMessage.Ai.From<fdm>,
     ): OpenAI.ChatCompletionAssistantMessageParam {
+        if (aiMessage instanceof RoleMessage.Ai) return aiMessage.getRaw();
         const parts = aiMessage.getParts();
         const textParts: Engine.RoleMessage.Part.Text[] = [];
         const fcParts: Function.Call.From<fdm>[] = [];

@@ -89,7 +89,7 @@ export class Transport<
                 dispatcher: this.providerSpec.dispatcher,
                 signal,
             },
-        );
+        ).catch(e => e instanceof TypeError ? Promise.reject(new Engine.Exceptions.ConnectionError(undefined, { cause: e })) : Promise.reject(e));
         loggers.message.debug(res);
 
         // Get response
@@ -103,18 +103,19 @@ export class Transport<
                 throw new Error(res.statusText, { cause: await res.text() });
             else throw new Error(res.statusText, { cause: res });
         }
-        const response = await res.json() as Google.GenerateContentResponse;
+        const response = <Google.GenerateContentResponse>await res.json()
+            .catch(e => e instanceof TypeError ? Promise.reject(new Engine.Exceptions.ConnectionError(undefined, { cause: e })) : Promise.reject(e));
         loggers.message.debug(response);
 
         // Validate response
         if (response.candidates?.[0]?.content?.parts?.length) {} else
-            throw new SyntaxError('Content missing', { cause: response });
+            throw new Engine.Exceptions.InferenceError('Content missing', { cause: response });
         if (response.candidates[0].finishReason === Google.FinishReason.MAX_TOKENS)
-            throw new SyntaxError('Token limit exceeded.', { cause: response });
+            throw new Engine.Exceptions.InferenceError('Token limit exceeded.', { cause: response });
         if (response.candidates[0].finishReason === Google.FinishReason.STOP) {} else
-            throw new SyntaxError('Abnormal finish reason', { cause: response });
+            throw new Engine.Exceptions.InferenceError('Abnormal finish reason', { cause: response });
         if (response.usageMetadata) {} else
-            throw new SyntaxError('Usage metadata missing', { cause: response });
+            throw new Engine.Exceptions.InferenceError('Usage metadata missing', { cause: response });
         for (const part of response.candidates[0].content.parts) {
             if (part.text) loggers.inference.info(part.text);
             if (part.functionCall) loggers.message.info(part.functionCall);

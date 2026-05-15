@@ -84,7 +84,7 @@ export class Transport<
         for (const item of output)
             if (item.type === 'message') {
                 if (item.content.every(part => part.type === 'output_text')) {} else
-                    throw new SyntaxError('Refusal', { cause: output });
+                    throw new Engine.Exceptions.InferenceError('Refusal', { cause: output });
                 loggers.inference.info(item.content.map(part => part.text).join(''));
             } else if (item.type === 'function_call')
                 loggers.message.info(item);
@@ -103,23 +103,29 @@ export class Transport<
         loggers.message.debug(params);
 
         let response: OpenAI.Responses.Response | null = null;
-        const stream = await this.client.responses.create(params, { signal });
-        for await (const event of stream) {
-            loggers.stream.trace(event);
-            if (event.type === 'response.completed')
-                response = event.response;
-            else if (event.type === 'response.incomplete')
-                response = event.response;
-            else if (event.type === 'response.failed')
-                response = event.response;
-            else if (event.type === 'error')
-                throw new SyntaxError('Response stream error', { cause: event });
+        try {
+            const stream = await this.client.responses.create(params, { signal });
+            for await (const event of stream) {
+                loggers.stream.trace(event);
+                if (event.type === 'response.completed')
+                    response = event.response;
+                else if (event.type === 'response.incomplete')
+                    response = event.response;
+                else if (event.type === 'response.failed')
+                    response = event.response;
+                else if (event.type === 'error')
+                    throw new Engine.Exceptions.InferenceError('Response stream error', { cause: event });
+            }
+        } catch (e) {
+            if (e instanceof OpenAI.APIConnectionError)
+                throw new Engine.Exceptions.ConnectionError(undefined, { cause: e });
+            throw e;
         }
 
         if (response) {} else throw new Error();
         loggers.message.debug(response);
         if (response.status === 'completed') {} else
-            throw new SyntaxError('Abnormal response status', { cause: response });
+            throw new Engine.Exceptions.InferenceError('Abnormal response status', { cause: response });
         if (response.usage) {} else throw new Error();
 
         this.logAiMessage(response.output);

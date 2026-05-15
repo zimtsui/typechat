@@ -24,7 +24,7 @@ export class MessageCodec<
                     if (part.type === 'output_text')
                         parts.push(new RoleMessage.Part.Text(part.text));
                     else if (part.type === 'refusal')
-                        throw new SyntaxError('Refusal', { cause: raw });
+                        throw new Engine.Exceptions.InferenceError('Refusal', { cause: raw });
                     else throw new Error();
             else if (item.type === 'function_call')
                 parts.push(this.toolCodec.decodeFunctionCall(item));

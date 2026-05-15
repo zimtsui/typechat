@@ -1,4 +1,4 @@
-import { Engine, Middleware } from '../engine.ts';
+import { Engine } from '../engine.ts';
 import { Function } from '../function.ts';
 import { MessageCodec } from './google/message-codec.ts';
 import { ToolCodec } from './google/tool-codec.ts';
@@ -74,15 +74,18 @@ export namespace GoogleEngine {
             this.toolChoiceValidator = new ToolChoiceValidator({ toolChoice: this.toolChoice });
         }
 
+        protected override async infer(
+            wfctx: InferenceContext,
+            session: Engine.Session.From<fdm>,
+        ): Promise<RoleMessage.Ai.From<fdm>> {
+            return await super.infer(wfctx, session) as RoleMessage.Ai.From<fdm>;
+        }
+
         public override clone(): GoogleEngine<fdm> {
             const engine = new GoogleEngine.Instance(this.options);
             engine.middlewaresStateless = [...this.middlewaresStateless];
             engine.middlewaresStateful = [...this.middlewaresStateful];
             return engine;
-        }
-
-        protected override async infer(wfctx: InferenceContext, session: Engine.Session.From<fdm>): Promise<RoleMessage.Ai.From<fdm>> {
-            return await super.infer(wfctx, session) as RoleMessage.Ai.From<fdm>;
         }
 
         public override async stateless(wfctx: InferenceContext, session: Engine.Session.From<fdm>): Promise<RoleMessage.Ai.From<fdm>> {
@@ -93,10 +96,10 @@ export namespace GoogleEngine {
             return await super.stateful(wfctx, session) as RoleMessage.Ai.From<fdm>;
         }
 
-        public override useStateless(middleware: Middleware.From<fdm>): GoogleEngine<fdm> {
+        public override useStateless(middleware: Engine.Middleware.From<fdm>): GoogleEngine<fdm> {
             return super.useStateless(middleware) as GoogleEngine<fdm>;
         }
-        public override useStateful(middleware: Middleware.From<fdm>): GoogleEngine<fdm> {
+        public override useStateful(middleware: Engine.Middleware.From<fdm>): GoogleEngine<fdm> {
             return super.useStateful(middleware) as GoogleEngine<fdm>;
         }
 
@@ -175,10 +178,23 @@ export namespace GoogleEngine {
         googleSearch?: boolean;
     }
 
-    export const create: Engine.Create = function<
+    export function create<
+        fdm extends Function.Decl.Map.Proto,
+    >(options: GoogleEngine.Options<fdm>): GoogleEngine<fdm> {
+        return new Instance(options);
+    }
+
+    export function createEngine<
         fdm extends Function.Decl.Map.Proto,
     >(options: Engine.Options<fdm>): Engine<fdm> {
-        return new Instance(options);
+        return new Instance({
+            endpointSpec: options.endpointSpec,
+            functionDeclarationMap: options.functionDeclarationMap,
+            throttle: options.throttle,
+            toolChoice: options.toolChoice,
+            providerRetry: options.providerRetry,
+            inferenceRetry: options.inferenceRetry,
+        });
     }
 
     export import RoleMessage = MessageModule.RoleMessage;

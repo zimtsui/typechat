@@ -1,4 +1,4 @@
-import { Engine, Middleware } from '../engine.ts';
+import { Engine } from '../engine.ts';
 import { Function } from '../function.ts';
 import { MessageCodec } from './openai-responses/message-codec.ts';
 import { ToolCodec } from './openai-responses/tool-codec.ts';
@@ -57,23 +57,11 @@ export namespace OpenAIResponsesEngine {
             return engine;
         }
 
-        /**
-        * @throws {@link InferenceTimeout} 推理超时
-        * @throws {@link SyntaxError} 模型抽风
-        * @throws {@link Recoverable} 模型抽风但可恢复
-        * @throws {@link TypeError} 网络故障
-        */
         protected override async infer(
             wfctx: InferenceContext,
             session: Engine.Session.From<fdm>,
         ): Promise<RoleMessage.Ai.From<fdm>> {
-            try {
-                return await super.infer(wfctx, session) as RoleMessage.Ai.From<fdm>;
-            } catch (e) {
-                if (e instanceof OpenAI.APIConnectionError)
-                    throw new TypeError(undefined, { cause: e });
-                else throw e;
-            }
+            return await super.infer(wfctx, session) as RoleMessage.Ai.From<fdm>;
         }
 
         public override async stateless(wfctx: InferenceContext, session: Engine.Session.From<fdm>): Promise<RoleMessage.Ai.From<fdm>> {
@@ -84,10 +72,10 @@ export namespace OpenAIResponsesEngine {
             return await super.stateful(wfctx, session) as RoleMessage.Ai.From<fdm>;
         }
 
-        public override useStateless(middleware: Middleware.From<fdm>): OpenAIResponsesEngine<fdm> {
+        public override useStateless(middleware: Engine.Middleware.From<fdm>): OpenAIResponsesEngine<fdm> {
             return super.useStateless(middleware) as OpenAIResponsesEngine<fdm>;
         }
-        public override useStateful(middleware: Middleware.From<fdm>): OpenAIResponsesEngine<fdm> {
+        public override useStateful(middleware: Engine.Middleware.From<fdm>): OpenAIResponsesEngine<fdm> {
             return super.useStateful(middleware) as OpenAIResponsesEngine<fdm>;
         }
 
@@ -168,10 +156,24 @@ export namespace OpenAIResponsesEngine {
         applyPatch?: boolean;
     }
 
-    export const create: Engine.Create = function<
+    export function create<
+        fdm extends Function.Decl.Map.Proto,
+    >(options: OpenAIResponsesEngine.Options<fdm>): OpenAIResponsesEngine<fdm> {
+        return new Instance(options);
+    }
+
+    createEngine satisfies Engine.Create;
+    export function createEngine<
         fdm extends Function.Decl.Map.Proto,
     >(options: Engine.Options<fdm>): Engine<fdm> {
-        return new Instance(options);
+        return new Instance({
+            endpointSpec: options.endpointSpec,
+            functionDeclarationMap: options.functionDeclarationMap,
+            throttle: options.throttle,
+            toolChoice: options.toolChoice,
+            providerRetry: options.providerRetry,
+            inferenceRetry: options.inferenceRetry,
+        });
     }
 
     export import Tool = ToolModule.Tool;

@@ -1,4 +1,4 @@
-import { Engine, Middleware } from '../engine.ts';
+import { Engine } from '../engine.ts';
 import { Function } from '../function.ts';
 import { MessageCodec } from './openai-compatible/message-codec.ts';
 import { ToolCodec } from './openai-responses/tool-codec.ts';
@@ -21,7 +21,7 @@ export namespace OpenAICompatibleEngine {
         protected billing: Billing;
         protected override transport: Transport<fdm>;
 
-        public constructor(protected options: OpenAICompatibleEngine.Options<fdm>) {
+        public constructor(protected options: Engine.Options<fdm>) {
             super(options);
 
             this.toolCodec = new ToolCodec({ fdm: this.fdm });
@@ -48,47 +48,10 @@ export namespace OpenAICompatibleEngine {
             return engine;
         }
 
-        /**
-        * @throws {@link InferenceTimeout} 推理超时
-        * @throws {@link SyntaxError} 模型抽风
-        * @throws {@link Recoverable} 模型抽风但可恢复
-        * @throws {@link TypeError} 网络故障
-        */
-        protected override async infer(
-            wfctx: InferenceContext,
-            session: Engine.Session.From<fdm>,
-        ): Promise<RoleMessage.Ai.From<fdm>> {
-            try {
-                return await super.infer(wfctx, session) as RoleMessage.Ai.From<fdm>;
-            } catch (e) {
-                if (e instanceof OpenAI.APIConnectionError)
-                    throw new TypeError(undefined, { cause: e });
-                else throw e;
-            }
-        }
-
-        public override async stateless(wfctx: InferenceContext, session: Engine.Session.From<fdm>): Promise<RoleMessage.Ai.From<fdm>> {
-            return await super.stateless(wfctx, session) as RoleMessage.Ai.From<fdm>;
-        }
-
-        public override async stateful(wfctx: InferenceContext, session: Engine.Session.From<fdm>): Promise<RoleMessage.Ai.From<fdm>> {
-            return await super.stateful(wfctx, session) as RoleMessage.Ai.From<fdm>;
-        }
-
-        public override useStateless(middleware: Middleware.From<fdm>): OpenAICompatibleEngine<fdm> {
-            return super.useStateless(middleware) as OpenAICompatibleEngine<fdm>;
-        }
-        public override useStateful(middleware: Middleware.From<fdm>): OpenAICompatibleEngine<fdm> {
-            return super.useStateful(middleware) as OpenAICompatibleEngine<fdm>;
-        }
-
     }
 
-    export interface Options<
-        in out fdm extends Function.Decl.Map.Proto,
-    > extends Engine.Options<fdm> {}
-
-    export const create: Engine.Create = function<
+    createEngine satisfies Engine.Create;
+    export function createEngine<
         fdm extends Function.Decl.Map.Proto,
     >(options: Engine.Options<fdm>): Engine<fdm> {
         return new Instance(options);

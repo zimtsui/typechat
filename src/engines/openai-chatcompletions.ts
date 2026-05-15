@@ -1,9 +1,12 @@
 import { Function } from '../function.ts';
 import { Engine } from '../engine.ts';
 import { MessageCodec } from './openai-chatcompletions/message-codec.ts';
-import { Transport } from './openai-chatcompletions/transport.ts';
+import * as TransportModule from './openai-chatcompletions/transport.ts';
+import * as MessageModule from './openai-chatcompletions/message.ts';
 import { ToolCodec } from './openai-chatcompletions/tool-codec.ts';
 import { Billing } from './openai-chatcompletions/billing.ts';
+import { InferenceContext } from '../inference-context.ts';
+import OpenAI from 'openai';
 
 
 export type OpenAIChatCompletionsEngine<
@@ -18,7 +21,7 @@ export namespace OpenAIChatCompletionsEngine {
         protected billing: Billing;
         protected override transport: Transport<fdm>;
 
-        public constructor(protected options: OpenAIChatCompletionsEngine.Options<fdm>) {
+        public constructor(protected options: Engine.Options<fdm>) {
             super(options);
             this.toolCodec = new ToolCodec({ fdm: this.fdm });
             this.messageCodec = new MessageCodec({
@@ -43,13 +46,14 @@ export namespace OpenAIChatCompletionsEngine {
             engine.middlewaresStateful = [...this.middlewaresStateful];
             return engine;
         }
+
     }
 
-    export interface Options<
-        in out fdm extends Function.Decl.Map.Proto,
-    > extends Engine.Options<fdm> {}
+    export import RoleMessage = MessageModule.RoleMessage;
+    export import Transport = TransportModule.Transport;
 
-    export const create: Engine.Create = function<
+    createEngine satisfies Engine.Create;
+    export function createEngine<
         fdm extends Function.Decl.Map.Proto,
     >(options: Engine.Options<fdm>): Engine<fdm> {
         return new Instance(options);

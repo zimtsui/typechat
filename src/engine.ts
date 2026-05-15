@@ -8,8 +8,8 @@ import { loggers } from './telemetry.ts';
 import * as SessionModule from './engine/session.ts';
 import * as MessageModule from './engine/message.ts';
 import { PartsValidator } from './engine/parts-validator.ts';
-import { Recoverable } from './engine/recoverable.ts';
-import { Middleware } from './engine/middleware.ts';
+import * as ExceptionsModule from './engine/exceptions.ts';
+import * as MiddlewareModule from './engine/middleware.ts';
 import * as ToolChoiceValidatorModule from './engine/tool-choice-validator.ts';
 import * as TransportModule from './engine/transport.ts';
 import { ToolChoice } from './tool-choice.ts';
@@ -98,11 +98,11 @@ export namespace Engine {
         }
 
         /**
-        * @throws {@link InferenceTimeout} 推理超时
-        * @throws {@link SyntaxError} 模型抽风
-        * @throws {@link Recoverable} 模型抽风但可恢复
-        * @throws {@link TypeError} 网络故障
-        */
+         * @throws {@link Exceptions.InferenceTimeout} 推理超时
+         * @throws {@link Exceptions.InferenceError} 模型抽风
+         * @throws {@link Exceptions.Recoverable} 模型抽风但可恢复
+         * @throws {@link Exceptions.ConnectionError} 网络故障
+         */
         protected async infer(
             wfctx: InferenceContext,
             session: Session.From<fdm>,
@@ -116,11 +116,11 @@ export namespace Engine {
                 const aiMessage = await this.transport.fetch(wfctx, session, signal);
                 this.partsValidator.validate(aiMessage);
                 const rejection = this.toolChoiceValidator.validate(aiMessage);
-                if (rejection) throw new Recoverable(aiMessage, rejection);
+                if (rejection) throw new Exceptions.InferenceError.Recoverable(aiMessage, rejection);
                 return aiMessage;
             } catch (e) {
                 if (signalTimeout?.aborted)
-                    throw new InferenceTimeout(undefined, { cause: e });
+                    throw new Exceptions.InferenceTimeout(undefined, { cause: e });
                 else if (wfctx.signal?.aborted)
                     throw wfctx.signal.reason;
                 else throw e;
@@ -128,9 +128,9 @@ export namespace Engine {
         }
 
         /**
-        * @throws {@link InferenceTimeout} 推理超时
-        * @throws {@link SyntaxError} 模型抽风
-        * @throws {@link TypeError} 网络故障
+        * @throws {@link Exceptions.InferenceTimeout} 推理超时
+        * @throws {@link Exceptions.InferenceError} 模型抽风
+        * @throws {@link Exceptions.ConnectionError} 网络故障
         */
         public async stateless(
             wfctx: InferenceContext,
@@ -140,15 +140,15 @@ export namespace Engine {
             for (let retryProvider = 0, retryInference = 0;;) try {
                 return await middleware(wfctx, session, () => this.infer(wfctx, session));
             } catch (e) {
-                if (e instanceof InferenceTimeout) {    // 推理超时
+                if (e instanceof Exceptions.InferenceTimeout) {
                     if (retryInference < this.inferenceOptions.retry) {} else throw e;
                     loggers.message.warn(e);
                     retryInference++;
-                } else if (e instanceof SyntaxError) {  // 模型抽风
+                } else if (e instanceof Exceptions.InferenceError) {
                     if (retryInference < this.inferenceOptions.retry) {} else throw e;
                     loggers.message.warn(e);
                     retryInference++;
-                } else if (e instanceof TypeError) {    // 网络故障
+                } else if (e instanceof Exceptions.ConnectionError) {
                     if (retryProvider < this.providerSpecs.retry) {} else throw e;
                     loggers.message.warn(e);
                     retryProvider++;
@@ -157,9 +157,9 @@ export namespace Engine {
         }
 
         /**
-        * @throws {@link InferenceTimeout} 推理超时
-        * @throws {@link SyntaxError} 模型抽风
-        * @throws {@link TypeError} 网络故障
+        * @throws {@link Exceptions.InferenceTimeout} 推理超时
+        * @throws {@link Exceptions.InferenceError} 模型抽风
+        * @throws {@link Exceptions.ConnectionError} 网络故障
         * @param session mutable
         */
         public async stateful(
@@ -175,15 +175,15 @@ export namespace Engine {
                 }
                 return await middleware(wfctx, session, next);
             } catch (e) {
-                if (e instanceof InferenceTimeout) {    // 推理超时
+                if (e instanceof Exceptions.InferenceTimeout) {
                     if (retryInference < this.inferenceOptions.retry) {} else throw e;
                     loggers.message.warn(e);
                     retryInference++;
-                } else if (e instanceof SyntaxError) {  // 模型抽风
+                } else if (e instanceof Exceptions.InferenceError) {
                     if (retryInference < this.inferenceOptions.retry) {} else throw e;
                     loggers.message.warn(e);
                     retryInference++;
-                } else if (e instanceof TypeError) {    // 网络故障
+                } else if (e instanceof Exceptions.ConnectionError) {
                     if (retryProvider < this.providerSpecs.retry) {} else throw e;
                     loggers.message.warn(e);
                     retryProvider++;
@@ -301,10 +301,9 @@ export namespace Engine {
     export import ToolChoiceValidator = ToolChoiceValidatorModule.ToolChoiceValidator;
     export import Session = SessionModule.Session;
     export import RoleMessage = MessageModule.RoleMessage;
+    export import Exceptions = ExceptionsModule;
+    export import Middleware = MiddlewareModule.Middleware;
 }
-
-export class InferenceTimeout extends Error {}
-export { Recoverable, Middleware }
 
 declare global {
     export namespace NodeJS {

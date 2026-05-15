@@ -1,6 +1,7 @@
 import { Function } from '../../function.ts';
 import Anthropic from '@anthropic-ai/sdk';
 import { Parse, ParseError } from 'typebox/schema';
+import { Engine } from '../../engine.ts';
 
 
 export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
@@ -22,12 +23,12 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
         apifc: Anthropic.ToolUseBlock,
     ): Function.Call.From<fdm> {
         const fditem = this.fdm[apifc.name];
-        if (fditem) {} else throw new SyntaxError('Unknown function call', { cause: apifc });
+        if (fditem) {} else throw new Engine.Exceptions.InferenceError('Unknown function call', { cause: apifc });
         try {
             Parse(fditem.parameters, apifc.input);
         } catch (e) {
             if (e instanceof ParseError)
-                throw new SyntaxError('Invalid arguments of function call.', { cause: e });
+                throw new Engine.Exceptions.InferenceError('Invalid arguments of function call.', { cause: e });
             else throw e;
         }
         return Function.Call.of({
