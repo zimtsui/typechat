@@ -13,7 +13,6 @@ import type { Billing } from './billing.ts';
 import * as ChoiceCodec from './tool-choice-codec.ts';
 import type { ToolChoice } from '../../tool-choice.ts';
 import { MIMEType } from 'node:util';
-import { HeaderRecord } from 'undici/types/header';
 
 
 
@@ -119,6 +118,9 @@ export class Transport<
         for (const part of response.candidates[0].content.parts) {
             if (part.text) loggers.inference.info(part.text);
             if (part.functionCall) loggers.message.info(part.functionCall);
+            if (part.executableCode?.code) loggers.message.info(part.executableCode.code);
+            if (part.codeExecutionResult?.outcome) loggers.message.info(part.codeExecutionResult.outcome);
+            if (part.codeExecutionResult?.output) loggers.message.info(part.codeExecutionResult.output);
         }
         wfctx.cost?.(this.billing.charge(response.usageMetadata));
 
