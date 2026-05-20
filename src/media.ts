@@ -1,5 +1,5 @@
 import * as XmlCodec from './xml.ts';
-import { MIMEType } from 'whatwg-mimetype';
+import { MIMEType } from 'node:util';
 
 const NOMINAL = Symbol();
 

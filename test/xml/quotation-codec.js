@@ -1,5 +1,5 @@
 import test from 'ava';
-import { MIMEType } from 'whatwg-mimetype';
+import { MIMEType } from 'node:util';
 import * as XmlCodec from '../../build/xml.js';
 
 

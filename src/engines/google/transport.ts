@@ -12,7 +12,7 @@ import type { ToolCodec } from './tool-codec.ts';
 import type { Billing } from './billing.ts';
 import * as ChoiceCodec from './tool-choice-codec.ts';
 import type { ToolChoice } from '../../tool-choice.ts';
-import { MIMEType } from 'whatwg-mimetype';
+import { MIMEType } from 'node:util';
 import { HeaderRecord } from 'undici/types/header';
 
 

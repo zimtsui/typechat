@@ -1,5 +1,5 @@
 import test from 'ava';
-import { MIMEType } from 'whatwg-mimetype';
+import { MIMEType } from 'node:util';
 import { Function } from '../../../build/function.js';
 import { Media } from '../../../build/media.js';
 import { RoleMessage } from '../../../build/engine/message.js';

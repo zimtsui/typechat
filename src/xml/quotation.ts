@@ -1,6 +1,6 @@
 import Assets from '../assets.ts';
 import Handlebars from './helpers.ts';
-import { MIMEType } from 'whatwg-mimetype';
+import { MIMEType } from 'node:util';
 
 
 const template = Handlebars.compile<template.Input>(Assets.Xml.quotation);

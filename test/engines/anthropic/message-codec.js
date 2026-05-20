@@ -1,5 +1,5 @@
 import test from 'ava';
-import { MIMEType } from 'whatwg-mimetype';
+import { MIMEType } from 'node:util';
 import { Media } from '../../../build/media.js';
 import { RoleMessage } from '../../../build/engine/message.js';
 import { ToolCodec } from '../../../build/engines/anthropic/tool-codec.js';
