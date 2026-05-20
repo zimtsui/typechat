@@ -63,7 +63,7 @@ export class MessageCodec<
             else if (part instanceof Media.Image)
                 content.push({
                     type: 'input_image',
-                    image_url: `data:${part.mimeType};base64,${part.base64}`,
+                    image_url: `data:${part.mimeType};base64,${part}`,
                     detail: 'auto',
                 });
             else if (part instanceof Function.Response) {

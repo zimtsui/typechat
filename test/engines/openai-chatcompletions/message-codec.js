@@ -9,6 +9,7 @@ import { ToolCodec } from '../../../build/engines/openai-chatcompletions/tool-co
 import { MessageCodec } from '../../../build/engines/openai-chatcompletions/message-codec.js';
 import { functionDeclarationMap } from '../../helpers.js';
 
+const binary = text => new TextEncoder().encode(text).buffer;
 
 function makeCodec() {
     const toolCodec = new ToolCodec({ fdm: functionDeclarationMap });
@@ -20,10 +21,7 @@ function makeCodec() {
 test('OpenAI chat completions codec rejects media user message', t => {
     const messageCodec = makeCodec();
     const userMessage = new RoleMessage.User([
-        new Media.Image({
-            mimeType: new MIMEType('image/png'),
-            base64: 'aGVsbG8=',
-        }),
+        new Media.Image(binary('hello'), new MIMEType('image/png')),
     ]);
 
     const error = t.throws(() => messageCodec.encodeUserMessage(userMessage));
@@ -82,10 +80,7 @@ test('OpenAI chat completions codec omits empty user message for pure tool respo
 test('OpenAI chat completions codec encodes text media as quoted text', t => {
     const messageCodec = makeCodec();
     const userMessage = new RoleMessage.User([
-        new Media.Text({
-            mimeType: new MIMEType('text/plain'),
-            text: 'hello',
-        }),
+        new Media.Text('hello', new MIMEType('text/plain')),
     ]);
 
     const encoded = messageCodec.encodeUserMessage(userMessage);

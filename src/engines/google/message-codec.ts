@@ -73,14 +73,14 @@ export class MessageCodec<
             else if (part instanceof Media.Pdf)
                 apiParts.push(
                     Google.createPartFromBase64(
-                        part.base64, String(part.mimeType),
+                        String(part), String(part.mimeType),
                         Google.PartMediaResolutionLevel.MEDIA_RESOLUTION_MEDIUM,
                     ),
                 );
             else if (part instanceof Media.Image)
                 apiParts.push(
                     Google.createPartFromBase64(
-                        part.base64, String(part.mimeType),
+                        String(part), String(part.mimeType),
                         Google.PartMediaResolutionLevel.MEDIA_RESOLUTION_HIGH,
                     ),
                 );

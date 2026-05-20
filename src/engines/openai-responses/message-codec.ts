@@ -66,13 +66,13 @@ export class MessageCodec<
             else if (part instanceof Media.Image)
                 content.push({
                     type: 'input_image',
-                    image_url: `data:${part.mimeType};base64,${part.base64}`,
+                    image_url: `data:${part.mimeType};base64,${part}`,
                     detail: 'high',
                 });
             else if (part instanceof Media.Pdf)
                 content.push({
                     type: 'input_file',
-                    file_data: `data:${part.mimeType};base64,${part.base64}`,
+                    file_data: `data:${part.mimeType};base64,${part}`,
                 });
             else if (part instanceof Function.Response) {
                 const fr = part as Function.Response.From<fdm>;

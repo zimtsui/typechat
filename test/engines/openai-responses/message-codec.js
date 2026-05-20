@@ -8,6 +8,7 @@ import { MessageCodec } from '../../../build/engines/openai-responses/message-co
 import { Tool } from '../../../build/engines/openai-responses/tool.js';
 import { functionDeclarationMap } from '../../helpers.js';
 
+const binary = text => new TextEncoder().encode(text).buffer;
 
 function makeCodec() {
     const toolCodec = new ToolCodec({ fdm: functionDeclarationMap });
@@ -20,11 +21,8 @@ test('OpenAI responses codec encodes multimodal user message', t => {
     const messageCodec = makeCodec();
     const userMessage = new RoleMessage.User([
         new RoleMessage.Part.Text('Hello.\n'),
-        new Media.Image({
-            mimeType: new MIMEType('image/png'),
-            base64: 'aGVsbG8=',
-        }),
-        new Media.Pdf('cGRm'),
+        new Media.Image(binary('hello'), new MIMEType('image/png')),
+        new Media.Pdf(binary('pdf')),
         Function.Response.Successful.of({
             id: 'call_1',
             name: 'noop',
@@ -65,7 +63,7 @@ test('OpenAI responses codec encodes multimodal user message', t => {
 test('OpenAI responses codec encodes PDF file input as raw base64', t => {
     const messageCodec = makeCodec();
     const userMessage = new RoleMessage.User([
-        new Media.Pdf('cGRm'),
+        new Media.Pdf(binary('pdf')),
     ]);
 
     const encoded = messageCodec.encodeUserMessage(userMessage);
@@ -83,10 +81,7 @@ test('OpenAI responses codec encodes PDF file input as raw base64', t => {
 test('OpenAI responses codec encodes text media as quoted text', t => {
     const messageCodec = makeCodec();
     const userMessage = new RoleMessage.User([
-        new Media.Text({
-            mimeType: new MIMEType('text/plain'),
-            text: 'hello',
-        }),
+        new Media.Text('hello', new MIMEType('text/plain')),
     ]);
 
     const encoded = messageCodec.encodeUserMessage(userMessage);

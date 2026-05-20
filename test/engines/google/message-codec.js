@@ -8,6 +8,7 @@ import { ToolCodec } from '../../../build/engines/google/tool-codec.js';
 import { MessageCodec } from '../../../build/engines/google/message-codec.js';
 import { functionDeclarationMap } from '../../helpers.js';
 
+const binary = text => new TextEncoder().encode(text).buffer;
 
 function makeCodec(codeExecution = false) {
     const toolCodec = new ToolCodec({ fdm: functionDeclarationMap });
@@ -20,7 +21,7 @@ function makeCodec(codeExecution = false) {
 test('Google codec encodes PDF user message', t => {
     const messageCodec = makeCodec();
     const userMessage = new RoleMessage.User([
-        new Media.Pdf('cGRm'),
+        new Media.Pdf(binary('pdf')),
     ]);
 
     const encoded = messageCodec.encodeUserMessage(userMessage);
@@ -40,10 +41,7 @@ test('Google codec encodes PDF user message', t => {
 test('Google codec encodes text media as quoted text', t => {
     const messageCodec = makeCodec();
     const userMessage = new RoleMessage.User([
-        new Media.Text({
-            mimeType: new MIMEType('text/plain'),
-            text: 'hello',
-        }),
+        new Media.Text('hello', new MIMEType('text/plain')),
     ]);
 
     const encoded = messageCodec.encodeUserMessage(userMessage);

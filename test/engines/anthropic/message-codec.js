@@ -6,6 +6,7 @@ import { ToolCodec } from '../../../build/engines/anthropic/tool-codec.js';
 import { MessageCodec } from '../../../build/engines/anthropic/message-codec.js';
 import { functionDeclarationMap } from '../../helpers.js';
 
+const binary = text => new TextEncoder().encode(text).buffer;
 
 function makeCodec() {
     const toolCodec = new ToolCodec({ fdm: functionDeclarationMap });
@@ -17,7 +18,7 @@ function makeCodec() {
 test('Anthropic codec rejects media user message', t => {
     const messageCodec = makeCodec();
     const userMessage = new RoleMessage.User([
-        new Media.Pdf('cGRm'),
+        new Media.Pdf(binary('pdf')),
     ]);
 
     const error = t.throws(() => messageCodec.encodeUserMessage(userMessage));
@@ -28,10 +29,7 @@ test('Anthropic codec rejects media user message', t => {
 test('Anthropic codec encodes text media as quoted text', t => {
     const messageCodec = makeCodec();
     const userMessage = new RoleMessage.User([
-        new Media.Text({
-            mimeType: new MIMEType('text/plain'),
-            text: 'hello',
-        }),
+        new Media.Text('hello', new MIMEType('text/plain')),
     ]);
 
     const encoded = messageCodec.encodeUserMessage(userMessage);

@@ -1,3 +1,4 @@
+import assert from 'node:assert';
 import * as XmlCodec from './xml.ts';
 import { MIMEType } from 'node:util';
 
@@ -11,49 +12,41 @@ export abstract class Media {
 
 export namespace Media {
     export class Image extends Media {
-        public override mimeType: MIMEType;
-        public base64: string;
-        public constructor(options: Media.Image.Options) {
+        public constructor(public binary: ArrayBuffer, public override mimeType: MIMEType) {
             super();
-            if (options.mimeType.type === 'image') {} else
+            if (this.mimeType.type === 'image') {} else
                 throw new TypeError('Major MIME type of image must be `image`.');
-            this.mimeType = options.mimeType;
-            this.base64 = options.base64;
         }
-    }
-    export namespace Image {
-        export interface Options {
-            mimeType: MIMEType;
-            base64: string;
+        public [Symbol.toPrimitive](hint: string): string {
+            assert(hint === 'string');
+            return Buffer.from(this.binary).toString('base64');
         }
     }
 
     export class Pdf extends Media {
-        public override mimeType = new MIMEType('application/pdf');
-        public constructor(public base64: string) {
+        public override mimeType: MIMEType;
+        public constructor(public binary: ArrayBuffer) {
             super();
+            this.mimeType = new MIMEType('application/pdf');
+        }
+        public [Symbol.toPrimitive](hint: string): string {
+            assert(hint === 'string');
+            return Buffer.from(this.binary).toString('base64');
         }
     }
 
     export class Text extends Media {
-        public override mimeType: MIMEType;
-        public text: string;
-        public constructor(options: Media.Text.Options) {
+        public constructor(public text: string, public override mimeType: MIMEType) {
             super();
-            if (options.mimeType.type === 'text') {} else
+            if (mimeType.type === 'text') {} else
                 throw new TypeError('Major MIME type of text must be `text`.');
-            this.mimeType = options.mimeType;
-            this.text = options.text;
         }
-
         public quote(): string {
             return XmlCodec.Quotation.encode(this.mimeType, this.text);
         }
-    }
-    export namespace Text {
-        export interface Options {
-            mimeType: MIMEType;
-            text: string;
+        public [Symbol.toPrimitive](hint: string): string {
+            assert(hint === 'string');
+            return this.text;
         }
     }
 }
