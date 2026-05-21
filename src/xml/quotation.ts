@@ -13,5 +13,5 @@ namespace template {
 }
 
 export function encode(mimeType: MIMEType, text: string, author?: string): string {
-    return template({ mimeType: `${mimeType}`, text, author });
+    return template({ mimeType: String(mimeType), text, author }).trim();
 }

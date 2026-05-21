@@ -10,5 +10,5 @@ namespace template {
 }
 
 export function encode(text: string): string {
-    return template({ text });
+    return template({ text }).trim();
 }
