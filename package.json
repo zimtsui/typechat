@@ -3,8 +3,7 @@
   "version": "0.0.123",
   "exports": {
     ".": "./build/exports.js",
-    "./assets": "./build/assets.js",
-    "./xml": "./build/xml.js"
+    "./xml": "./build/exports/xml.js"
   },
   "engines": {
     "node": ">=24"
