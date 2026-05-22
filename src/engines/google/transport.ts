@@ -97,9 +97,15 @@ export class Transport<
             if (contentType) {} else throw new Error(res.statusText, { cause: res });
             const mimeType = new MIMEType(contentType);
             if (mimeType.essence === 'application/json')
-                throw new Error(res.statusText, { cause: await res.json() });
+                if (res.status === 429)
+                    throw new Engine.Exceptions.ConnectionError(res.statusText, { cause: await res.json() });
+                else
+                    throw new Error(res.statusText, { cause: await res.json() });
             else if (mimeType.type === 'text')
-                throw new Error(res.statusText, { cause: await res.text() });
+                if (res.status === 429)
+                    throw new Engine.Exceptions.ConnectionError(res.statusText, { cause: await res.text() });
+                else
+                    throw new Error(res.statusText, { cause: await res.text() });
             else throw new Error(res.statusText, { cause: res });
         }
         const response = <Google.GenerateContentResponse>await res.json()
