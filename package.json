@@ -1,6 +1,6 @@
 {
   "name": "@zimtsui/typechat",
-  "version": "0.0.124",
+  "version": "0.0.125",
   "exports": {
     ".": "./build/exports.js",
     "./xml": "./build/exports/xml.js"
