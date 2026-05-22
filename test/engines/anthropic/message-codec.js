@@ -36,7 +36,7 @@ test('Anthropic codec encodes text media as quoted text', t => {
 
     t.deepEqual(encoded, [{
         type: 'text',
-        text: '<typechat:quotation mime-type="text/plain"><![CDATA[hello]]></typechat:quotation>\n',
+        text: '<typechat:quotation mime-type="text/plain"><![CDATA[hello]]></typechat:quotation>',
     }]);
 });
 

@@ -40,7 +40,7 @@ test('Tool choice validator enforces exactly one function call for ANYONE', t =>
 
     t.regex(getOnlyText(missing), /Error: Function call required, but not found\./);
     t.regex(getText(duplicated), /Error: Only 1 function call allowed, but multiple found\./);
-    t.is(duplicated.getFunctionResponses()[0].error, '<typechat:system>Cancelled by system.</typechat:system>\n');
+    t.is(duplicated.getFunctionResponses()[0].error, '<typechat:system>Cancelled by system.</typechat:system>');
     t.is(validate(ToolChoice.ANYONE, [fcall]), undefined);
 });
 
@@ -48,6 +48,6 @@ test('Tool choice validator rejects function calls for NONE', t => {
     const rejection = validate(ToolChoice.NONE, [fcall]);
 
     t.regex(getText(rejection), /Error: No function call allowed\./);
-    t.is(rejection.getFunctionResponses()[0].error, '<typechat:system>Cancelled by system.</typechat:system>\n');
+    t.is(rejection.getFunctionResponses()[0].error, '<typechat:system>Cancelled by system.</typechat:system>');
     t.is(validate(ToolChoice.NONE, [chat]), undefined);
 });

@@ -110,7 +110,7 @@ export class Transport<
             throw e;
         }
 
-        if (response) {} else throw new Error();
+        if (response) {} else throw new Engine.Exceptions.ConnectionError('Stream shut down');
         loggers.message.debug(response);
         if (response.status === 'completed') {} else
             throw new Engine.Exceptions.InferenceError('Abnormal response status', { cause: response });

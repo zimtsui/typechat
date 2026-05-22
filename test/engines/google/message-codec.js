@@ -48,7 +48,7 @@ test('Google codec encodes text media as quoted text', t => {
 
     t.is(encoded.role, 'user');
     t.deepEqual(encoded.parts, [{
-        text: '<typechat:quotation mime-type="text/plain"><![CDATA[hello]]></typechat:quotation>\n',
+        text: '<typechat:quotation mime-type="text/plain"><![CDATA[hello]]></typechat:quotation>',
     }]);
 });
 

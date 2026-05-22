@@ -1,4 +1,5 @@
 import test from 'ava';
+import { Engine } from '../../../build/engine.js';
 import { RoleMessage } from '../../../build/engine/message.js';
 import { ToolChoice } from '../../../build/tool-choice.js';
 import { ToolCodec } from '../../../build/engines/openai-responses/tool-codec.js';
@@ -82,4 +83,24 @@ test('OpenAI Responses transport throws on stream error event', async t => {
     const error = await t.throwsAsync(() => transport.fetch({}, session));
 
     t.is(error?.message, 'Response stream error');
+});
+
+test('OpenAI Responses transport treats stream shutdown without response as connection error', async t => {
+    const transport = makeTransport(true);
+    transport.client = {
+        responses: {
+            create: async function* () {},
+        },
+    };
+    const session = {
+        chatMessages: [new RoleMessage.User([
+            new RoleMessage.Part.Text('Hello.\n'),
+        ])],
+    };
+
+    const error = await t.throwsAsync(() => transport.fetch({}, session), {
+        instanceOf: Engine.Exceptions.ConnectionError,
+    });
+
+    t.is(error?.message, 'Stream shut down');
 });

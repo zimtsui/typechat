@@ -89,7 +89,7 @@ test('OpenAI chat completions codec encodes text media as quoted text', t => {
         role: 'user',
         content: [{
             type: 'text',
-            text: '<typechat:quotation mime-type="text/plain"><![CDATA[hello]]></typechat:quotation>\n',
+            text: '<typechat:quotation mime-type="text/plain"><![CDATA[hello]]></typechat:quotation>',
         }],
     }]);
 });

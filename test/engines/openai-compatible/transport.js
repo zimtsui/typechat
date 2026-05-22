@@ -1,4 +1,5 @@
 import test from 'ava';
+import { Engine } from '../../../build/engine.js';
 import { RoleMessage } from '../../../build/engine/message.js';
 import { ToolChoice } from '../../../build/tool-choice.js';
 import { ToolCodec } from '../../../build/engines/openai-responses/tool-codec.js';
@@ -65,4 +66,24 @@ test('OpenAI compatible transport forwards additional headers', t => {
     });
 
     t.is(transport.client._options.defaultHeaders.get('x-provider-feature'), 'enabled');
+});
+
+test('OpenAI compatible transport treats stream shutdown without response as connection error', async t => {
+    const transport = makeTransport(ToolChoice.AUTO);
+    transport.client = {
+        responses: {
+            create: async function* () {},
+        },
+    };
+    const session = {
+        chatMessages: [new RoleMessage.User([
+            new RoleMessage.Part.Text('Hello.\n'),
+        ])],
+    };
+
+    const error = await t.throwsAsync(() => transport.fetch({}, session), {
+        instanceOf: Engine.Exceptions.ConnectionError,
+    });
+
+    t.is(error?.message, 'Stream shut down');
 });

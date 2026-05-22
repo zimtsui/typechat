@@ -91,7 +91,7 @@ test('OpenAI responses codec encodes text media as quoted text', t => {
         role: 'user',
         content: [{
             type: 'input_text',
-            text: '<typechat:quotation mime-type="text/plain"><![CDATA[hello]]></typechat:quotation>\n',
+            text: '<typechat:quotation mime-type="text/plain"><![CDATA[hello]]></typechat:quotation>',
         }],
     }]);
 });
