@@ -171,7 +171,9 @@ export class Transport<
         } catch (e) {
             if (e instanceof OpenAI.APIConnectionError)
                 throw new Engine.Exceptions.ConnectionError(undefined, { cause: e });
-            throw e;
+            else if (e instanceof TypeError)
+                throw new Engine.Exceptions.ConnectionError(undefined, { cause: e });
+            else throw e;
         }
 
         if (stock) {} else throw new Error();
