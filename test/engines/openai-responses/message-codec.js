@@ -34,6 +34,14 @@ test('OpenAI responses codec encodes multimodal user message', t => {
 
     t.deepEqual(encoded, [
         {
+            type: 'function_call_output',
+            call_id: 'call_1',
+            output: [{
+                type: 'input_text',
+                text: 'done',
+            }],
+        },
+        {
             type: 'message',
             role: 'user',
             content: [
@@ -51,14 +59,6 @@ test('OpenAI responses codec encodes multimodal user message', t => {
                     file_data: 'data:application/pdf;base64,cGRm',
                 },
             ],
-        },
-        {
-            type: 'function_call_output',
-            call_id: 'call_1',
-            output: [{
-                type: 'input_text',
-                text: 'done',
-            }],
         },
     ]);
 });
@@ -162,6 +162,6 @@ test('OpenAI responses codec rejects uncached output messages', t => {
     const outputMessage = new Message.Output([new Text('hello')]);
 
     t.throws(() => messageCodec.encodeOutputMessage(outputMessage), {
-        message: 'Only cached output message allowed.',
+        message: 'Only native output message allowed.',
     });
 });

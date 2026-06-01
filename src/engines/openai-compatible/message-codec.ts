@@ -5,16 +5,13 @@ import { ToolCodec } from '../openai-responses/tool-codec.ts';
 import { Media } from '../../media.ts';
 import { Text } from '../../text.ts';
 
-
-const cacheDeveloperMessages = new WeakMap<Engine.Message.Developer, string>();
-const cacheInputMessages = new WeakMap<Engine.Message.Input<Function.Decl.Proto>, OpenAI.Responses.ResponseInput>();
-const cacheOutputMessages = new WeakMap<Engine.Message.Output<Function.Decl.Proto>, OpenAI.Responses.ResponseInput>();
-const cacheResponseIds = new WeakMap<Engine.Message.Output<Function.Decl.Proto>, string>();
-
-
 export class MessageCodec<
     in out fdm extends Function.Decl.Map.Proto,
 > {
+    protected cacheDeveloperMessages = new WeakMap<Engine.Message.Developer, string>();
+    protected cacheInputMessages = new WeakMap<Engine.Message.Input<Function.Decl.Proto>, OpenAI.Responses.ResponseInput>();
+    protected cacheOutputMessages = new WeakMap<Engine.Message.Output<Function.Decl.Proto>, OpenAI.Responses.ResponseInput>();
+    protected cacheResponseIds = new WeakMap<Engine.Message.Output<Function.Decl.Proto>, string>();
     protected toolCodec: ToolCodec<fdm>;
     public constructor(options: MessageCodec.Options<fdm>) {
         this.toolCodec = options.toolCodec;
@@ -40,8 +37,8 @@ export class MessageCodec<
         const outm = new Engine.Message.Output(parts);
         if (raw.output.every(item => item.type !== 'computer_call_output')) {} else
             throw new Error('Computer calls are not supported yet.');
-        cacheOutputMessages.set(outm, raw.output);
-        cacheResponseIds.set(outm, raw.id);
+        this.cacheOutputMessages.set(outm, raw.output);
+        this.cacheResponseIds.set(outm, raw.id);
         return outm;
     }
 
@@ -68,7 +65,7 @@ export class MessageCodec<
     public encodeInputMessage(
         inm: Engine.Message.Input.From<fdm>,
     ): OpenAI.Responses.ResponseInput {
-        if (cacheInputMessages.has(inm)) return cacheInputMessages.get(inm)!;
+        if (this.cacheInputMessages.has(inm)) return this.cacheInputMessages.get(inm)!;
         const responseInput: OpenAI.Responses.ResponseInput = [];
         const content: OpenAI.Responses.ResponseInputContent[] = [];
         for (const part of inm.parts)
@@ -82,27 +79,27 @@ export class MessageCodec<
             role: 'user',
             content,
         });
-        cacheInputMessages.set(inm, responseInput);
+        this.cacheInputMessages.set(inm, responseInput);
         return responseInput;
     }
 
     public encodeOutputMessage(
         outm: Engine.Message.Output.From<fdm>,
     ): OpenAI.Responses.ResponseInput {
-        if (cacheOutputMessages.has(outm)) return cacheOutputMessages.get(outm)!;
+        if (this.cacheOutputMessages.has(outm)) return this.cacheOutputMessages.get(outm)!;
         throw new Error('Only native output message allowed.', { cause: outm });
     }
 
     public getResponseId(
         outm: Engine.Message.Output.From<fdm>,
     ): string | undefined {
-        return cacheResponseIds.get(outm);
+        return this.cacheResponseIds.get(outm);
     }
 
     public encodeDeveloperMessage(developerMessage: Engine.Message.Developer): string {
-        if (cacheDeveloperMessages.has(developerMessage)) return cacheDeveloperMessages.get(developerMessage)!;
+        if (this.cacheDeveloperMessages.has(developerMessage)) return this.cacheDeveloperMessages.get(developerMessage)!;
         const raw = developerMessage.getOnlyTextParts().map(part => part.raw).join('');
-        cacheDeveloperMessages.set(developerMessage, raw);
+        this.cacheDeveloperMessages.set(developerMessage, raw);
         return raw;
     }
 
