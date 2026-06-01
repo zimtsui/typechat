@@ -54,7 +54,7 @@ export class Adaptor {
         if (endpointSpec?.apiType === 'google') {} else throw new Error();
         const throttle = this.throttles.get(adaptorOptions.endpoint);
         if (throttle) {} else throw new Error();
-        const options: GoogleEngine.Options<fdm> = {
+        const options: Engine.Options<fdm> = {
             ...adaptorOptions,
             endpointSpec,
             throttle,
@@ -69,7 +69,7 @@ export class Adaptor {
         if (endpointSpec?.apiType === 'openai-responses') {} else throw new Error();
         const throttle = this.throttles.get(adaptorOptions.endpoint);
         if (throttle) {} else throw new Error();
-        const options: OpenAIResponsesEngine.Options<fdm> = {
+        const options: Engine.Options<fdm> = {
             ...adaptorOptions,
             endpointSpec,
             throttle,
@@ -87,13 +87,13 @@ export namespace Adaptor {
 
     export interface GoogleParams<
         in out fdm extends Function.Decl.Map.Proto,
-    > extends Omit<GoogleEngine.Options<fdm>, 'endpointSpec' | 'throttle'> {
+    > extends Omit<Engine.Options<fdm>, 'endpointSpec' | 'throttle'> {
         endpoint: string;
     }
 
     export interface OpenAIResponsesParams<
         in out fdm extends Function.Decl.Map.Proto,
-    > extends Omit<OpenAIResponsesEngine.Options<fdm>, 'endpointSpec' | 'throttle'> {
+    > extends Omit<Engine.Options<fdm>, 'endpointSpec' | 'throttle'> {
         endpoint: string;
     }
 }

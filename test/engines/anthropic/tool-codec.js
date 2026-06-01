@@ -1,9 +1,13 @@
 import test from 'ava';
+import { MIMEType } from 'node:util';
 import { Engine } from '../../../build/engine.js';
 import { Function } from '../../../build/function.js';
+import { Media } from '../../../build/media.js';
+import { Text } from '../../../build/text.js';
 import { ToolCodec } from '../../../build/engines/anthropic/tool-codec.js';
 import { functionDeclarationMapWithArgs } from '../../helpers.js';
 
+const binary = text => new TextEncoder().encode(text).buffer;
 
 test('Anthropic tool codec encodes function declarations', t => {
     const codec = new ToolCodec({ fdm: functionDeclarationMapWithArgs });
@@ -58,7 +62,12 @@ test('Anthropic tool codec encodes function responses and requires ids', t => {
     const successful = Function.Response.Successful.of({
         id: 'call_1',
         name: 'echo',
-        text: 'done',
+        parts: [
+            new Text('done'),
+            new Media.Text('quoted', new MIMEType('text/plain')),
+            new Media.Image(binary('png'), new MIMEType('image/png')),
+            new Media.Pdf(binary('pdf')),
+        ],
     });
     const failed = Function.Response.Failed.of({
         id: 'call_2',
@@ -69,7 +78,32 @@ test('Anthropic tool codec encodes function responses and requires ids', t => {
     t.deepEqual(codec.encodeFunctionResponse(successful), {
         type: 'tool_result',
         tool_use_id: 'call_1',
-        content: 'done',
+        content: [
+            {
+                type: 'text',
+                text: 'done',
+            },
+            {
+                type: 'text',
+                text: '<typechat:quotation mime-type="text/plain"><![CDATA[quoted]]></typechat:quotation>',
+            },
+            {
+                type: 'image',
+                source: {
+                    type: 'base64',
+                    data: 'cG5n',
+                    media_type: 'image/png',
+                },
+            },
+            {
+                type: 'document',
+                source: {
+                    type: 'base64',
+                    data: 'cGRm',
+                    media_type: 'application/pdf',
+                },
+            },
+        ],
     });
     t.deepEqual(codec.encodeFunctionResponse(failed), {
         type: 'tool_result',
@@ -78,7 +112,7 @@ test('Anthropic tool codec encodes function responses and requires ids', t => {
     });
     t.throws(() => codec.encodeFunctionResponse(Function.Response.Successful.of({
         name: 'echo',
-        text: 'done',
+        parts: [new Text('done')],
     })));
 });
 

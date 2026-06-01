@@ -103,18 +103,6 @@ export class ToolCodec<
             args,
         } as Function.Call.Options.From<fdm>);
     }
-
-    public encodeFunctionCall(
-        fc: Function.Call.From<fdm>,
-    ): OpenAI.Responses.ResponseFunctionToolCall {
-        if (fc.id) {} else throw new Error();
-        return {
-            type: 'function_call',
-            call_id: fc.id,
-            name: fc.name,
-            arguments: JSON.stringify(fc.args),
-        };
-    }
 }
 
 export namespace ToolCodec {

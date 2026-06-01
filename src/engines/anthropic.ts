@@ -4,9 +4,6 @@ import { ToolCodec } from './anthropic/tool-codec.ts';
 import { Billing } from './anthropic/billing.ts';
 import { MessageCodec } from './anthropic/message-codec.ts';
 import * as TransportModule from './anthropic/transport.ts';
-import * as MessageModule from './anthropic/message.ts';
-import { InferenceContext } from '../inference-context.ts';
-import Anthropic from '@anthropic-ai/sdk';
 
 
 export type AnthropicEngine<
@@ -55,5 +52,4 @@ export namespace AnthropicEngine {
     }
 
     export import Transport = TransportModule.Transport;
-    export import RoleMessage = MessageModule.RoleMessage;
 }

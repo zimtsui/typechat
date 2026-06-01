@@ -2,21 +2,17 @@ import { Function } from '../../function.ts';
 import Anthropic from '@anthropic-ai/sdk';
 import { Parse, ParseError } from 'typebox/schema';
 import { Engine } from '../../engine.ts';
+import { Text } from '../../text.ts';
+import { Media } from '../../media.ts';
 
 
 export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
     protected fdm: fdm;
-    protected apiFds: Anthropic.Tool[];
+    protected rawfds: Anthropic.Tool[];
     public constructor(options: ToolCodec.Options<fdm>) {
         this.fdm = options.fdm;
         const fdentries = Object.entries(this.fdm) as Function.Decl.Entry.From<fdm>[];
-        this.apiFds = fdentries.map(fdentry => ToolCodec.encodeFunctionDeclarationEntry(fdentry));
-    }
-
-    public encodeFunctionCall(
-        fc: Function.Call.From<fdm>,
-    ): Anthropic.ToolUseBlock {
-        throw new Error('Anthropic engine requires native function calls.');
+        this.rawfds = fdentries.map(fdentry => ToolCodec.encodeFunctionDeclarationEntry(fdentry));
     }
 
     public decodeFunctionCall(
@@ -46,7 +42,7 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
             return {
                 type: 'tool_result',
                 tool_use_id: fr.id,
-                content: fr.text,
+                content: fr.parts.map(part => this.encodeFunctionResponsePart(part)),
             };
         else if (fr instanceof Function.Response.Failed)
             return {
@@ -55,6 +51,38 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
                 content: fr.error,
             };
         else throw new Error();
+    }
+
+    public encodeFunctionResponsePart(part: Function.Response.Successful.Part): Anthropic.TextBlockParam | Anthropic.ImageBlockParam | Anthropic.DocumentBlockParam {
+        if (part instanceof Text)
+            return {
+                type: 'text',
+                text: part.raw,
+            };
+        else if (part instanceof Media.Text)
+            return {
+                type: 'text',
+                text: part.quote(),
+            };
+        else if (part instanceof Media.Image)
+            return {
+                type: 'image',
+                source: {
+                    type: 'base64',
+                    data: String(part),
+                    media_type: String(part.mimeType) as Anthropic.Base64ImageSource['media_type'],
+                },
+            };
+        else if (part instanceof Media.Pdf)
+            return {
+                type: 'document',
+                source: {
+                    type: 'base64',
+                    data: String(part),
+                    media_type: 'application/pdf',
+                },
+            };
+        else throw new Error('Unsupported function response part.', { cause: part });
     }
 
     protected static encodeFunctionDeclarationEntry<fdu extends Function.Decl.Proto>(
@@ -68,7 +96,7 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
     }
 
     public encodeFunctionDeclarationMap(): Anthropic.Tool[] {
-        return this.apiFds.slice();
+        return this.rawfds.slice();
     }
 }
 

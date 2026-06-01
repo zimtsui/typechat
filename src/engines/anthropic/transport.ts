@@ -10,7 +10,6 @@ import type { ToolCodec } from './tool-codec.ts';
 import * as ToolChoiceCodec from './tool-choice-codec.ts';
 import type { ToolChoice } from '../../tool-choice.ts';
 import * as Undici from 'undici';
-import { RoleMessage } from './message.ts';
 
 
 export class Transport<
@@ -64,7 +63,7 @@ export class Transport<
         wfctx: InferenceContext,
         session: Engine.Session.From<fdm>,
         signal?: AbortSignal,
-    ): Promise<RoleMessage.Ai.From<fdm>> {
+    ): Promise<Engine.Message.Output.From<fdm>> {
         await this.throttle.requests(wfctx);
 
         const params = this.makeParams(session);
@@ -147,7 +146,7 @@ export class Transport<
         loggers.message.info(response.usage);
         wfctx.cost?.(this.billing.charge(response.usage));
 
-        return this.messageCodec.decodeAiMessage(response.content);
+        return this.messageCodec.decodeOutputMessage(response.content);
     }
 }
 

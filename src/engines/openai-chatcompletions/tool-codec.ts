@@ -15,20 +15,6 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
         this.rawfds = fdentries.map(fdentry => ToolCodec.encodeFunctionDeclarationEntry(fdentry));
     }
 
-    public encodeFunctionCall(
-        fc: Function.Call.From<fdm>,
-    ): OpenAI.ChatCompletionMessageToolCall {
-        if (fc.id) {} else throw new Error();
-        return {
-            id: fc.id,
-            type: 'function',
-            function: {
-                name: fc.name,
-                arguments: JSON.stringify(fc.args),
-            },
-        };
-    }
-
     public decodeFunctionCall(
         apifc: OpenAI.ChatCompletionMessageFunctionToolCall,
     ): Function.Call.From<fdm> {

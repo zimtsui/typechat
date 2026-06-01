@@ -18,16 +18,6 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
         this.rawfds = fdentries.map(fdentry => ToolCodec.encodeFunctionDeclarationEntry(fdentry));
     }
 
-    public encodeFunctionCall(
-        fc: Function.Call.From<fdm>,
-    ): Google.FunctionCall {
-        return {
-            id: fc.id,
-            name: fc.name,
-            args: fc.args satisfies Record<string, unknown>,
-        };
-    }
-
     public encodeFunctionDeclarationMap(): Google.FunctionDeclaration[] {
         return this.rawfds.slice();
     }
