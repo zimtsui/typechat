@@ -34,13 +34,12 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
     ): Function.Call.From<fdm> {
         const fditem = this.fdm[apifc.function.name];
         if (fditem) {} else throw new Engine.Exceptions.InferenceError('Unknown function call', { cause: apifc });
-        const args = (() => {
-            try {
-                return JSON.parse(apifc.function.arguments);
-            } catch (e) {
-                throw new Engine.Exceptions.InferenceError('Invalid JSON of function call', { cause: apifc });
-            }
-        })();
+        let args: unknown;
+        try {
+            args = JSON.parse(apifc.function.arguments);
+        } catch (e) {
+            throw new Engine.Exceptions.InferenceError('Invalid JSON of function call', { cause: apifc });
+        }
         try {
             Parse(fditem.parameters, args);
         } catch (e) {
