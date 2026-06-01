@@ -4,9 +4,6 @@ import { MessageCodec } from './openai-compatible/message-codec.ts';
 import { ToolCodec } from './openai-responses/tool-codec.ts';
 import { Billing } from './openai-responses/billing.ts';
 import * as TransportModule from './openai-compatible/transport.ts';
-import { InferenceContext } from '../inference-context.ts';
-import * as MessageModule from './openai-compatible/message.ts';
-import OpenAI from 'openai';
 
 
 export type OpenAICompatibleEngine<
@@ -57,6 +54,5 @@ export namespace OpenAICompatibleEngine {
         return new Instance(options);
     }
 
-    export import RoleMessage = MessageModule.RoleMessage;
     export import Transport = TransportModule.Transport;
 }

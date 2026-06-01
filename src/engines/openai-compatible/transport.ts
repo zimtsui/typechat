@@ -1,8 +1,6 @@
-import { type InferenceOptions, type ProviderSpecs } from '../../engine.ts';
-import { type Session } from '../../engine/session.ts';
-import { RoleMessage } from './message.ts';
+import { type InferenceOptions, type ProviderSpecs, Engine } from '../../engine.ts';
 import { Function } from '../../function.ts';
-import OpenAI from 'openai';
+import OpenAI, { type ClientOptions } from 'openai';
 import { type InferenceContext } from '../../inference-context.ts';
 import { Throttle } from '../../throttle.ts';
 import { loggers } from '../../telemetry.ts';
@@ -11,7 +9,6 @@ import type { ToolCodec } from '../openai-responses/tool-codec.ts';
 import type { Billing } from '../openai-responses/billing.ts';
 import * as ToolChoiceCodec from './tool-choice-codec.ts';
 import { ToolChoice } from '../../tool-choice.ts';
-import { Engine } from "../../engine.js";
 import * as Undici from 'undici';
 import assert from 'node:assert';
 
@@ -35,7 +32,7 @@ export class Transport<
             baseURL: options.providerSpec.baseUrl,
             apiKey: options.providerSpec.apiKey,
             fetch: Undici.fetch as typeof globalThis.fetch,
-            fetchOptions: { dispatcher: options.providerSpec.dispatcher },
+            fetchOptions: { dispatcher: options.providerSpec.dispatcher } as ClientOptions['fetchOptions'],
             defaultHeaders: new Headers(options.inferenceParams.additionalHeaders),
         });
         this.inferenceParams = options.inferenceParams;
@@ -49,18 +46,18 @@ export class Transport<
     }
 
     protected makeParams(
-        session: Session.From<fdm>,
+        session: Engine.Session.From<fdm>,
     ): OpenAI.Responses.ResponseCreateParamsStreaming {
         const tools: OpenAI.Responses.Tool[] = this.toolCodec.encodeFunctionDeclarationMap();
         let input: OpenAI.Responses.ResponseInput;
         let previous_response_id: string | undefined = undefined;
         let instructions: string | undefined = undefined;
         const lastSecondMessage = session.chatMessages.at(-2);
-        if (lastSecondMessage instanceof RoleMessage.Ai) {
+        if (lastSecondMessage instanceof Engine.Message.Output && this.messageCodec.getResponseId(lastSecondMessage)) {
             const lastMessage = session.chatMessages.at(-1);
             assert(lastMessage instanceof Engine.Message.Input);
-            input = this.messageCodec.encodeUserMessage(lastMessage);
-            previous_response_id = lastSecondMessage.getRaw().id;
+            input = this.messageCodec.encodeInputMessage(lastMessage as Engine.Message.Input.From<fdm>);
+            previous_response_id = this.messageCodec.getResponseId(lastSecondMessage);
         } else {
             input = session.chatMessages.flatMap(chatMessage => this.messageCodec.encodeChatMessage(chatMessage));
             instructions = session.developerMessage && this.messageCodec.encodeDeveloperMessage(session.developerMessage);
@@ -94,9 +91,9 @@ export class Transport<
 
     public async fetch(
         wfctx: InferenceContext,
-        session: Session.From<fdm>,
+        session: Engine.Session.From<fdm>,
         signal?: AbortSignal,
-    ): Promise<RoleMessage.Ai.From<fdm>> {
+    ): Promise<Engine.Message.Output.From<fdm>> {
         await this.throttle.requests(wfctx);
 
         const params = this.makeParams(session);
@@ -134,7 +131,7 @@ export class Transport<
         wfctx.cost?.(this.billing.charge(response.usage));
         loggers.message.info(response.usage);
 
-        return this.messageCodec.decodeAiMessage(response);
+        return this.messageCodec.decodeOutputMessage(response);
     }
 }
 

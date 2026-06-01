@@ -1,0 +1,117 @@
+import test from 'ava';
+import { Function } from '../../../build/function.js';
+import { Message } from '../../../build/engine/message.js';
+import { Text } from '../../../build/text.js';
+import { ToolCodec } from '../../../build/engines/openai-responses/tool-codec.js';
+import { MessageCodec } from '../../../build/engines/openai-compatible/message-codec.js';
+import { functionDeclarationMap } from '../../helpers.js';
+
+
+function makeCodec() {
+    const toolCodec = new ToolCodec({ fdm: functionDeclarationMap });
+    return new MessageCodec({
+        toolCodec,
+    });
+}
+
+test('OpenAI compatible codec encodes user input and function responses', t => {
+    const messageCodec = makeCodec();
+    const inputMessage = new Message.Input([
+        new Text('Hello.\n'),
+        Function.Response.Successful.of({
+            id: 'call_1',
+            name: 'noop',
+            parts: [new Text('done')],
+        }),
+    ]);
+
+    const encoded = messageCodec.encodeInputMessage(inputMessage);
+
+    t.deepEqual(encoded, [
+        {
+            type: 'function_call_output',
+            call_id: 'call_1',
+            output: [{
+                type: 'input_text',
+                text: 'done',
+            }],
+        },
+        {
+            type: 'message',
+            role: 'user',
+            content: [{
+                type: 'input_text',
+                text: 'Hello.\n',
+            }],
+        },
+    ]);
+});
+
+test('OpenAI compatible codec omits empty user message for pure function responses', t => {
+    const messageCodec = makeCodec();
+    const inputMessage = new Message.Input([
+        Function.Response.Successful.of({
+            id: 'call_1',
+            name: 'noop',
+            parts: [new Text('done')],
+        }),
+    ]);
+
+    const encoded = messageCodec.encodeInputMessage(inputMessage);
+
+    t.deepEqual(encoded, [{
+        type: 'function_call_output',
+        call_id: 'call_1',
+        output: [{
+            type: 'input_text',
+            text: 'done',
+        }],
+    }]);
+});
+
+test('OpenAI compatible codec decodes output and replays cached raw output', t => {
+    const messageCodec = makeCodec();
+    const raw = {
+        id: 'resp_1',
+        object: 'response',
+        created_at: 0,
+        model: 'test-model',
+        output: [
+            {
+                type: 'message',
+                id: 'msg_1',
+                role: 'assistant',
+                status: 'completed',
+                content: [{
+                    type: 'output_text',
+                    text: 'hello',
+                    annotations: [],
+                }],
+            },
+            {
+                type: 'function_call',
+                id: 'fc_1',
+                call_id: 'call_1',
+                name: 'noop',
+                arguments: '{}',
+                status: 'completed',
+            },
+        ],
+    };
+
+    const outputMessage = messageCodec.decodeOutputMessage(raw);
+
+    t.is(outputMessage.joinText(), 'hello');
+    t.is(outputMessage.getFunctionCalls()[0].name, 'noop');
+    t.deepEqual(messageCodec.encodeOutputMessage(outputMessage), raw.output);
+    t.is(messageCodec.getResponseId(outputMessage), 'resp_1');
+});
+
+test('OpenAI compatible codec rejects uncached output messages', t => {
+    const messageCodec = makeCodec();
+    const outputMessage = new Message.Output([new Text('hello')]);
+
+    t.throws(() => messageCodec.encodeOutputMessage(outputMessage), {
+        message: 'Only native output message allowed.',
+    });
+});
