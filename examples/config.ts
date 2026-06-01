@@ -1,7 +1,7 @@
-import { type Config } from '@zimtsui/typechat';
+import type * as TypeChat from '@zimtsui/typechat';
 
 // 配置推理服务商 API 接入点
-export const config: Config = {
+export const config: TypeChat.Config = {
     endpoints: {
         'gpt-5.4-mini': {
             name: 'GPT-5.4 mini',

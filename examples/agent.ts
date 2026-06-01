@@ -1,4 +1,4 @@
-import { Adaptor, Function, Engine, Text, ToolChoice } from '@zimtsui/typechat';
+import * as TypeChat from '@zimtsui/typechat';
 import { Type } from 'typebox';
 import { config } from './config.ts';
 
@@ -17,18 +17,18 @@ const fdm = {
             advice: Type.String(),
         }),
     },
-} satisfies Function.Decl.Map.Proto;
+} satisfies TypeChat.Function.Decl.Map.Proto;
 type fdm = typeof fdm;
-type fdu = Function.Decl.From<fdm>;
+type fdu = TypeChat.Function.Decl.From<fdm>;
 
 // 实现函数工具
 export class Submission {
     public constructor(public weather: string, public advice: string) {}
 }
-const fnm: Function.Map<fdm> = {
+const fnm: TypeChat.Function.Map<fdm> = {
     async get_weather({ city }) {
         const data = { city, unit: 'C', temperature: 26, sky: 'sunny' };
-        return [new Text(JSON.stringify(data))];
+        return [new TypeChat.Text(JSON.stringify(data))];
     },
     async submit_result({ weather, advice }) {
         throw new Submission(weather, advice);
@@ -36,21 +36,21 @@ const fnm: Function.Map<fdm> = {
 };
 
 // 创建会话
-const session: Engine.Session<fdu> = {
-    developerMessage: new Engine.Message.Developer([
-        Text.paragraph('你的工作是为用户查询天气，并给出穿衣建议。调用工具提交最终结果'),
+const session: TypeChat.Engine.Session<fdu> = {
+    developerMessage: new TypeChat.Engine.Message.Developer([
+        TypeChat.Text.paragraph('你的工作是为用户查询天气，并给出穿衣建议。调用工具提交最终结果'),
     ]),
     chatMessages: [
-        new Engine.Message.Input([ Text.paragraph('请查询现在北京的天气，并给穿衣建议。') ]),
+        new TypeChat.Engine.Message.Input([ TypeChat.Text.paragraph('请查询现在北京的天气，并给穿衣建议。') ]),
     ],
 };
 
 // 选择推理引擎
-const adaptor = Adaptor.create(config);
+const adaptor = TypeChat.Adaptor.create(config);
 const engine = adaptor.makeEngine<fdm>({
     endpoint: 'gpt-5.4-mini',
     functionDeclarationMap: fdm,
-    toolChoice: ToolChoice.REQUIRED,
+    toolChoice: TypeChat.ToolChoice.REQUIRED,
 });
 
 // 使用 agentloop 驱动智能体循环，最多 8 轮对话

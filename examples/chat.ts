@@ -1,18 +1,18 @@
-import { Adaptor, Engine, Text } from '@zimtsui/typechat';
+import * as TypeChat from '@zimtsui/typechat';
 import { config } from './config.ts';
 
 // 创建会话
-const session: Engine.Session<never> = {
-    developerMessage: new Engine.Message.Developer([
-        Text.paragraph('You are a helpful assistant.'),
+const session: TypeChat.Engine.Session<never> = {
+    developerMessage: new TypeChat.Engine.Message.Developer([
+        TypeChat.Text.paragraph('You are a helpful assistant.'),
     ]),
     chatMessages: [
-        new Engine.Message.Input([ Text.paragraph('Hello!') ]),
+        new TypeChat.Engine.Message.Input([ TypeChat.Text.paragraph('Hello!') ]),
     ],
 };
 
 // 选择推理引擎
-const adaptor = Adaptor.create(config);
+const adaptor = TypeChat.Adaptor.create(config);
 const engine = adaptor.makeEngine<{}>({
     endpoint: 'gpt-5.4-mini',
     functionDeclarationMap: {},
