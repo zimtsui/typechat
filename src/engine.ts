@@ -7,7 +7,7 @@ import { type InferenceContext } from './inference-context.ts';
 import { loggers } from './telemetry.ts';
 import * as SessionModule from './engine/session.ts';
 import * as MessageModule from './engine/message.ts';
-import { PartsValidator } from './engine/parts-validator.ts';
+import * as MessageValidatorModule from './engine/message-validator.ts';
 import * as ExceptionsModule from './engine/exceptions.ts';
 import * as MiddlewareModule from './engine/middleware.ts';
 import * as ToolChoiceValidatorModule from './engine/tool-choice-validator.ts';
@@ -51,7 +51,7 @@ export namespace Engine {
         protected throttle: Throttle;
         protected toolChoice: ToolChoice;
         protected toolChoiceValidator: Engine.ToolChoiceValidator.From<fdm>;
-        protected partsValidator: PartsValidator.From<fdm>;
+        protected messageValidator: Engine.MessageValidator.From<fdm>;
         protected abstract transport: Engine.Transport<fdm>;
 
         public constructor(options: Engine.Options<fdm>) {
@@ -92,7 +92,7 @@ export namespace Engine {
             this.fdm = options.functionDeclarationMap;
             this.toolChoice = options.toolChoice ?? ToolChoice.AUTO;
             this.throttle = options.throttle;
-            this.partsValidator = new PartsValidator();
+            this.messageValidator = new MessageValidator();
             this.toolChoiceValidator = new ToolChoiceValidator({ toolChoice: this.toolChoice });
         }
 
@@ -112,11 +112,10 @@ export namespace Engine {
             if (wfctx.signal) signals.push(wfctx.signal);
             const signal = AbortSignal.any(signals);
             try {
-                const aiMessage = await this.transport.fetch(wfctx, session, signal);
-                this.partsValidator.validate(aiMessage);
-                const rejection = this.toolChoiceValidator.validate(aiMessage);
-                if (rejection) throw new Exceptions.InferenceError.Recoverable(aiMessage, rejection);
-                return aiMessage;
+                const outm = await this.transport.fetch(wfctx, session, signal);
+                const rejection = this.toolChoiceValidator.validate(outm);
+                if (rejection) throw new Exceptions.InferenceError.Recoverable(outm, rejection);
+                return outm;
             } catch (e) {
                 if (signalTimeout?.aborted)
                     throw new Exceptions.InferenceTimeout(undefined, { cause: e });
@@ -190,19 +189,15 @@ export namespace Engine {
             }
         }
 
-        public abstract clone(): Engine<fdm>;
-
         protected middlewaresStateless: Middleware.From<fdm>[] = [];
-        public useStateless(middleware: Middleware.From<fdm>): Engine<fdm> {
-            const engine = this.clone();
-            engine.middlewaresStateless.push(middleware);
-            return engine;
+        public useStateless(middleware: Middleware.From<fdm>): this {
+            this.middlewaresStateless.push(middleware);
+            return this;
         }
         protected middlewaresStateful: Middleware.From<fdm>[] = [];
-        public useStateful(middleware: Middleware.From<fdm>): Engine<fdm> {
-            const engine = this.clone();
-            engine.middlewaresStateful.push(middleware);
-            return engine;
+        public useStateful(middleware: Middleware.From<fdm>): this {
+            this.middlewaresStateful.push(middleware);
+            return this;
         }
         protected compose(middlewares: Middleware.From<fdm>[]): Middleware.From<fdm> {
             let composed: Middleware.From<fdm> = (wfctx, session, next) => next();
@@ -284,6 +279,7 @@ export namespace Engine {
     export import Message = MessageModule.Message;
     export import Exceptions = ExceptionsModule;
     export import Middleware = MiddlewareModule.Middleware;
+    export import MessageValidator = MessageValidatorModule.MessageValidator;
 }
 
 declare global {

@@ -13,8 +13,10 @@ export class MessageCodec<
     protected cacheInputMessages = new WeakMap<Engine.Message.Input<Function.Decl.Proto>, (OpenAI.ChatCompletionUserMessageParam | OpenAI.ChatCompletionToolMessageParam)[]>();
     protected cacheOutputMessages = new WeakMap<Engine.Message.Output<Function.Decl.Proto>, OpenAI.ChatCompletionAssistantMessageParam>();
     protected toolCodec: ToolCodec<fdm>;
+    protected messageValidator: Engine.MessageValidator.From<fdm>;
     public constructor(options: MessageCodec.Options<fdm>) {
         this.toolCodec = options.toolCodec;
+        this.messageValidator = options.messageValidator;
     }
 
     public decodeOutputMessage(
@@ -30,12 +32,10 @@ export class MessageCodec<
                 if (apifc.type === 'function')
                     parts.push(this.toolCodec.decodeFunctionCall(apifc));
                 else throw new Error('Unsupported API tool call.', { cause: apifc });
-        if (parts.length) {
-            const outm = new Engine.Message.Output(parts);
-            this.cacheOutputMessages.set(outm, message);
-            return outm;
-        }
-        else throw new Engine.Exceptions.InferenceError('Content or tool calls not found in Response', { cause: message });
+        const outm = new Engine.Message.Output(parts);
+        this.messageValidator.validateOutputMessage(outm);
+        this.cacheOutputMessages.set(outm, message);
+        return outm;
     }
 
     public encodeDeveloperMessage(developerMessage: Engine.Message.Developer): OpenAI.ChatCompletionSystemMessageParam {
@@ -52,6 +52,7 @@ export class MessageCodec<
         inm: Engine.Message.Input.From<fdm>,
     ): (OpenAI.ChatCompletionUserMessageParam | OpenAI.ChatCompletionToolMessageParam)[] {
         if (this.cacheInputMessages.has(inm)) return this.cacheInputMessages.get(inm)!;
+        this.messageValidator.validateInputMessage(inm);
         for (const part of inm.parts)
             if (part instanceof Function.Response) {}
             else if (part instanceof Text) {}
@@ -108,5 +109,6 @@ export namespace MessageCodec {
         in out fdm extends Function.Decl.Map.Proto,
     > {
         toolCodec: ToolCodec<fdm>;
+        messageValidator: Engine.MessageValidator.From<fdm>;
     }
 }

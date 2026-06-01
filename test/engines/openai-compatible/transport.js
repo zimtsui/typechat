@@ -13,6 +13,7 @@ function makeTransport(toolChoice, additionalHeaders) {
     const toolCodec = new ToolCodec({ fdm: functionDeclarationMap });
     const messageCodec = new MessageCodec({
         toolCodec,
+        messageValidator: new Engine.MessageValidator(),
     });
     return new Transport({
         inferenceParams: {

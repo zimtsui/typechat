@@ -1,4 +1,5 @@
 import test from 'ava';
+import { Engine } from '../../../build/engine.js';
 import { Message } from '../../../build/engine/message.js';
 import { Text } from '../../../build/text.js';
 import { ToolChoice } from '../../../build/tool-choice.js';
@@ -12,6 +13,7 @@ function makeTransport(parallelToolCall, additionalHeaders) {
     const toolCodec = new ToolCodec({ fdm: functionDeclarationMap });
     const messageCodec = new MessageCodec({
         toolCodec,
+        messageValidator: new Engine.MessageValidator(),
     });
     return new Transport({
         fdm: functionDeclarationMap,

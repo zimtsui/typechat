@@ -24,6 +24,7 @@ export namespace OpenAICompatibleEngine {
             this.toolCodec = new ToolCodec({ fdm: this.fdm });
             this.messageCodec = new MessageCodec({
                 toolCodec: this.toolCodec,
+                messageValidator: this.messageValidator,
             });
             this.billing = new Billing({ pricing: this.pricing });
             this.transport = new Transport({
@@ -37,14 +38,6 @@ export namespace OpenAICompatibleEngine {
                 billing: this.billing,
             });
         }
-
-        public override clone(): OpenAICompatibleEngine<fdm> {
-            const engine = new OpenAICompatibleEngine.Instance(this.options);
-            engine.middlewaresStateless = [...this.middlewaresStateless];
-            engine.middlewaresStateful = [...this.middlewaresStateful];
-            return engine;
-        }
-
     }
 
     createEngine satisfies Engine.Create;

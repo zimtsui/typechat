@@ -1,6 +1,7 @@
 import test from 'ava';
 import { MIMEType } from 'node:util';
 import { Media } from '../../../build/media.js';
+import { Engine } from '../../../build/engine.js';
 import { Message } from '../../../build/engine/message.js';
 import { Text } from '../../../build/text.js';
 import { ToolCodec } from '../../../build/engines/google/tool-codec.js';
@@ -13,6 +14,7 @@ function makeCodec() {
     const toolCodec = new ToolCodec({ fdm: functionDeclarationMap });
     return new MessageCodec({
         toolCodec,
+        messageValidator: new Engine.MessageValidator(),
     });
 }
 

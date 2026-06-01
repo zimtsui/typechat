@@ -9,7 +9,7 @@ import { functionDeclarationMap } from '../helpers.js';
 
 
 class FakeEngine extends Engine.Instance {
-    constructor(responses, toolChoiceValidator, partsValidator) {
+    constructor(responses, toolChoiceValidator) {
         super({
             throttle: new Throttle(Number.POSITIVE_INFINITY),
             endpointSpec: {
@@ -25,17 +25,9 @@ class FakeEngine extends Engine.Instance {
         });
         this.responses = responses;
         this.toolChoiceValidator = toolChoiceValidator;
-        this.partsValidator = partsValidator;
         this.transport = {
             fetch: async () => this.responses.shift(),
         };
-    }
-
-    clone() {
-        const engine = new FakeEngine(this.responses, this.toolChoiceValidator, this.partsValidator);
-        engine.middlewaresStateless = [...this.middlewaresStateless];
-        engine.middlewaresStateful = [...this.middlewaresStateful];
-        return engine;
     }
 }
 
@@ -56,8 +48,6 @@ test('Engine stateful retries validator rejection without mutating session by de
         validate(message) {
             if (message.kind === 'invalid') return rejection;
         },
-    }, {
-        validate() {},
     });
     const session = { chatMessages: [] };
 
@@ -78,8 +68,6 @@ test('Engine Recoverable middleware appends validator rejection into session his
         validate(message) {
             if (message.kind === 'invalid') return rejection;
         },
-    }, {
-        validate() {},
     });
     const recoveringEngine = engine.useStateful(Engine.Exceptions.InferenceError.Recoverable.recover);
     const session = { chatMessages: [] };
@@ -108,8 +96,6 @@ test('Engine agentloop passes function call object to function handler', async t
         aiMessage,
         finalMessage,
     ], {
-        validate() {},
-    }, {
         validate() {},
     });
     const session = { chatMessages: [] };

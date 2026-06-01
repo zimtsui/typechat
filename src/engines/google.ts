@@ -27,6 +27,7 @@ export namespace GoogleEngine {
             });
             this.messageCodec = new MessageCodec({
                 toolCodec: this.toolCodec,
+                messageValidator: this.messageValidator,
             });
             this.billing = new Billing({ pricing: this.pricing });
             this.transport = new Transport({
@@ -39,13 +40,6 @@ export namespace GoogleEngine {
                 toolCodec: this.toolCodec,
                 billing: this.billing,
             });
-        }
-
-        public override clone(): GoogleEngine<fdm> {
-            const engine = new GoogleEngine.Instance(this.options);
-            engine.middlewaresStateless = [...this.middlewaresStateless];
-            engine.middlewaresStateful = [...this.middlewaresStateful];
-            return engine;
         }
     }
 

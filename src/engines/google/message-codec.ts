@@ -14,8 +14,10 @@ export class MessageCodec<
     protected cacheInputMessages = new WeakMap<Engine.Message.Input<Function.Decl.Proto>, Google.Content>();
     protected cacheOutputMessages = new WeakMap<Engine.Message.Output<Function.Decl.Proto>, Google.Content>();
     protected toolCodec: ToolCodec<fdm>;
+    protected messageValidator: Engine.MessageValidator.From<fdm>;
     public constructor(options: MessageCodec.Options<fdm>) {
         this.toolCodec = options.toolCodec;
+        this.messageValidator = options.messageValidator;
     }
 
     public encodeOutputMessage(
@@ -48,6 +50,7 @@ export class MessageCodec<
         inm: Engine.Message.Input.From<fdm>,
     ): Google.Content {
         if (this.cacheInputMessages.has(inm)) return this.cacheInputMessages.get(inm)!;
+        this.messageValidator.validateInputMessage(inm);
         const apiParts: Google.PartUnion[] = [];
         for (const part of inm.parts) {
             if (part instanceof Text)
@@ -107,6 +110,7 @@ export class MessageCodec<
                 throw new Error('Code execution result is not supported.', { cause: part });
         }
         const outm = new Engine.Message.Output(parts);
+        this.messageValidator.validateOutputMessage(outm);
         this.cacheOutputMessages.set(outm, content);
         return outm;
     }
@@ -118,6 +122,7 @@ export namespace MessageCodec {
         in out fdm extends Function.Decl.Map.Proto,
     > {
         toolCodec: ToolCodec<fdm>;
+        messageValidator: Engine.MessageValidator.From<fdm>;
     }
 
 }

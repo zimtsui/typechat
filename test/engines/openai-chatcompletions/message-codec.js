@@ -15,6 +15,7 @@ function makeCodec() {
     const toolCodec = new ToolCodec({ fdm: functionDeclarationMap });
     return new MessageCodec({
         toolCodec,
+        messageValidator: new Engine.MessageValidator(),
     });
 }
 

@@ -23,6 +23,7 @@ export namespace AnthropicEngine {
             this.toolCodec = new ToolCodec({ fdm: this.fdm });
             this.messageCodec = new MessageCodec({
                 toolCodec: this.toolCodec,
+                messageValidator: this.messageValidator,
             });
             this.billing = new Billing({ pricing: this.pricing });
             this.transport = new Transport({
@@ -35,13 +36,6 @@ export namespace AnthropicEngine {
                 toolCodec: this.toolCodec,
                 billing: this.billing,
             });
-        }
-
-        public override clone(): Engine<fdm> {
-            const engine = new AnthropicEngine.Instance(this.options);
-            engine.middlewaresStateless = [...this.middlewaresStateless];
-            engine.middlewaresStateful = [...this.middlewaresStateful];
-            return engine;
         }
     }
 

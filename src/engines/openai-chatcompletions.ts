@@ -23,6 +23,7 @@ export namespace OpenAIChatCompletionsEngine {
             this.toolCodec = new ToolCodec({ fdm: this.fdm });
             this.messageCodec = new MessageCodec({
                 toolCodec: this.toolCodec,
+                messageValidator: this.messageValidator,
             });
             this.billing = new Billing({ pricing: this.pricing });
             this.transport = new Transport({
@@ -36,14 +37,6 @@ export namespace OpenAIChatCompletionsEngine {
                 billing: this.billing,
             });
         }
-
-        public override clone(): Engine<fdm> {
-            const engine = new OpenAIChatCompletionsEngine.Instance(this.options);
-            engine.middlewaresStateless = [...this.middlewaresStateless];
-            engine.middlewaresStateful = [...this.middlewaresStateful];
-            return engine;
-        }
-
     }
 
     export import Transport = TransportModule.Transport;

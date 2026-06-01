@@ -1,5 +1,6 @@
 import test from 'ava';
 import { Function } from '../../../build/function.js';
+import { Engine } from '../../../build/engine.js';
 import { Message } from '../../../build/engine/message.js';
 import { Text } from '../../../build/text.js';
 import { ToolCodec } from '../../../build/engines/openai-responses/tool-codec.js';
@@ -11,18 +12,19 @@ function makeCodec() {
     const toolCodec = new ToolCodec({ fdm: functionDeclarationMap });
     return new MessageCodec({
         toolCodec,
+        messageValidator: new Engine.MessageValidator(),
     });
 }
 
 test('OpenAI compatible codec encodes user input and function responses', t => {
     const messageCodec = makeCodec();
     const inputMessage = new Message.Input([
-        new Text('Hello.\n'),
         Function.Response.Successful.of({
             id: 'call_1',
             name: 'noop',
             parts: [new Text('done')],
         }),
+        new Text('Hello.\n'),
     ]);
 
     const encoded = messageCodec.encodeInputMessage(inputMessage);

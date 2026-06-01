@@ -13,14 +13,17 @@ export class MessageCodec<
     protected cacheInputMessages = new WeakMap<Engine.Message.Input<Function.Decl.Proto>, Anthropic.ContentBlockParam[]>();
     protected cacheOutputMessages = new WeakMap<Engine.Message.Output<Function.Decl.Proto>, Anthropic.ContentBlockParam[]>();
     protected toolCodec: ToolCodec<fdm>;
+    protected messageValidator: Engine.MessageValidator.From<fdm>;
     public constructor(options: MessageCodec.Options<fdm>) {
         this.toolCodec = options.toolCodec;
+        this.messageValidator = options.messageValidator;
     }
 
     public encodeInputMessage(
         inm: Engine.Message.Input.From<fdm>,
     ): Anthropic.ContentBlockParam[] {
         if (this.cacheInputMessages.has(inm)) return this.cacheInputMessages.get(inm)!;
+        this.messageValidator.validateInputMessage(inm);
         const blocks: Anthropic.ContentBlockParam[] = [];
         for (const part of inm.parts)
             if (part instanceof Text)
@@ -84,6 +87,7 @@ export class MessageCodec<
             else throw new Error('Unsupported API output block.', { cause: item });
         }
         const outm = new Engine.Message.Output(parts);
+        this.messageValidator.validateOutputMessage(outm);
         this.cacheOutputMessages.set(outm, raw);
         return outm;
     }
@@ -94,5 +98,6 @@ export namespace MessageCodec {
         in out fdm extends Function.Decl.Map.Proto,
     > {
         toolCodec: ToolCodec<fdm>;
+        messageValidator: Engine.MessageValidator.From<fdm>;
     }
 }

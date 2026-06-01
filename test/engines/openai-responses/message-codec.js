@@ -2,6 +2,7 @@ import test from 'ava';
 import { MIMEType } from 'node:util';
 import { Function } from '../../../build/function.js';
 import { Media } from '../../../build/media.js';
+import { Engine } from '../../../build/engine.js';
 import { Message } from '../../../build/engine/message.js';
 import { Text } from '../../../build/text.js';
 import { ToolCodec } from '../../../build/engines/openai-responses/tool-codec.js';
@@ -14,20 +15,21 @@ function makeCodec() {
     const toolCodec = new ToolCodec({ fdm: functionDeclarationMap });
     return new MessageCodec({
         toolCodec,
+        messageValidator: new Engine.MessageValidator(),
     });
 }
 
 test('OpenAI responses codec encodes multimodal user message', t => {
     const messageCodec = makeCodec();
     const userMessage = new Message.Input([
-        new Text('Hello.\n'),
-        new Media.Image(binary('hello'), new MIMEType('image/png')),
-        new Media.Pdf(binary('pdf')),
         Function.Response.Successful.of({
             id: 'call_1',
             name: 'noop',
             parts: [new Text('done')],
         }),
+        new Text('Hello.\n'),
+        new Media.Image(binary('hello'), new MIMEType('image/png')),
+        new Media.Pdf(binary('pdf')),
     ]);
 
     const encoded = messageCodec.encodeInputMessage(userMessage);

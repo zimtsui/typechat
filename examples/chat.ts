@@ -1,13 +1,13 @@
-import { Adaptor, Engine } from '@zimtsui/typechat';
+import { Adaptor, Engine, Text } from '@zimtsui/typechat';
 import { config } from './config.ts';
 
 // 创建会话
 const session: Engine.Session<never> = {
-    developerMessage: new Engine.RoleMessage.Developer([
-        Engine.RoleMessage.Part.Text.paragraph('You are a helpful assistant.'),
+    developerMessage: new Engine.Message.Developer([
+        Text.paragraph('You are a helpful assistant.'),
     ]),
     chatMessages: [
-        new Engine.RoleMessage.User([ Engine.RoleMessage.Part.Text.paragraph('Hello!') ]),
+        new Engine.Message.Input([ Text.paragraph('Hello!') ]),
     ],
 };
 
@@ -19,4 +19,4 @@ const engine = adaptor.makeEngine<{}>({
 });
 
 const response = await engine.stateless({}, session);
-console.log(response.getText());
+console.log(response.joinText());

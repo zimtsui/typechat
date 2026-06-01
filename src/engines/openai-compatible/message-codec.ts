@@ -13,8 +13,10 @@ export class MessageCodec<
     protected cacheOutputMessages = new WeakMap<Engine.Message.Output<Function.Decl.Proto>, OpenAI.Responses.ResponseInput>();
     protected cacheResponseIds = new WeakMap<Engine.Message.Output<Function.Decl.Proto>, string>();
     protected toolCodec: ToolCodec<fdm>;
+    protected messageValidator: Engine.MessageValidator.From<fdm>;
     public constructor(options: MessageCodec.Options<fdm>) {
         this.toolCodec = options.toolCodec;
+        this.messageValidator = options.messageValidator;
     }
 
     public decodeOutputMessage(
@@ -35,6 +37,7 @@ export class MessageCodec<
             else throw new Error('Unsupported API output item.', { cause: item });
         }
         const outm = new Engine.Message.Output(parts);
+        this.messageValidator.validateOutputMessage(outm);
         if (raw.output.every(item => item.type !== 'computer_call_output')) {} else
             throw new Error('Computer calls are not supported yet.');
         this.cacheOutputMessages.set(outm, raw.output);
@@ -66,6 +69,7 @@ export class MessageCodec<
         inm: Engine.Message.Input.From<fdm>,
     ): OpenAI.Responses.ResponseInput {
         if (this.cacheInputMessages.has(inm)) return this.cacheInputMessages.get(inm)!;
+        this.messageValidator.validateInputMessage(inm);
         const responseInput: OpenAI.Responses.ResponseInput = [];
         const content: OpenAI.Responses.ResponseInputContent[] = [];
         for (const part of inm.parts)
@@ -122,5 +126,6 @@ export namespace MessageCodec {
         in out fdm extends Function.Decl.Map.Proto,
     > {
         toolCodec: ToolCodec<fdm>;
+        messageValidator: Engine.MessageValidator.From<fdm>;
     }
 }
