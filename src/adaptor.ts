@@ -46,52 +46,10 @@ export class Adaptor {
             return OpenAICompatibleEngine.createEngine<fdm>(options);
         else throw new Error();
     }
-
-    public makeGoogleEngine<
-        fdm extends Function.Decl.Map.Proto,
-    >(adaptorOptions: Adaptor.GoogleParams<fdm>): GoogleEngine<fdm> {
-        const endpointSpec = this.config.endpoints[adaptorOptions.endpoint];
-        if (endpointSpec?.apiType === 'google') {} else throw new Error();
-        const throttle = this.throttles.get(adaptorOptions.endpoint);
-        if (throttle) {} else throw new Error();
-        const options: Engine.Options<fdm> = {
-            ...adaptorOptions,
-            endpointSpec,
-            throttle,
-        };
-        return new GoogleEngine.Instance(options);
-    }
-
-    public makeOpenAIResponsesEngine<
-        fdm extends Function.Decl.Map.Proto,
-    >(adaptorOptions: Adaptor.OpenAIResponsesParams<fdm>): OpenAIResponsesEngine<fdm> {
-        const endpointSpec = this.config.endpoints[adaptorOptions.endpoint];
-        if (endpointSpec?.apiType === 'openai-responses') {} else throw new Error();
-        const throttle = this.throttles.get(adaptorOptions.endpoint);
-        if (throttle) {} else throw new Error();
-        const options: Engine.Options<fdm> = {
-            ...adaptorOptions,
-            endpointSpec,
-            throttle,
-        };
-        return new OpenAIResponsesEngine.Instance(options);
-    }
 }
 
 export namespace Adaptor {
     export interface Params<
-        in out fdm extends Function.Decl.Map.Proto,
-    > extends Omit<Engine.Options<fdm>, 'endpointSpec' | 'throttle'> {
-        endpoint: string;
-    }
-
-    export interface GoogleParams<
-        in out fdm extends Function.Decl.Map.Proto,
-    > extends Omit<Engine.Options<fdm>, 'endpointSpec' | 'throttle'> {
-        endpoint: string;
-    }
-
-    export interface OpenAIResponsesParams<
         in out fdm extends Function.Decl.Map.Proto,
     > extends Omit<Engine.Options<fdm>, 'endpointSpec' | 'throttle'> {
         endpoint: string;
