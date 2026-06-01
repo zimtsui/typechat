@@ -64,17 +64,17 @@ export class Transport<
     }
 
     public mergeToolCall(
-        apifc: OpenAI.ChatCompletionChunk.Choice.Delta.ToolCall,
+        rawfc: OpenAI.ChatCompletionChunk.Choice.Delta.ToolCall,
     ): OpenAI.ChatCompletionMessageToolCall {
-        if (apifc.id) {} else throw new Error();
-        if (apifc.function?.name) {} else throw new Engine.Exceptions.InferenceError('Function name missing.', { cause: apifc });
-        if (apifc.function?.arguments) {} else throw new Engine.Exceptions.InferenceError('Function arguments missing.', { cause: apifc });
+        if (rawfc.id) {} else throw new Error();
+        if (rawfc.function?.name) {} else throw new Engine.Exceptions.InferenceError('Function name missing.', { cause: rawfc });
+        if (rawfc.function?.arguments) {} else throw new Engine.Exceptions.InferenceError('Function arguments missing.', { cause: rawfc });
         return {
-            id: apifc.id,
+            id: rawfc.id,
             type: 'function',
             function: {
-                name: apifc.function.name,
-                arguments: apifc.function.arguments,
+                name: rawfc.function.name,
+                arguments: rawfc.function.arguments,
             },
         };
     }

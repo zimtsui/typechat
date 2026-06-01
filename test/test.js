@@ -18,7 +18,6 @@ import './engines/openai-chatcompletions/message-codec.js';
 import './engines/openai-chatcompletions/tool-codec.js';
 import './engines/openai-chatcompletions/transport.js';
 import './engines/openai-responses/message-codec.js';
-import './engines/openai-responses/tool-choice-validator.js';
 import './engines/openai-responses/tool-codec.js';
 import './engines/openai-responses/transport.js';
 import './repetition.js';

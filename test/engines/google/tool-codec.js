@@ -1,4 +1,5 @@
 import test from 'ava';
+import { Text } from '../../../build/text.js';
 import { Engine } from '../../../build/engine.js';
 import { Function } from '../../../build/function.js';
 import { ToolCodec } from '../../../build/engines/google/tool-codec.js';
@@ -54,7 +55,7 @@ test('Google tool codec encodes function responses', t => {
     const successful = Function.Response.Successful.of({
         id: 'call_1',
         name: 'echo',
-        text: 'done',
+        parts: [new Text('done')],
     });
     const failed = Function.Response.Failed.of({
         id: 'call_2',

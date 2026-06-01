@@ -1,40 +1,41 @@
 import test from 'ava';
 import { Function } from '../../build/function.js';
-import { RoleMessage } from '../../build/engine/message.js';
+import { Message } from '../../build/engine/message.js';
+import { Text } from '../../build/text.js';
 
 
-test('RoleMessage paragraph helpers trim trailing whitespace and append paragraph break', t => {
-    t.is(RoleMessage.Part.Text.paragraph('hello  ').text, 'hello\n\n');
+test('Text paragraph helper trims trailing whitespace and appends paragraph break', t => {
+    t.is(Text.paragraph('hello  ').raw, 'hello\n\n');
 });
 
 test('Developer message requires only text parts for getOnlyTextParts', t => {
-    const text = new RoleMessage.Part.Text('hello');
-    const valid = new RoleMessage.Developer([text]);
-    const invalid = new RoleMessage.Developer([text, { kind: 'unknown' }]);
+    const text = new Text('hello');
+    const valid = new Message.Developer([text]);
+    const invalid = new Message.Developer([text, { kind: 'unknown' }]);
 
     t.deepEqual(valid.getOnlyTextParts(), [text]);
     t.throws(() => invalid.getOnlyTextParts());
 });
 
-test('AI message separates text and function calls', t => {
-    const text = new RoleMessage.Part.Text('chat');
-    const text2 = new RoleMessage.Part.Text('more');
+test('Output message separates text and function calls', t => {
+    const text = new Text('chat');
+    const text2 = new Text('more');
     const call = Function.Call.of({
         id: 'call_1',
         name: 'noop',
         args: {},
     });
-    const message = new RoleMessage.Ai([text, text2, call]);
+    const message = new Message.Output([text, text2, call]);
 
-    t.false(message.allText());
-    t.is(message.getText(), 'chatmore');
+    t.false(message.allTextParts());
+    t.is(message.joinText(), 'chatmore');
     t.deepEqual(message.getFunctionCalls(), [call]);
     t.is(message.getOnlyFunctionCall(), call);
 });
 
-test('AI message rejects getOnly helpers unless exactly one item exists', t => {
-    const empty = new RoleMessage.Ai([]);
-    const twoCalls = new RoleMessage.Ai([
+test('Output message rejects getOnly helpers unless exactly one function call exists', t => {
+    const empty = new Message.Output([]);
+    const twoCalls = new Message.Output([
         Function.Call.of({ id: 'call_1', name: 'noop', args: {} }),
         Function.Call.of({ id: 'call_2', name: 'noop', args: {} }),
     ]);

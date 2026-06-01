@@ -16,21 +16,21 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
     }
 
     public decodeFunctionCall(
-        apifc: Anthropic.ToolUseBlock,
+        rawfc: Anthropic.ToolUseBlock,
     ): Function.Call.From<fdm> {
-        const fditem = this.fdm[apifc.name];
-        if (fditem) {} else throw new Engine.Exceptions.InferenceError('Unknown function call', { cause: apifc });
+        const fditem = this.fdm[rawfc.name];
+        if (fditem) {} else throw new Engine.Exceptions.InferenceError('Unknown function call', { cause: rawfc });
         try {
-            Parse(fditem.parameters, apifc.input);
+            Parse(fditem.parameters, rawfc.input);
         } catch (e) {
             if (e instanceof ParseError)
                 throw new Engine.Exceptions.InferenceError('Invalid arguments of function call.', { cause: e });
             else throw e;
         }
         return Function.Call.of({
-            id: apifc.id,
-            name: apifc.name,
-            args: apifc.input,
+            id: rawfc.id,
+            name: rawfc.name,
+            args: rawfc.input,
         } as Function.Call.Options.From<fdm>);
     }
 

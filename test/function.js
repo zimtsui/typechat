@@ -1,6 +1,7 @@
 import test from 'ava';
 import { Function } from '../build/function.js';
-import { RoleMessage } from '../build/engine/message.js';
+import { Message } from '../build/engine/message.js';
+import { Text } from '../build/text.js';
 
 
 test('Function call stores id, name and typed args', t => {
@@ -19,9 +20,9 @@ test('Function successful response is collected from user message', t => {
     const response = Function.Response.Successful.of({
         id: 'call_1',
         name: 'echo',
-        text: 'done',
+        parts: [new Text('done')],
     });
-    const userMessage = new RoleMessage.User([response]);
+    const userMessage = new Message.Input([response]);
 
     t.deepEqual(userMessage.getFunctionResponses(), [response]);
     t.is(userMessage.getOnlyFunctionResponse(), response);

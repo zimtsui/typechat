@@ -22,6 +22,5 @@ export const functionDeclarationMapWithArgs = {
 };
 
 export function getOnlyText(message) {
-    const parts = message.getParts();
-    return parts[0].text;
+    return message.getTextParts()[0].raw;
 }

@@ -16,15 +16,15 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
     }
 
     public decodeFunctionCall(
-        apifc: OpenAI.ChatCompletionMessageFunctionToolCall,
+        rawfc: OpenAI.ChatCompletionMessageFunctionToolCall,
     ): Function.Call.From<fdm> {
-        const fditem = this.fdm[apifc.function.name];
-        if (fditem) {} else throw new Engine.Exceptions.InferenceError('Unknown function call', { cause: apifc });
+        const fditem = this.fdm[rawfc.function.name];
+        if (fditem) {} else throw new Engine.Exceptions.InferenceError('Unknown function call', { cause: rawfc });
         let args: unknown;
         try {
-            args = JSON.parse(apifc.function.arguments);
+            args = JSON.parse(rawfc.function.arguments);
         } catch (e) {
-            throw new Engine.Exceptions.InferenceError('Invalid JSON of function call', { cause: apifc });
+            throw new Engine.Exceptions.InferenceError('Invalid JSON of function call', { cause: rawfc });
         }
         try {
             Parse(fditem.parameters, args);
@@ -34,8 +34,8 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
             else throw e;
         }
         return Function.Call.of({
-            id: apifc.id,
-            name: apifc.function.name,
+            id: rawfc.id,
+            name: rawfc.function.name,
             args,
         } as Function.Call.Options.From<fdm>);
     }

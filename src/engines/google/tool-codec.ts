@@ -34,22 +34,22 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
 
 
     public decodeFunctionCall(
-        googlefc: Google.FunctionCall,
+        rawfc: Google.FunctionCall,
     ): Function.Call.From<fdm> {
-        if (googlefc.name) {} else throw new Error();
-        const fditem = this.fdm[googlefc.name];
-        if (fditem) {} else throw new Engine.Exceptions.InferenceError('Unknown function call', { cause: googlefc });
+        if (rawfc.name) {} else throw new Error();
+        const fditem = this.fdm[rawfc.name];
+        if (fditem) {} else throw new Engine.Exceptions.InferenceError('Unknown function call', { cause: rawfc });
         try {
-            Parse(fditem.parameters, googlefc.args);
+            Parse(fditem.parameters, rawfc.args);
         } catch (e) {
             if (e instanceof ParseError)
                 throw new Engine.Exceptions.InferenceError('Invalid arguments of function call.', { cause: e });
             else throw e;
         }
         return Function.Call.of({
-            id: googlefc.id,
-            name: googlefc.name,
-            args: googlefc.args,
+            id: rawfc.id,
+            name: rawfc.name,
+            args: rawfc.args,
         } as Function.Call.Options.From<fdm>);
     }
 

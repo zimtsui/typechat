@@ -3,7 +3,8 @@ import { Throttle } from '../../build/throttle.js';
 import { Engine } from '../../build/engine.js';
 import { Function } from '../../build/function.js';
 import * as XmlCodec from '../../build/xml.js';
-import { RoleMessage } from '../../build/engine/message.js';
+import { Message } from '../../build/engine/message.js';
+import { Text } from '../../build/text.js';
 import { functionDeclarationMap } from '../helpers.js';
 
 
@@ -39,8 +40,8 @@ class FakeEngine extends Engine.Instance {
 }
 
 function rejectionMessage() {
-    return new RoleMessage.User([
-        RoleMessage.Part.Text.paragraph(
+    return new Message.Input([
+        Text.paragraph(
             XmlCodec.System.encode('Error: Function call required, but not found.'),
         ),
     ]);
@@ -99,9 +100,9 @@ test('Engine agentloop passes function call object to function handler', async t
         name: 'noop',
         args: {},
     });
-    const aiMessage = new RoleMessage.Ai([fcall]);
-    const finalMessage = new RoleMessage.Ai([
-        RoleMessage.Part.Text.paragraph('done'),
+    const aiMessage = new Message.Output([fcall]);
+    const finalMessage = new Message.Output([
+        Text.paragraph('done'),
     ]);
     const engine = new FakeEngine([
         aiMessage,
@@ -116,7 +117,7 @@ test('Engine agentloop passes function call object to function handler', async t
         noop: async (args, receivedCall) => {
             t.deepEqual(args, {});
             t.is(receivedCall, fcall);
-            return 'ok';
+            return [new Text('ok')];
         },
     };
 
@@ -127,11 +128,11 @@ test('Engine agentloop passes function call object to function handler', async t
     t.deepEqual(chunks, []);
     t.deepEqual(session.chatMessages, [
         aiMessage,
-        new RoleMessage.User([
+        new Message.Input([
             Function.Response.Successful.of({
                 id: 'call_1',
                 name: 'noop',
-                text: 'ok',
+                parts: [new Text('ok')],
             }),
         ]),
         finalMessage,

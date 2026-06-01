@@ -80,15 +80,15 @@ export class ToolCodec<
     }
 
     public decodeFunctionCall(
-        apifc: OpenAI.Responses.ResponseFunctionToolCall,
+        rawfc: OpenAI.Responses.ResponseFunctionToolCall,
     ): Function.Call.From<fdm> {
-        const fditem = this.fdm[apifc.name];
-        if (fditem) {} else throw new Engine.Exceptions.InferenceError('Unknown function call', { cause: apifc });
+        const fditem = this.fdm[rawfc.name];
+        if (fditem) {} else throw new Engine.Exceptions.InferenceError('Unknown function call', { cause: rawfc });
         let args: unknown;
         try {
-            args = JSON.parse(apifc.arguments);
+            args = JSON.parse(rawfc.arguments);
         } catch (e) {
-            throw new Engine.Exceptions.InferenceError('Invalid JSON of function call', { cause: apifc });
+            throw new Engine.Exceptions.InferenceError('Invalid JSON of function call', { cause: rawfc });
         }
         try {
             Parse(fditem.parameters, args);
@@ -98,8 +98,8 @@ export class ToolCodec<
             else throw e;
         }
         return Function.Call.of({
-            id: apifc.call_id,
-            name: apifc.name,
+            id: rawfc.call_id,
+            name: rawfc.name,
             args,
         } as Function.Call.Options.From<fdm>);
     }

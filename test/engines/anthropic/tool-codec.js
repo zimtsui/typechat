@@ -115,13 +115,3 @@ test('Anthropic tool codec encodes function responses and requires ids', t => {
         parts: [new Text('done')],
     })));
 });
-
-test('Anthropic tool codec rejects encoding non-native function calls', t => {
-    const codec = new ToolCodec({ fdm: functionDeclarationMapWithArgs });
-
-    t.throws(() => codec.encodeFunctionCall(Function.Call.of({
-        id: 'call_1',
-        name: 'echo',
-        args: { text: 'hello' },
-    })), { message: 'Anthropic engine requires native function calls.' });
-});

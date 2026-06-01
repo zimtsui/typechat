@@ -1,8 +1,9 @@
 import test from 'ava';
 import { Function } from '../../build/function.js';
-import { RoleMessage } from '../../build/engine/message.js';
+import { Message } from '../../build/engine/message.js';
 import { ToolChoiceValidator } from '../../build/engine/tool-choice-validator.js';
 import { ToolChoice } from '../../build/tool-choice.js';
+import { Text } from '../../build/text.js';
 import { getOnlyText } from '../helpers.js';
 
 
@@ -16,15 +17,15 @@ const fcall2 = Function.Call.of({
     name: 'noop',
     args: {},
 });
-const chat = new RoleMessage.Part.Text('chat');
+const chat = new Text('chat');
 
 function validate(toolChoice, parts) {
     const validator = new ToolChoiceValidator({ toolChoice });
-    return validator.validate(new RoleMessage.Ai(parts));
+    return validator.validate(new Message.Output(parts));
 }
 
 function getText(rejection) {
-    return rejection.getTextParts().map(part => part.text).join('');
+    return rejection.getTextParts().map(part => part.raw).join('');
 }
 
 test('Tool choice validator enforces at least one function call for REQUIRED', t => {
@@ -39,15 +40,15 @@ test('Tool choice validator enforces exactly one function call for ANYONE', t =>
     const duplicated = validate(ToolChoice.ANYONE, [fcall, fcall2]);
 
     t.regex(getOnlyText(missing), /Error: Function call required, but not found\./);
-    t.regex(getText(duplicated), /Error: Only 1 function call allowed, but multiple found\./);
-    t.is(duplicated.getFunctionResponses()[0].error, '<typechat:system>Cancelled by system.</typechat:system>');
+    t.is(getText(duplicated), '');
+    t.regex(duplicated.getFunctionResponses()[0].error, /Error: Only 1 function call allowed, but multiple found\./);
     t.is(validate(ToolChoice.ANYONE, [fcall]), undefined);
 });
 
 test('Tool choice validator rejects function calls for NONE', t => {
     const rejection = validate(ToolChoice.NONE, [fcall]);
 
-    t.regex(getText(rejection), /Error: No function call allowed\./);
-    t.is(rejection.getFunctionResponses()[0].error, '<typechat:system>Cancelled by system.</typechat:system>');
+    t.is(getText(rejection), '');
+    t.regex(rejection.getFunctionResponses()[0].error, /Error: No function call allowed\./);
     t.is(validate(ToolChoice.NONE, [chat]), undefined);
 });
