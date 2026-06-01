@@ -1,5 +1,4 @@
 import { type InferenceOptions, type ProviderSpecs, Engine } from '../../engine.ts';
-import { RoleMessage } from './message.ts';
 import { Function } from '../../function.ts';
 import * as Google from '@google/genai';
 import * as Undici from 'undici';
@@ -25,9 +24,6 @@ export class Transport<
     protected fdm: fdm;
     protected throttle: Throttle;
     protected toolChoice: ToolChoice;
-    protected codeExecution: boolean;
-    protected urlContext: boolean;
-    protected googleSearch: boolean;
     protected messageCodec: MessageCodec<fdm>;
     protected toolCodec: ToolCodec<fdm>;
     protected billing: Billing;
@@ -39,9 +35,6 @@ export class Transport<
         this.fdm = options.fdm;
         this.throttle = options.throttle;
         this.toolChoice = options.toolChoice;
-        this.codeExecution = options.codeExecution;
-        this.urlContext = options.urlContext;
-        this.googleSearch = options.googleSearch;
         this.messageCodec = options.messageCodec;
         this.toolCodec = options.toolCodec;
         this.billing = options.billing;
@@ -51,7 +44,7 @@ export class Transport<
         wfctx: InferenceContext,
         session: Engine.Session.From<fdm>,
         signal?: AbortSignal,
-    ): Promise<RoleMessage.Ai.From<fdm>> {
+    ): Promise<Engine.Message.Output.From<fdm>> {
         await this.throttle.requests(wfctx);
 
         // Prepare request body
@@ -60,9 +53,6 @@ export class Transport<
         const apiFds = this.toolCodec.encodeFunctionDeclarationMap();
         const apiTools: Google.Tool[] = [];
         if (apiFds.length) apiTools.push({ functionDeclarations: apiFds });
-        if (this.urlContext) apiTools.push({ urlContext: {} });
-        if (this.googleSearch) apiTools.push({ googleSearch: {} });
-        if (this.codeExecution) apiTools.push({ codeExecution: {} });
         const apiToolConfig: Google.ToolConfig = {};
         if (apiFds.length) apiToolConfig.functionCallingConfig = ChoiceCodec.encode(this.toolChoice);
         const reqbody: RestfulRequest = {
@@ -130,7 +120,7 @@ export class Transport<
         }
         wfctx.cost?.(this.billing.charge(response.usageMetadata));
 
-        return this.messageCodec.decodeAiMessage(response.candidates[0].content);
+        return this.messageCodec.decodeOutputMessage(response.candidates[0].content);
     }
 }
 
@@ -143,9 +133,6 @@ export namespace GoogleNativeTransport {
         fdm: fdm;
         throttle: Throttle;
         toolChoice: ToolChoice;
-        codeExecution: boolean;
-        urlContext: boolean;
-        googleSearch: boolean;
         messageCodec: MessageCodec<fdm>;
         toolCodec: ToolCodec<fdm>;
         billing: Billing;

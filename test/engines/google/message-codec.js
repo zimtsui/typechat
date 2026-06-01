@@ -1,30 +1,28 @@
 import test from 'ava';
 import { MIMEType } from 'node:util';
-import { Engine } from '../../../build/engine.js';
 import { Media } from '../../../build/media.js';
-import { RoleMessage } from '../../../build/engine/message.js';
-import { RoleMessage as GoogleRoleMessage } from '../../../build/engines/google/message.js';
+import { Message } from '../../../build/engine/message.js';
+import { Text } from '../../../build/text.js';
 import { ToolCodec } from '../../../build/engines/google/tool-codec.js';
 import { MessageCodec } from '../../../build/engines/google/message-codec.js';
 import { functionDeclarationMap } from '../../helpers.js';
 
 const binary = text => new TextEncoder().encode(text).buffer;
 
-function makeCodec(codeExecution = false) {
+function makeCodec() {
     const toolCodec = new ToolCodec({ fdm: functionDeclarationMap });
     return new MessageCodec({
         toolCodec,
-        codeExecution,
     });
 }
 
 test('Google codec encodes PDF user message', t => {
     const messageCodec = makeCodec();
-    const userMessage = new RoleMessage.User([
+    const userMessage = new Message.Input([
         new Media.Pdf(binary('pdf')),
     ]);
 
-    const encoded = messageCodec.encodeUserMessage(userMessage);
+    const encoded = messageCodec.encodeInputMessage(userMessage);
 
     t.is(encoded.role, 'user');
     t.deepEqual(encoded.parts, [{
@@ -40,11 +38,11 @@ test('Google codec encodes PDF user message', t => {
 
 test('Google codec encodes text media as quoted text', t => {
     const messageCodec = makeCodec();
-    const userMessage = new RoleMessage.User([
+    const userMessage = new Message.Input([
         new Media.Text('hello', new MIMEType('text/plain')),
     ]);
 
-    const encoded = messageCodec.encodeUserMessage(userMessage);
+    const encoded = messageCodec.encodeInputMessage(userMessage);
 
     t.is(encoded.role, 'user');
     t.deepEqual(encoded.parts, [{
@@ -52,10 +50,10 @@ test('Google codec encodes text media as quoted text', t => {
     }]);
 });
 
-test('Google codec decodes text, function calls and code execution parts', t => {
-    const messageCodec = makeCodec(true);
+test('Google codec decodes text and function calls', t => {
+    const messageCodec = makeCodec();
 
-    const aiMessage = messageCodec.decodeAiMessage({
+    const raw = {
         role: 'model',
         parts: [
             { text: 'hello' },
@@ -66,31 +64,29 @@ test('Google codec decodes text, function calls and code execution parts', t => 
                     args: {},
                 },
             },
-            {
-                executableCode: {
-                    code: 'print(1)',
-                    language: 'PYTHON',
-                },
-            },
-            {
-                codeExecutionResult: {
-                    outcome: 'OUTCOME_OK',
-                    output: '1\n',
-                },
-            },
         ],
-    });
+    };
 
-    t.is(aiMessage.getText(), 'hello');
-    t.is(aiMessage.getOnlyFunctionCall().name, 'noop');
-    t.true(aiMessage.getParts()[2] instanceof GoogleRoleMessage.Ai.Part.ExecutableCode);
-    t.true(aiMessage.getParts()[3] instanceof GoogleRoleMessage.Ai.Part.CodeExecutionResult);
+    const outputMessage = messageCodec.decodeOutputMessage(raw);
+
+    t.is(outputMessage.joinText(), 'hello');
+    t.is(outputMessage.getOnlyFunctionCall().name, 'noop');
+    t.deepEqual(messageCodec.encodeOutputMessage(outputMessage), raw);
 });
 
-test('Google codec rejects unexpected code execution parts when disabled', t => {
-    const messageCodec = makeCodec(false);
+test('Google codec rejects uncached output messages', t => {
+    const messageCodec = makeCodec();
+    const outputMessage = new Message.Output([new Text('hello')]);
 
-    t.throws(() => messageCodec.decodeAiMessage({
+    t.throws(() => messageCodec.encodeOutputMessage(outputMessage), {
+        message: 'Only native output message allowed.',
+    });
+});
+
+test('Google codec rejects code execution output parts', t => {
+    const messageCodec = makeCodec();
+
+    t.throws(() => messageCodec.decodeOutputMessage({
         role: 'model',
         parts: [{
             executableCode: {
@@ -98,5 +94,14 @@ test('Google codec rejects unexpected code execution parts when disabled', t => 
                 language: 'PYTHON',
             },
         }],
-    }), { instanceOf: Engine.Exceptions.InferenceError, message: 'Unexpected code execution' });
+    }), { instanceOf: Error, message: 'Executable code is not supported.' });
+    t.throws(() => messageCodec.decodeOutputMessage({
+        role: 'model',
+        parts: [{
+            codeExecutionResult: {
+                outcome: 'OUTCOME_OK',
+                output: '1\n',
+            },
+        }],
+    }), { instanceOf: Error, message: 'Code execution result is not supported.' });
 });

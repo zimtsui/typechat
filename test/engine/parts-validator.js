@@ -1,14 +1,15 @@
 import test from 'ava';
+import { Engine } from '../../build/engine.js';
 import { PartsValidator } from '../../build/engine/parts-validator.js';
-import { RoleMessage as GoogleRoleMessage } from '../../build/engines/google/message.js';
+import { Message } from '../../build/engine/message.js';
 
 
-test('Parts validator ignores Google executable code and code execution result text', t => {
+test('Parts validator rejects empty output messages', t => {
     const validator = new PartsValidator();
-    const aiMessage = new GoogleRoleMessage.Ai([
-        new GoogleRoleMessage.Ai.Part.ExecutableCode('ab'.repeat(50), 'python'),
-        new GoogleRoleMessage.Ai.Part.CodeExecutionResult('ok', 'ab'.repeat(50)),
-    ], { parts: [] });
+    const outputMessage = new Message.Output([]);
 
-    t.notThrows(() => validator.validate(aiMessage));
+    t.throws(() => validator.validate(outputMessage), {
+        instanceOf: Engine.Exceptions.InferenceError,
+        message: 'Empty message.',
+    });
 });

@@ -1,71 +1,57 @@
-import { RoleMessage } from './message.ts';
 import { Engine } from '../../engine.ts';
 import { Function } from '../../function.ts';
 import * as Google from '@google/genai';
 import { type ToolCodec } from './tool-codec.ts';
 import { Media } from '../../media.ts';
+import { Text } from '../../text.ts';
 
 
 
 export class MessageCodec<
     fdm extends Function.Decl.Map.Proto,
 > {
+    protected cacheDeveloperMessages = new WeakMap<Engine.Message.Developer, Google.Content>();
+    protected cacheInputMessages = new WeakMap<Engine.Message.Input<Function.Decl.Proto>, Google.Content>();
+    protected cacheOutputMessages = new WeakMap<Engine.Message.Output<Function.Decl.Proto>, Google.Content>();
     protected toolCodec: ToolCodec<fdm>;
-    protected codeExecution: boolean;
     public constructor(options: MessageCodec.Options<fdm>) {
         this.toolCodec = options.toolCodec;
-        this.codeExecution = options.codeExecution;
     }
 
-    public encodeAiMessage(
-        aiMessage: Engine.Message.Output.From<fdm>,
+    public encodeOutputMessage(
+        outm: Engine.Message.Output.From<fdm>,
     ): Google.Content {
-        if (aiMessage instanceof RoleMessage.Ai) {
-            const nativeAiMessage = aiMessage as RoleMessage.Ai.From<fdm>;
-            return nativeAiMessage.getRaw();
-        }
-        else {
-            const apiParts: Google.PartUnion[] = [];
-            for (const part of aiMessage.getParts()) {
-                if (part instanceof RoleMessage.Part.Text) {
-                    apiParts.push(Google.createPartFromText(part.text));
-                } else if (part instanceof Function.Call) {
-                    const fc = part as Function.Call.From<fdm>;
-                    if (fc.args instanceof Object) {} else throw new Error();
-                    apiParts.push(
-                        Google.createPartFromFunctionCall(
-                            fc.name,
-                            fc.args satisfies Record<string, unknown>,
-                        ),
-                    );
-                } else throw new Error('Unknown AI message part type', { cause: part });
-            }
-            return Google.createModelContent(apiParts);
-        }
+        if (this.cacheOutputMessages.has(outm)) return this.cacheOutputMessages.get(outm)!;
+        throw new Error('Only native output message allowed.', { cause: outm });
     }
 
     public encodeChatMessages(
         chatMessages: Engine.Session.ChatMessage.From<fdm>[],
     ): Google.Content[] {
-        return chatMessages.map(chatMessage => {
-            if (chatMessage instanceof Engine.Message.Input) {
-                const userMessage = chatMessage as Engine.Message.Input.From<fdm>;
-                return this.encodeUserMessage(userMessage);
-            } else if (chatMessage instanceof Engine.Message.Output) {
-                const aiMessage = chatMessage as Engine.Message.Output.From<fdm>;
-                return this.encodeAiMessage(aiMessage);
-            }
-            else throw new Error();
-        });
+        return chatMessages.map(chatMessage => this.encodeChatMessage(chatMessage));
     }
 
-    public encodeUserMessage(
-        userMessage: Engine.Message.Input.From<fdm>,
+    public encodeChatMessage(
+        chatMessage: Engine.Session.ChatMessage.From<fdm>,
     ): Google.Content {
+        if (chatMessage instanceof Engine.Message.Input) {
+            const inm = chatMessage as Engine.Message.Input.From<fdm>;
+            return this.encodeInputMessage(inm);
+        } else if (chatMessage instanceof Engine.Message.Output) {
+            const outm = chatMessage as Engine.Message.Output.From<fdm>;
+            return this.encodeOutputMessage(outm);
+        }
+        else throw new Error();
+    }
+
+    public encodeInputMessage(
+        inm: Engine.Message.Input.From<fdm>,
+    ): Google.Content {
+        if (this.cacheInputMessages.has(inm)) return this.cacheInputMessages.get(inm)!;
         const apiParts: Google.PartUnion[] = [];
-        for (const part of userMessage.getParts()) {
-            if (part instanceof Engine.Message.Part.Text)
-                apiParts.push(Google.createPartFromText(part.text));
+        for (const part of inm.parts) {
+            if (part instanceof Text)
+                apiParts.push(Google.createPartFromText(part.raw));
             else if (part instanceof Function.Response) {
                 const fr = part as Function.Response.From<fdm>;
                 apiParts.push(this.toolCodec.encodeFunctionResponse(fr));
@@ -90,42 +76,39 @@ export class MessageCodec<
                 );
             else throw new Error('Unknown user message part type', { cause: part });
         };
-        return Google.createUserContent(apiParts);
+        const raw = Google.createUserContent(apiParts);
+        this.cacheInputMessages.set(inm, raw);
+        return raw;
     }
 
     public encodeDeveloperMessage(
         developerMessage: Engine.Message.Developer,
     ): Google.Content {
+        if (this.cacheDeveloperMessages.has(developerMessage)) return this.cacheDeveloperMessages.get(developerMessage)!;
         const parts = developerMessage.getOnlyTextParts().map(part => Google.createPartFromText(part.raw));
-        return { parts };
+        const raw = { parts };
+        this.cacheDeveloperMessages.set(developerMessage, raw);
+        return raw;
     }
 
-    public decodeAiMessage(
+    public decodeOutputMessage(
         content: Google.Content,
-    ): RoleMessage.Ai.From<fdm> {
+    ): Engine.Message.Output.From<fdm> {
         if (content.parts) {} else throw new Error();
-        const parts: unknown[] = [];
+        const parts: Engine.Message.Output.Part.From<fdm>[] = [];
         for (const part of content.parts) {
-            if (part.text)
-                parts.push(new RoleMessage.Part.Text(part.text));
+            if (part.text !== undefined)
+                parts.push(new Text(part.text));
             if (part.functionCall)
                 parts.push(this.toolCodec.decodeFunctionCall(part.functionCall));
-            if (part.executableCode) {
-                if (this.codeExecution) {} else throw new Engine.Exceptions.InferenceError('Unexpected code execution', { cause: content });
-                if (part.executableCode.code) {} else throw new Error();
-                if (part.executableCode.language) {} else throw new Error();
-                parts.push(new RoleMessage.Ai.Part.ExecutableCode(
-                    part.executableCode.code,
-                    part.executableCode.language === Google.Language.LANGUAGE_UNSPECIFIED ? undefined : part.executableCode.language,
-                ));
-            }
-            if (part.codeExecutionResult) {
-                if (this.codeExecution) {} else throw new Engine.Exceptions.InferenceError('Unexpected code execution result', { cause: content });
-                if (part.codeExecutionResult.outcome) {} else throw new Error();
-                parts.push(new RoleMessage.Ai.Part.CodeExecutionResult(part.codeExecutionResult.outcome, part.codeExecutionResult.output));
-            }
+            if (part.executableCode)
+                throw new Error('Executable code is not supported.', { cause: part });
+            if (part.codeExecutionResult)
+                throw new Error('Code execution result is not supported.', { cause: part });
         }
-        return new RoleMessage.Ai(parts, content);
+        const outm = new Engine.Message.Output(parts);
+        this.cacheOutputMessages.set(outm, content);
+        return outm;
     }
 }
 
@@ -135,7 +118,6 @@ export namespace MessageCodec {
         in out fdm extends Function.Decl.Map.Proto,
     > {
         toolCodec: ToolCodec<fdm>;
-        codeExecution: boolean;
     }
 
 }
