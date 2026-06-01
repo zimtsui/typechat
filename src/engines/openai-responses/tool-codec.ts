@@ -12,11 +12,11 @@ export class ToolCodec<
     in out fdm extends Function.Decl.Map.Proto,
 > {
     protected fdm: fdm;
-    protected apifds: OpenAI.Responses.FunctionTool[];
+    protected rawfds: OpenAI.Responses.FunctionTool[];
     public constructor(options: ToolCodec.Options<fdm>) {
         this.fdm = options.fdm;
         const fdentries = Object.entries(this.fdm) as Function.Decl.Entry.From<fdm>[];
-        this.apifds = fdentries.map(fdentry => ToolCodec.encodeFunctionDeclarationEntry(fdentry));
+        this.rawfds = fdentries.map(fdentry => ToolCodec.encodeFunctionDeclarationEntry(fdentry));
     }
 
     public encodeFunctionResponsePart(part: Text | Media): OpenAI.Responses.ResponseFunctionCallOutputItem {
@@ -76,7 +76,7 @@ export class ToolCodec<
     }
 
     public encodeFunctionDeclarationMap(): OpenAI.Responses.FunctionTool[] {
-        return this.apifds.slice();
+        return this.rawfds.slice();
     }
 
     public decodeFunctionCall(

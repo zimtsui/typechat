@@ -4,7 +4,6 @@ import { MessageCodec } from './openai-responses/message-codec.ts';
 import { ToolCodec } from './openai-responses/tool-codec.ts';
 import { Billing } from './openai-responses/billing.ts';
 import * as TransportModule from './openai-responses/transport.ts';
-import { InferenceContext } from '../inference-context.ts';
 
 
 export type OpenAIResponsesEngine<
@@ -19,7 +18,7 @@ export namespace OpenAIResponsesEngine {
         protected billing: Billing;
         protected override transport: Transport<fdm>;
 
-        public constructor(protected options: OpenAIResponsesEngine.Options<fdm>) {
+        public constructor(protected options: Engine.Options<fdm>) {
             super(options);
 
             this.toolCodec = new ToolCodec({ fdm: this.fdm });
@@ -45,37 +44,11 @@ export namespace OpenAIResponsesEngine {
             engine.middlewaresStateful = [...this.middlewaresStateful];
             return engine;
         }
-
-        protected override async infer(
-            wfctx: InferenceContext,
-            session: Engine.Session.From<fdm>,
-        ): Promise<Engine.Message.Output.From<fdm>> {
-            return await super.infer(wfctx, session) as Engine.Message.Output.From<fdm>;
-        }
-
-        public override async stateless(wfctx: InferenceContext, session: Engine.Session.From<fdm>): Promise<Engine.Message.Output.From<fdm>> {
-            return await super.stateless(wfctx, session) as Engine.Message.Output.From<fdm>;
-        }
-
-        public override async stateful(wfctx: InferenceContext, session: Engine.Session.From<fdm>): Promise<Engine.Message.Output.From<fdm>> {
-            return await super.stateful(wfctx, session) as Engine.Message.Output.From<fdm>;
-        }
-
-        public override useStateless(middleware: Engine.Middleware.From<fdm>): OpenAIResponsesEngine<fdm> {
-            return super.useStateless(middleware) as OpenAIResponsesEngine<fdm>;
-        }
-        public override useStateful(middleware: Engine.Middleware.From<fdm>): OpenAIResponsesEngine<fdm> {
-            return super.useStateful(middleware) as OpenAIResponsesEngine<fdm>;
-        }
     }
-
-    export interface Options<
-        in out fdm extends Function.Decl.Map.Proto,
-    > extends Engine.Options<fdm> {}
 
     export function create<
         fdm extends Function.Decl.Map.Proto,
-    >(options: OpenAIResponsesEngine.Options<fdm>): OpenAIResponsesEngine<fdm> {
+    >(options: Engine.Options<fdm>): OpenAIResponsesEngine<fdm> {
         return new Instance(options);
     }
 

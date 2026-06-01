@@ -8,11 +8,11 @@ import { Text } from '../../text.ts';
 
 export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
     protected fdm: fdm;
-    protected apifds: OpenAI.ChatCompletionTool[];
+    protected rawfds: OpenAI.ChatCompletionTool[];
     public constructor(options: ToolCodec.Options<fdm>) {
         this.fdm = options.fdm;
         const fdentries = Object.entries(this.fdm) as Function.Decl.Entry.From<fdm>[];
-        this.apifds = fdentries.map(fdentry => ToolCodec.encodeFunctionDeclarationEntry(fdentry));
+        this.rawfds = fdentries.map(fdentry => ToolCodec.encodeFunctionDeclarationEntry(fdentry));
     }
 
     public encodeFunctionCall(
@@ -98,7 +98,7 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
     }
 
     public encodeFunctionDeclarationMap(): OpenAI.ChatCompletionTool[] {
-        return this.apifds.slice();
+        return this.rawfds.slice();
     }
 }
 

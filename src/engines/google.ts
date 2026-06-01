@@ -18,7 +18,7 @@ export namespace GoogleEngine {
         protected billing: Billing;
         protected override transport: Transport<fdm>;
 
-        public constructor(protected options: GoogleEngine.Options<fdm>) {
+        public constructor(protected options: Engine.Options<fdm>) {
             super(options);
 
             if (options.endpointSpec.parallelToolCall === false) throw new Error('Parallel tool calling is required by Google engine.');
@@ -47,23 +47,11 @@ export namespace GoogleEngine {
             engine.middlewaresStateful = [...this.middlewaresStateful];
             return engine;
         }
-
-        public override useStateless(middleware: Engine.Middleware.From<fdm>): GoogleEngine<fdm> {
-            return super.useStateless(middleware) as GoogleEngine<fdm>;
-        }
-        public override useStateful(middleware: Engine.Middleware.From<fdm>): GoogleEngine<fdm> {
-            return super.useStateful(middleware) as GoogleEngine<fdm>;
-        }
-
     }
-
-    export interface Options<
-        in out fdm extends Function.Decl.Map.Proto,
-    > extends Engine.Options<fdm> {}
 
     export function create<
         fdm extends Function.Decl.Map.Proto,
-    >(options: GoogleEngine.Options<fdm>): GoogleEngine<fdm> {
+    >(options: Engine.Options<fdm>): GoogleEngine<fdm> {
         return new Instance(options);
     }
 

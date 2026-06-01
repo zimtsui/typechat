@@ -3,16 +3,19 @@ import * as Google from '@google/genai';
 import { Parse, ParseError } from 'typebox/schema';
 import { removeAdditionalProperties } from '../../function/parameters.ts';
 import { Engine } from '../../engine.ts';
+import assert from 'node:assert';
+import { Text } from '../../text.ts';
+import { Media } from '../../media.ts';
 
 
 
 export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
     protected fdm: fdm;
-    protected apiFds: Google.FunctionDeclaration[];
+    protected rawfds: Google.FunctionDeclaration[];
     public constructor(options: ToolCodec.Options<fdm>) {
         this.fdm = options.fdm;
         const fdentries = Object.entries(this.fdm) as Function.Decl.Entry.From<fdm>[];
-        this.apiFds = fdentries.map(fdentry => ToolCodec.encodeFunctionDeclarationEntry(fdentry));
+        this.rawfds = fdentries.map(fdentry => ToolCodec.encodeFunctionDeclarationEntry(fdentry));
     }
 
     public encodeFunctionCall(
@@ -26,7 +29,7 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
     }
 
     public encodeFunctionDeclarationMap(): Google.FunctionDeclaration[] {
-        return this.apiFds.slice();
+        return this.rawfds.slice();
     }
 
     protected static encodeFunctionDeclarationEntry<fdu extends Function.Decl.Proto>(
@@ -63,11 +66,43 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
     public encodeFunctionResponse(
         fr: Function.Response.From<fdm>,
     ): Google.Part {
-        if (fr instanceof Function.Response.Successful) return {
-            functionResponse: { id: fr.id, name: fr.name, response: { output: fr.text } },
-        }; else if (fr instanceof Function.Response.Failed) return {
-            functionResponse: { id: fr.id, name: fr.name, response: { error: fr.error } },
-        }; else throw new Error();
+        if (fr instanceof Function.Response.Successful) {
+            assert(fr.parts.length === 1);
+            if (fr.parts[0]! instanceof Text) {
+                const text = fr.parts[0] satisfies Text;
+                return {
+                    functionResponse: { id: fr.id, name: fr.name, response: { output: text.raw } },
+                };
+            } else if (fr.parts[0]! instanceof Media.Text) {
+                const media = fr.parts[0] satisfies Media.Text;
+                return {
+                    functionResponse: { id: fr.id, name: fr.name, response: { output: media.quote() } },
+                };
+            } else if (fr.parts[0]! instanceof Media.Image || fr.parts[0]! instanceof Media.Pdf) {
+                const media = fr.parts[0] satisfies Media.Image | Media.Pdf;
+                return {
+                    functionResponse: {
+                        id: fr.id, name: fr.name,
+                        parts: [{
+                            inlineData: {
+                                data: String(media),
+                                mimeType: String(media.mimeType),
+                                displayName: 'media',
+                            },
+                        }],
+                        response: {
+                            output: {
+                                $ref: 'media',
+                            },
+                        },
+                    },
+                };
+            } else throw new Error('Unsupported function response part.', { cause: fr.parts[0]! });
+        } else if (fr instanceof Function.Response.Failed)
+            return {
+                functionResponse: { id: fr.id, name: fr.name, response: { error: fr.error } },
+            };
+        else throw new Error();
     }
 
 }
