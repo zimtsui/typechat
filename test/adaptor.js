@@ -113,39 +113,6 @@ test('Adaptor applies cache price fallback and override', t => {
     t.is(explicit.pricing.cachePrice, 0.125);
 });
 
-test('Adaptor creates dedicated Google and OpenAI Responses engines', t => {
-    const adaptor = Adaptor.create({
-        endpoints: {
-            openai: {
-                apiType: 'openai-responses',
-                baseUrl: 'https://example.invalid/openai',
-                apiKey: 'test-key',
-                model: 'test-model',
-                name: 'OpenAI Responses',
-            },
-            google: {
-                apiType: 'google',
-                baseUrl: 'https://example.invalid/google',
-                apiKey: 'test-key',
-                model: 'test-model',
-                name: 'Google',
-            },
-        },
-    });
-
-    const openaiEngine = adaptor.makeOpenAIResponsesEngine({
-        endpoint: 'openai',
-        functionDeclarationMap,
-    });
-    const googleEngine = adaptor.makeGoogleEngine({
-        endpoint: 'google',
-        functionDeclarationMap,
-    });
-
-    t.true(openaiEngine instanceof OpenAIResponsesEngine.Instance);
-    t.true(googleEngine instanceof GoogleEngine.Instance);
-});
-
 test('Adaptor rejects unknown endpoint ids', t => {
     const adaptor = Adaptor.create({
         endpoints: {},

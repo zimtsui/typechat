@@ -1,4 +1,5 @@
 import './adaptor.js';
+import './exports.js';
 import './function.js';
 import './function/parameters.js';
 import './media.js';

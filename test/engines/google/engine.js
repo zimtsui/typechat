@@ -18,7 +18,7 @@ test('Google engine rejects disabling parallel tool calls', t => {
         },
     });
 
-    const error = t.throws(() => adaptor.makeGoogleEngine({
+    const error = t.throws(() => adaptor.makeEngine({
         endpoint: 'google',
         functionDeclarationMap,
     }));
@@ -39,7 +39,7 @@ test('Google engine allows omitted parallel tool call option', t => {
         },
     });
 
-    const engine = adaptor.makeGoogleEngine({
+    const engine = adaptor.makeEngine({
         endpoint: 'google',
         functionDeclarationMap,
     });
