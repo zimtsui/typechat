@@ -2,15 +2,17 @@ import { Parse, ParseError } from 'typebox/schema';
 import { Function } from '../../function.ts';
 import OpenAI from 'openai';
 import { Engine } from '../../engine.ts';
+import { Media } from '../../media.ts';
+import { Text } from '../../text.ts';
 
 
 export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
     protected fdm: fdm;
-    protected apiFds: OpenAI.ChatCompletionTool[];
+    protected apifds: OpenAI.ChatCompletionTool[];
     public constructor(options: ToolCodec.Options<fdm>) {
         this.fdm = options.fdm;
         const fdentries = Object.entries(this.fdm) as Function.Decl.Entry.From<fdm>[];
-        this.apiFds = fdentries.map(fdentry => ToolCodec.encodeFunctionDeclarationEntry(fdentry));
+        this.apifds = fdentries.map(fdentry => ToolCodec.encodeFunctionDeclarationEntry(fdentry));
     }
 
     public encodeFunctionCall(
@@ -57,19 +59,29 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
         fr: Function.Response.From<fdm>,
     ): OpenAI.ChatCompletionToolMessageParam {
         if (fr.id) {} else throw new Error();
-        if (fr instanceof Function.Response.Successful)
+        if (fr instanceof Function.Response.Successful) {
+            if (fr.parts.length === 1) {} else
+                throw new Error('OpenAI Chat Completions engine requires exactly one function response part.');
             return {
                 role: 'tool',
                 tool_call_id: fr.id,
-                content: fr.text,
+                content: this.encodeFunctionResponsePart(fr.parts[0]!),
             };
-        else if (fr instanceof Function.Response.Failed)
+        } else if (fr instanceof Function.Response.Failed)
             return {
                 role: 'tool',
                 tool_call_id: fr.id,
                 content: fr.error,
             };
         else throw new Error();
+    }
+
+    public encodeFunctionResponsePart(part: Function.Response.Successful.Part): string {
+        if (part instanceof Text)
+            return part.raw;
+        else if (part instanceof Media.Text)
+            return part.quote();
+        else throw new Error('Unsupported function response part.', { cause: part });
     }
 
     protected static encodeFunctionDeclarationEntry<fdu extends Function.Decl.Proto>(
@@ -87,7 +99,7 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
     }
 
     public encodeFunctionDeclarationMap(): OpenAI.ChatCompletionTool[] {
-        return this.apiFds.slice();
+        return this.apifds.slice();
     }
 }
 

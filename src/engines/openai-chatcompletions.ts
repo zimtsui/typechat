@@ -2,11 +2,8 @@ import { Function } from '../function.ts';
 import { Engine } from '../engine.ts';
 import { MessageCodec } from './openai-chatcompletions/message-codec.ts';
 import * as TransportModule from './openai-chatcompletions/transport.ts';
-import * as MessageModule from './openai-chatcompletions/message.ts';
 import { ToolCodec } from './openai-chatcompletions/tool-codec.ts';
 import { Billing } from './openai-chatcompletions/billing.ts';
-import { InferenceContext } from '../inference-context.ts';
-import OpenAI from 'openai';
 
 
 export type OpenAIChatCompletionsEngine<
@@ -49,7 +46,6 @@ export namespace OpenAIChatCompletionsEngine {
 
     }
 
-    export import RoleMessage = MessageModule.RoleMessage;
     export import Transport = TransportModule.Transport;
 
     createEngine satisfies Engine.Create;

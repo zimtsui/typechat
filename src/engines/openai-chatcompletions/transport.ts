@@ -1,5 +1,5 @@
 import { Function } from '../../function.ts';
-import OpenAI from 'openai';
+import OpenAI, { type ClientOptions } from 'openai';
 import type { InferenceContext } from '../../inference-context.ts';
 import { type InferenceOptions, type ProviderSpecs, Engine } from '../../engine.ts';
 import { loggers } from '../../telemetry.ts';
@@ -29,7 +29,7 @@ export class Transport<
             baseURL: options.providerSpec.baseUrl,
             apiKey: options.providerSpec.apiKey,
             fetch: Undici.fetch as typeof globalThis.fetch,
-            fetchOptions: { dispatcher: options.providerSpec.dispatcher },
+            fetchOptions: { dispatcher: options.providerSpec.dispatcher } as ClientOptions['fetchOptions'],
             defaultHeaders: new Headers(options.inferenceParams.additionalHeaders),
         });
         this.inferenceParams = options.inferenceParams;
@@ -47,8 +47,8 @@ export class Transport<
     ): OpenAI.ChatCompletionCreateParamsStreaming {
         const tools = this.toolCodec.encodeFunctionDeclarationMap();
         const messages: OpenAI.ChatCompletionMessageParam[] = [];
-        if (session.developerMessage) messages.push(...this.messageCodec.encodeRoleMessage(session.developerMessage));
-        messages.push(...this.messageCodec.encodeRoleMessages(session.chatMessages));
+        if (session.developerMessage) messages.push(this.messageCodec.encodeDeveloperMessage(session.developerMessage));
+        messages.push(...this.messageCodec.encodeChatMessages(session.chatMessages));
         return {
             model: this.inferenceParams.model,
             messages,
@@ -195,7 +195,7 @@ export class Transport<
         loggers.message.info(completion.usage);
         wfctx.cost?.(cost);
 
-        return this.messageCodec.decodeAiMessage(choice.message);
+        return this.messageCodec.decodeOutputMessage(choice.message);
     }
 }
 

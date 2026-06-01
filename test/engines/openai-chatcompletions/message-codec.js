@@ -3,8 +3,8 @@ import { MIMEType } from 'node:util';
 import { Function } from '../../../build/function.js';
 import { Media } from '../../../build/media.js';
 import { Engine } from '../../../build/engine.js';
-import { RoleMessage } from '../../../build/engine/message.js';
-import { OpenAIChatCompletionsEngine } from '../../../build/engines/openai-chatcompletions.js';
+import { Message } from '../../../build/engine/message.js';
+import { Text } from '../../../build/text.js';
 import { ToolCodec } from '../../../build/engines/openai-chatcompletions/tool-codec.js';
 import { MessageCodec } from '../../../build/engines/openai-chatcompletions/message-codec.js';
 import { functionDeclarationMap } from '../../helpers.js';
@@ -20,27 +20,27 @@ function makeCodec() {
 
 test('OpenAI chat completions codec rejects media user message', t => {
     const messageCodec = makeCodec();
-    const userMessage = new RoleMessage.User([
+    const userMessage = new Message.Input([
         new Media.Image(binary('hello'), new MIMEType('image/png')),
     ]);
 
-    const error = t.throws(() => messageCodec.encodeUserMessage(userMessage));
+    const error = t.throws(() => messageCodec.encodeInputMessage(userMessage));
 
     t.is(error?.message, 'Unsupported part type.');
 });
 
 test('OpenAI chat completions codec splits mixed function responses and text', t => {
     const messageCodec = makeCodec();
-    const userMessage = new RoleMessage.User([
+    const userMessage = new Message.Input([
         Function.Response.Failed.of({
             id: 'call_1',
             name: 'noop',
             error: 'cancelled',
         }),
-        new RoleMessage.Part.Text('retry with XML verbatim\n'),
+        new Text('retry with XML verbatim\n'),
     ]);
 
-    const encoded = messageCodec.encodeUserMessage(userMessage);
+    const encoded = messageCodec.encodeInputMessage(userMessage);
 
     t.deepEqual(encoded, [
         {
@@ -60,15 +60,15 @@ test('OpenAI chat completions codec splits mixed function responses and text', t
 
 test('OpenAI chat completions codec omits empty user message for pure tool responses', t => {
     const messageCodec = makeCodec();
-    const userMessage = new RoleMessage.User([
+    const userMessage = new Message.Input([
         Function.Response.Successful.of({
             id: 'call_1',
             name: 'noop',
-            text: 'done',
+            parts: [new Text('done')],
         }),
     ]);
 
-    const encoded = messageCodec.encodeUserMessage(userMessage);
+    const encoded = messageCodec.encodeInputMessage(userMessage);
 
     t.deepEqual(encoded, [{
         role: 'tool',
@@ -79,11 +79,11 @@ test('OpenAI chat completions codec omits empty user message for pure tool respo
 
 test('OpenAI chat completions codec encodes text media as quoted text', t => {
     const messageCodec = makeCodec();
-    const userMessage = new RoleMessage.User([
+    const userMessage = new Message.Input([
         new Media.Text('hello', new MIMEType('text/plain')),
     ]);
 
-    const encoded = messageCodec.encodeUserMessage(userMessage);
+    const encoded = messageCodec.encodeInputMessage(userMessage);
 
     t.deepEqual(encoded, [{
         role: 'user',
@@ -97,9 +97,10 @@ test('OpenAI chat completions codec encodes text media as quoted text', t => {
 test('OpenAI Chat Completions codec decodes text and tool calls', t => {
     const messageCodec = makeCodec();
 
-    const aiMessage = messageCodec.decodeAiMessage({
+    const raw = {
         role: 'assistant',
         content: 'hello',
+        refusal: null,
         tool_calls: [{
             id: 'call_1',
             type: 'function',
@@ -108,19 +109,31 @@ test('OpenAI Chat Completions codec decodes text and tool calls', t => {
                 arguments: '{}',
             },
         }],
-    });
+    };
 
-    t.true(aiMessage instanceof OpenAIChatCompletionsEngine.RoleMessage.Ai);
-    t.is(aiMessage.getText(), 'hello');
-    t.is(aiMessage.getOnlyFunctionCall().name, 'noop');
-    t.deepEqual(messageCodec.encodeAiMessage(aiMessage), aiMessage.getRaw());
+    const outputMessage = messageCodec.decodeOutputMessage(raw);
+
+    t.is(outputMessage.joinText(), 'hello');
+    t.is(outputMessage.getOnlyFunctionCall().name, 'noop');
+    t.deepEqual(messageCodec.encodeOutputMessage(outputMessage), raw);
+});
+
+test('OpenAI Chat Completions codec rejects uncached output messages', t => {
+    const messageCodec = makeCodec();
+    const outputMessage = new Message.Output([new Text('hello')]);
+
+    t.throws(() => messageCodec.encodeOutputMessage(outputMessage), {
+        message: 'Only native output message allowed.',
+    });
 });
 
 test('OpenAI Chat Completions codec rejects empty assistant message', t => {
     const messageCodec = makeCodec();
 
-    t.throws(() => messageCodec.decodeAiMessage({
+    t.throws(() => messageCodec.decodeOutputMessage({
         role: 'assistant',
+        content: null,
+        refusal: null,
     }), {
         instanceOf: Engine.Exceptions.InferenceError,
         message: 'Content or tool calls not found in Response',

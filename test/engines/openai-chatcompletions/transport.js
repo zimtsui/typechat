@@ -1,5 +1,6 @@
 import test from 'ava';
-import { RoleMessage } from '../../../build/engine/message.js';
+import { Message } from '../../../build/engine/message.js';
+import { Text } from '../../../build/text.js';
 import { ToolChoice } from '../../../build/tool-choice.js';
 import { ToolCodec } from '../../../build/engines/openai-chatcompletions/tool-codec.js';
 import { MessageCodec } from '../../../build/engines/openai-chatcompletions/message-codec.js';
@@ -36,8 +37,8 @@ function makeTransport(parallelToolCall, additionalHeaders) {
 test('OpenAI Chat Completions transport reads parallelToolCall from inferenceParams', t => {
     const transport = makeTransport(true);
     const session = {
-        chatMessages: [new RoleMessage.User([
-            new RoleMessage.Part.Text('Hello.\n'),
+        chatMessages: [new Message.Input([
+            new Text('Hello.\n'),
         ])],
     };
 
@@ -50,8 +51,8 @@ test('OpenAI Chat Completions transport reads parallelToolCall from inferencePar
 test('OpenAI Chat Completions transport streams usage by default', t => {
     const transport = makeTransport(false);
     const session = {
-        chatMessages: [new RoleMessage.User([
-            new RoleMessage.Part.Text('Hello.\n'),
+        chatMessages: [new Message.Input([
+            new Text('Hello.\n'),
         ])],
     };
 
