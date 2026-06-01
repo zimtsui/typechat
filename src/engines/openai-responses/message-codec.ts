@@ -70,6 +70,7 @@ export class MessageCodec<
     public encodeInputMessage(
         inm: Engine.Message.Input.From<fdm>,
     ): OpenAI.Responses.ResponseInput {
+        if (cacheInputMessages.has(inm)) return cacheInputMessages.get(inm)!;
         const responseInput: OpenAI.Responses.ResponseInput = [];
         const content: OpenAI.Responses.ResponseInputContent[] = [];
         for (const part of inm.parts)
@@ -78,7 +79,7 @@ export class MessageCodec<
                 responseInput.push(this.toolCodec.encodeFunctionResponse(fr));
             } else
                 content.push(this.encodeUserMessagePart(part));
-        responseInput.push({
+        if (content.length) responseInput.push({
             type: 'message',
             role: 'user',
             content,
@@ -95,6 +96,7 @@ export class MessageCodec<
     }
 
     public encodeDeveloperMessage(developerMessage: Engine.Message.Developer): string {
+        if (cacheDeveloperMessages.has(developerMessage)) return cacheDeveloperMessages.get(developerMessage)!;
         const raw = developerMessage.getOnlyTextParts().map(part => part.raw).join('');
         cacheDeveloperMessages.set(developerMessage, raw);
         return raw;

@@ -18,11 +18,9 @@ export namespace OpenAIResponsesEngine {
         protected messageCodec: MessageCodec<fdm>;
         protected billing: Billing;
         protected override transport: Transport<fdm>;
-        protected applyPatch: boolean;
 
         public constructor(protected options: OpenAIResponsesEngine.Options<fdm>) {
             super(options);
-            this.applyPatch = options.applyPatch ?? false;
 
             this.toolCodec = new ToolCodec({ fdm: this.fdm });
             this.messageCodec = new MessageCodec({
@@ -35,7 +33,6 @@ export namespace OpenAIResponsesEngine {
                 fdm: this.fdm,
                 throttle: this.throttle,
                 toolChoice: this.toolChoice,
-                applyPatch: this.applyPatch,
                 messageCodec: this.messageCodec,
                 toolCodec: this.toolCodec,
                 billing: this.billing,
@@ -74,9 +71,7 @@ export namespace OpenAIResponsesEngine {
 
     export interface Options<
         in out fdm extends Function.Decl.Map.Proto,
-    > extends Engine.Options<fdm> {
-        applyPatch?: boolean;
-    }
+    > extends Engine.Options<fdm> {}
 
     export function create<
         fdm extends Function.Decl.Map.Proto,

@@ -2,10 +2,10 @@ import test from 'ava';
 import { MIMEType } from 'node:util';
 import { Function } from '../../../build/function.js';
 import { Media } from '../../../build/media.js';
-import { RoleMessage } from '../../../build/engine/message.js';
+import { Message } from '../../../build/engine/message.js';
+import { Text } from '../../../build/text.js';
 import { ToolCodec } from '../../../build/engines/openai-responses/tool-codec.js';
 import { MessageCodec } from '../../../build/engines/openai-responses/message-codec.js';
-import { Tool } from '../../../build/engines/openai-responses/tool.js';
 import { functionDeclarationMap } from '../../helpers.js';
 
 const binary = text => new TextEncoder().encode(text).buffer;
@@ -19,18 +19,18 @@ function makeCodec() {
 
 test('OpenAI responses codec encodes multimodal user message', t => {
     const messageCodec = makeCodec();
-    const userMessage = new RoleMessage.User([
-        new RoleMessage.Part.Text('Hello.\n'),
+    const userMessage = new Message.Input([
+        new Text('Hello.\n'),
         new Media.Image(binary('hello'), new MIMEType('image/png')),
         new Media.Pdf(binary('pdf')),
         Function.Response.Successful.of({
             id: 'call_1',
             name: 'noop',
-            text: 'done',
+            parts: [new Text('done')],
         }),
     ]);
 
-    const encoded = messageCodec.encodeUserMessage(userMessage);
+    const encoded = messageCodec.encodeInputMessage(userMessage);
 
     t.deepEqual(encoded, [
         {
@@ -55,18 +55,21 @@ test('OpenAI responses codec encodes multimodal user message', t => {
         {
             type: 'function_call_output',
             call_id: 'call_1',
-            output: 'done',
+            output: [{
+                type: 'input_text',
+                text: 'done',
+            }],
         },
     ]);
 });
 
 test('OpenAI responses codec encodes PDF file input as raw base64', t => {
     const messageCodec = makeCodec();
-    const userMessage = new RoleMessage.User([
+    const userMessage = new Message.Input([
         new Media.Pdf(binary('pdf')),
     ]);
 
-    const encoded = messageCodec.encodeUserMessage(userMessage);
+    const encoded = messageCodec.encodeInputMessage(userMessage);
 
     t.deepEqual(encoded, [{
         type: 'message',
@@ -80,11 +83,11 @@ test('OpenAI responses codec encodes PDF file input as raw base64', t => {
 
 test('OpenAI responses codec encodes text media as quoted text', t => {
     const messageCodec = makeCodec();
-    const userMessage = new RoleMessage.User([
+    const userMessage = new Message.Input([
         new Media.Text('hello', new MIMEType('text/plain')),
     ]);
 
-    const encoded = messageCodec.encodeUserMessage(userMessage);
+    const encoded = messageCodec.encodeInputMessage(userMessage);
 
     t.deepEqual(encoded, [{
         type: 'message',
@@ -98,24 +101,27 @@ test('OpenAI responses codec encodes text media as quoted text', t => {
 
 test('OpenAI responses codec omits empty user message for pure tool responses', t => {
     const messageCodec = makeCodec();
-    const userMessage = new RoleMessage.User([
+    const userMessage = new Message.Input([
         Function.Response.Successful.of({
             id: 'call_1',
             name: 'noop',
-            text: 'done',
+            parts: [new Text('done')],
         }),
     ]);
 
-    const encoded = messageCodec.encodeUserMessage(userMessage);
+    const encoded = messageCodec.encodeInputMessage(userMessage);
 
     t.deepEqual(encoded, [{
         type: 'function_call_output',
         call_id: 'call_1',
-        output: 'done',
+        output: [{
+            type: 'input_text',
+            text: 'done',
+        }],
     }]);
 });
 
-test('OpenAI responses codec decodes text, function calls and apply patch calls', t => {
+test('OpenAI responses codec decodes text and function calls', t => {
     const messageCodec = makeCodec();
     const raw = {
         id: 'resp_1',
@@ -142,26 +148,20 @@ test('OpenAI responses codec decodes text, function calls and apply patch calls'
                 arguments: '{}',
                 status: 'completed',
             },
-            {
-                type: 'apply_patch_call',
-                id: 'ap_1',
-                call_id: 'patch_1',
-                status: 'completed',
-                input: {
-                    operation: {
-                        type: 'update_file',
-                        path: 'a.txt',
-                        diff: 'diff',
-                    },
-                },
-            },
         ],
     };
-    const aiMessage = messageCodec.decodeAiMessage(raw);
+    const outputMessage = messageCodec.decodeOutputMessage(raw);
 
-    t.is(aiMessage.getText(), 'hello');
-    t.is(aiMessage.getRaw(), raw);
-    t.is(aiMessage.getFunctionCalls()[0].name, 'noop');
-    t.true(aiMessage.getToolCalls()[0] instanceof Function.Call);
-    t.true(aiMessage.getToolCalls()[1] instanceof Tool.ApplyPatch.Call);
+    t.is(outputMessage.joinText(), 'hello');
+    t.is(outputMessage.getFunctionCalls()[0].name, 'noop');
+    t.deepEqual(messageCodec.encodeOutputMessage(outputMessage), raw.output);
+});
+
+test('OpenAI responses codec rejects uncached output messages', t => {
+    const messageCodec = makeCodec();
+    const outputMessage = new Message.Output([new Text('hello')]);
+
+    t.throws(() => messageCodec.encodeOutputMessage(outputMessage), {
+        message: 'Only cached output message allowed.',
+    });
 });

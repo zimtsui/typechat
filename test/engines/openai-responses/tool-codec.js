@@ -1,6 +1,7 @@
 import test from 'ava';
 import { Engine } from '../../../build/engine.js';
 import { Function } from '../../../build/function.js';
+import { Text } from '../../../build/text.js';
 import { ToolCodec } from '../../../build/engines/openai-responses/tool-codec.js';
 import { functionDeclarationMapWithArgs } from '../../helpers.js';
 
@@ -66,7 +67,7 @@ test('OpenAI Responses tool codec encodes function responses and requires ids', 
     const successful = Function.Response.Successful.of({
         id: 'call_1',
         name: 'echo',
-        text: 'done',
+        parts: [new Text('done')],
     });
     const failed = Function.Response.Failed.of({
         id: 'call_2',
@@ -77,7 +78,10 @@ test('OpenAI Responses tool codec encodes function responses and requires ids', 
     t.deepEqual(codec.encodeFunctionResponse(successful), {
         type: 'function_call_output',
         call_id: 'call_1',
-        output: 'done',
+        output: [{
+            type: 'input_text',
+            text: 'done',
+        }],
     });
     t.deepEqual(codec.encodeFunctionResponse(failed), {
         type: 'function_call_output',
@@ -86,6 +90,6 @@ test('OpenAI Responses tool codec encodes function responses and requires ids', 
     });
     t.throws(() => codec.encodeFunctionResponse(Function.Response.Successful.of({
         name: 'echo',
-        text: 'done',
+        parts: [new Text('done')],
     })));
 });

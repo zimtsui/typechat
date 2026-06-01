@@ -1,6 +1,6 @@
 import { type InferenceOptions, type ProviderSpecs, Engine } from '../../engine.ts';
 import { Function } from '../../function.ts';
-import OpenAI from 'openai';
+import OpenAI, { type ClientOptions } from 'openai';
 import { type InferenceContext } from '../../inference-context.ts';
 import { Throttle } from '../../throttle.ts';
 import { loggers } from '../../telemetry.ts';
@@ -21,7 +21,6 @@ export class Transport<
     protected fdm: fdm;
     protected throttle: Throttle;
     protected toolChoice: ToolChoice;
-    protected applyPatch: boolean;
     protected messageCodec: MessageCodec<fdm>;
     protected toolCodec: ToolCodec<fdm>;
     protected billing: Billing;
@@ -31,7 +30,7 @@ export class Transport<
             baseURL: options.providerSpec.baseUrl,
             apiKey: options.providerSpec.apiKey,
             fetch: Undici.fetch as typeof globalThis.fetch,
-            fetchOptions: { dispatcher: options.providerSpec.dispatcher },
+            fetchOptions: { dispatcher: options.providerSpec.dispatcher } as ClientOptions['fetchOptions'],
             defaultHeaders: new Headers(options.inferenceParams.additionalHeaders),
         });
         this.inferenceParams = options.inferenceParams;
@@ -39,7 +38,6 @@ export class Transport<
         this.fdm = options.fdm;
         this.throttle = options.throttle;
         this.toolChoice = options.toolChoice;
-        this.applyPatch = options.applyPatch;
         this.messageCodec = options.messageCodec;
         this.toolCodec = options.toolCodec;
         this.billing = options.billing;
@@ -49,7 +47,6 @@ export class Transport<
         session: Engine.Session.From<fdm>,
     ): OpenAI.Responses.ResponseCreateParamsStreaming {
         const tools: OpenAI.Responses.Tool[] = this.toolCodec.encodeFunctionDeclarationMap();
-        if (this.applyPatch) tools.push({ type: 'apply_patch' });
         return {
             model: this.inferenceParams.model,
             include: ['reasoning.encrypted_content'],
@@ -71,8 +68,6 @@ export class Transport<
                     throw new Engine.Exceptions.InferenceError('Refusal', { cause: output });
                 loggers.inference.info(item.content.map(part => part.text).join(''));
             } else if (item.type === 'function_call')
-                loggers.message.info(item);
-            else if (item.type === 'apply_patch_call')
                 loggers.message.info(item);
             else if (item.type === 'reasoning') {}
             else loggers.message.info(item);
@@ -133,7 +128,6 @@ export namespace Transport {
         fdm: fdm;
         throttle: Throttle;
         toolChoice: ToolChoice;
-        applyPatch: boolean;
         messageCodec: MessageCodec<fdm>;
         toolCodec: ToolCodec<fdm>;
         billing: Billing;

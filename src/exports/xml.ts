@@ -1,5 +1,5 @@
-import { Engine } from '../engine.ts';
 import Assets from '../assets.ts';
+import { Text } from '../text.ts';
 export * from '../xml.ts';
 
-export const instruction = Engine.Message.Part.Text.paragraph(Assets.Xml.instruction);
+export const instruction = Text.paragraph(Assets.Xml.instruction);

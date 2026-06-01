@@ -1,6 +1,7 @@
 import test from 'ava';
 import { Engine } from '../../../build/engine.js';
-import { RoleMessage } from '../../../build/engine/message.js';
+import { Message } from '../../../build/engine/message.js';
+import { Text } from '../../../build/text.js';
 import { ToolChoice } from '../../../build/tool-choice.js';
 import { ToolCodec } from '../../../build/engines/openai-responses/tool-codec.js';
 import { MessageCodec } from '../../../build/engines/openai-responses/message-codec.js';
@@ -27,7 +28,6 @@ function makeTransport(parallelToolCall) {
         fdm: functionDeclarationMap,
         throttle: { requests: async () => {} },
         toolChoice: ToolChoice.AUTO,
-        applyPatch: false,
         messageCodec,
         toolCodec,
         billing: { charge: () => 0 },
@@ -37,21 +37,23 @@ function makeTransport(parallelToolCall) {
 test('OpenAI Responses transport reads parallelToolCall from inference params', t => {
     const transport = makeTransport(true);
     const session = {
-        chatMessages: [new RoleMessage.User([
-            new RoleMessage.Part.Text('Hello.\n'),
+        chatMessages: [new Message.Input([
+            new Text('Hello.\n'),
         ])],
     };
 
     const params = transport.makeParams(session);
 
     t.is(params.parallel_tool_calls, true);
+    t.deepEqual(params.include, ['reasoning.encrypted_content']);
+    t.false(params.tools.some(tool => tool.type === 'apply_patch'));
 });
 
 test('OpenAI Responses transport reads disabled parallelToolCall from inferenceParams', t => {
     const transport = makeTransport(false);
     const session = {
-        chatMessages: [new RoleMessage.User([
-            new RoleMessage.Part.Text('Hello.\n'),
+        chatMessages: [new Message.Input([
+            new Text('Hello.\n'),
         ])],
     };
 
@@ -75,8 +77,8 @@ test('OpenAI Responses transport throws on stream error event', async t => {
         },
     };
     const session = {
-        chatMessages: [new RoleMessage.User([
-            new RoleMessage.Part.Text('Hello.\n'),
+        chatMessages: [new Message.Input([
+            new Text('Hello.\n'),
         ])],
     };
 
@@ -93,8 +95,8 @@ test('OpenAI Responses transport treats stream shutdown without response as conn
         },
     };
     const session = {
-        chatMessages: [new RoleMessage.User([
-            new RoleMessage.Part.Text('Hello.\n'),
+        chatMessages: [new Message.Input([
+            new Text('Hello.\n'),
         ])],
     };
 
