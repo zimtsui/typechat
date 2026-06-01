@@ -3,6 +3,8 @@ import { Function } from '../../function.ts';
 import { Parse, ParseError } from 'typebox/schema';
 import { addAdditionalProperties } from '../../function/parameters.ts';
 import { Engine } from '../../engine.ts';
+import { Media } from '../../media.ts';
+import { Text } from '../../text.ts';
 
 
 
@@ -10,11 +12,36 @@ export class ToolCodec<
     in out fdm extends Function.Decl.Map.Proto,
 > {
     protected fdm: fdm;
-    protected apiFds: OpenAI.Responses.FunctionTool[];
+    protected apifds: OpenAI.Responses.FunctionTool[];
     public constructor(options: ToolCodec.Options<fdm>) {
         this.fdm = options.fdm;
         const fdentries = Object.entries(this.fdm) as Function.Decl.Entry.From<fdm>[];
-        this.apiFds = fdentries.map(fdentry => ToolCodec.encodeFunctionDeclarationEntry(fdentry));
+        this.apifds = fdentries.map(fdentry => ToolCodec.encodeFunctionDeclarationEntry(fdentry));
+    }
+
+    public encodeFunctionResponsePart(part: Text | Media): OpenAI.Responses.ResponseFunctionCallOutputItem {
+        if (part instanceof Text)
+            return {
+                type: 'input_text',
+                text: part.raw,
+            };
+        else if (part instanceof Media.Text)
+            return {
+                type: 'input_text',
+                text: part.quote(),
+            };
+        else if (part instanceof Media.Image)
+            return {
+                type: 'input_image',
+                image_url: `data:${part.mimeType};base64,${part}`,
+                detail: 'high',
+            };
+        else if (part instanceof Media.Pdf)
+            return {
+                type: 'input_file',
+                file_data: `data:${part.mimeType};base64,${part}`,
+            };
+        else throw new Error();
     }
 
     public encodeFunctionResponse(
@@ -25,7 +52,7 @@ export class ToolCodec<
             return {
                 type: 'function_call_output',
                 call_id: fr.id,
-                output: fr.text,
+                output: fr.parts.map(part => this.encodeFunctionResponsePart(part)),
             };
         else if (fr instanceof Function.Response.Failed)
             return {
@@ -49,7 +76,7 @@ export class ToolCodec<
     }
 
     public encodeFunctionDeclarationMap(): OpenAI.Responses.FunctionTool[] {
-        return this.apiFds.slice();
+        return this.apifds.slice();
     }
 
     public decodeFunctionCall(
@@ -57,13 +84,12 @@ export class ToolCodec<
     ): Function.Call.From<fdm> {
         const fditem = this.fdm[apifc.name];
         if (fditem) {} else throw new Engine.Exceptions.InferenceError('Unknown function call', { cause: apifc });
-        const args = (() => {
-            try {
-                return JSON.parse(apifc.arguments);
-            } catch (e) {
-                throw new Engine.Exceptions.InferenceError('Invalid JSON of function call', { cause: apifc });
-            }
-        })();
+        let args: unknown;
+        try {
+            args = JSON.parse(apifc.arguments);
+        } catch (e) {
+            throw new Engine.Exceptions.InferenceError('Invalid JSON of function call', { cause: apifc });
+        }
         try {
             Parse(fditem.parameters, args);
         } catch (e) {

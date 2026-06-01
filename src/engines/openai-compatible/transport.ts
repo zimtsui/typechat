@@ -58,7 +58,7 @@ export class Transport<
         const lastSecondMessage = session.chatMessages.at(-2);
         if (lastSecondMessage instanceof RoleMessage.Ai) {
             const lastMessage = session.chatMessages.at(-1);
-            assert(lastMessage instanceof Engine.RoleMessage.User);
+            assert(lastMessage instanceof Engine.Message.Input);
             input = this.messageCodec.encodeUserMessage(lastMessage);
             previous_response_id = lastSecondMessage.getRaw().id;
         } else {

@@ -1,11 +1,14 @@
 import { Engine } from '../../engine.ts';
-import { RoleMessage } from './message.ts';
 import { Function } from '../../function.ts';
-import { Tool } from './tool.ts';
 import OpenAI from 'openai';
 import type { ToolCodec } from './tool-codec.ts';
 import { Media } from '../../media.ts';
+import { Text } from '../../text.ts';
 
+
+const cacheDeveloperMessages = new WeakMap<Engine.Message.Developer, string>();
+const cacheInputMessages = new WeakMap<Engine.Message.Input<Function.Decl.Proto>, OpenAI.Responses.ResponseInput>();
+const cacheOutputMessages = new WeakMap<Engine.Message.Output<Function.Decl.Proto>, OpenAI.Responses.ResponseInput>();
 
 export class MessageCodec<
     in out fdm extends Function.Decl.Map.Proto,
@@ -15,123 +18,98 @@ export class MessageCodec<
         this.toolCodec = options.toolCodec;
     }
 
-    public decodeAiMessage(
+    public decodeOutputMessage(
         raw: OpenAI.Responses.Response,
-    ): RoleMessage.Ai.From<fdm> {
-        const parts: unknown[] = [];
+    ): Engine.Message.Output.From<fdm> {
+        const parts: Engine.Message.Output.Part.From<fdm>[] = [];
         for (const item of raw.output) {
             if (item.type === 'message')
                 for (const part of item.content)
                     if (part.type === 'output_text')
-                        parts.push(new RoleMessage.Part.Text(part.text));
+                        parts.push(new Text(part.text));
                     else if (part.type === 'refusal')
                         throw new Engine.Exceptions.InferenceError('Refusal', { cause: raw });
-                    else throw new Error();
+                    else throw new Error('Unsupported API output message part.', { cause: part });
             else if (item.type === 'function_call')
                 parts.push(this.toolCodec.decodeFunctionCall(item));
             else if (item.type === 'reasoning') {}
-            else if (item.type === 'apply_patch_call')
-                parts.push(new Tool.ApplyPatch.Call(item));
-            else throw new Error();
+            else throw new Error('Unsupported API output item.', { cause: item });
         }
-        return new RoleMessage.Ai(parts, raw);
+        const outm = new Engine.Message.Output(parts);
+        if (raw.output.every(item => item.type !== 'computer_call_output')) {} else
+            throw new Error('Computer calls are not supported yet.');
+        cacheOutputMessages.set(outm, raw.output);
+        return outm;
     }
 
-    public encodeUserMessage(
-        userMessage: Engine.RoleMessage.User.From<fdm>,
+    public encodeUserMessagePart(part: Text | Media): OpenAI.Responses.ResponseInputContent {
+        if (part instanceof Text)
+            return {
+                type: 'input_text',
+                text: part.raw,
+            };
+        else if (part instanceof Media.Text)
+            return {
+                type: 'input_text',
+                text: part.quote(),
+            };
+        else if (part instanceof Media.Image)
+            return {
+                type: 'input_image',
+                image_url: `data:${part.mimeType};base64,${part}`,
+                detail: 'high',
+            };
+        else if (part instanceof Media.Pdf)
+            return {
+                type: 'input_file',
+                file_data: `data:${part.mimeType};base64,${part}`,
+            };
+        else throw new Error('Unsupported user message part.', { cause: part });
+    }
+
+    public encodeInputMessage(
+        inm: Engine.Message.Input.From<fdm>,
     ): OpenAI.Responses.ResponseInput {
         const responseInput: OpenAI.Responses.ResponseInput = [];
-        let content: OpenAI.Responses.ResponseInputContent[] = [];
-        function flush() {
-            if (content.length) {
-                responseInput.push({
-                    type: 'message',
-                    role: 'user',
-                    content,
-                });
-                content = [];
-            }
-        }
-        for (const part of userMessage.getParts()) {
-            if (part instanceof Engine.RoleMessage.Part.Text)
-                content.push({
-                    type: 'input_text',
-                    text: part.text,
-                });
-            else if (part instanceof Media.Text)
-                content.push({
-                    type: 'input_text',
-                    text: part.quote(),
-                });
-            else if (part instanceof Media.Image)
-                content.push({
-                    type: 'input_image',
-                    image_url: `data:${part.mimeType};base64,${part}`,
-                    detail: 'high',
-                });
-            else if (part instanceof Media.Pdf)
-                content.push({
-                    type: 'input_file',
-                    file_data: `data:${part.mimeType};base64,${part}`,
-                });
-            else if (part instanceof Function.Response) {
+        const content: OpenAI.Responses.ResponseInputContent[] = [];
+        for (const part of inm.parts)
+            if (part instanceof Function.Response) {
                 const fr = part as Function.Response.From<fdm>;
-                flush();
                 responseInput.push(this.toolCodec.encodeFunctionResponse(fr));
-            } else if (part instanceof Tool.ApplyPatch.Response) {
-                flush();
-                responseInput.push({
-                    type: 'apply_patch_call_output',
-                    call_id: part.id,
-                    status: part.failure ? 'failed' : 'completed',
-                    output: part.failure || undefined,
-                });
-            } else throw new Error('Unknown user message part type', { cause: part });
-        }
-        flush();
+            } else
+                content.push(this.encodeUserMessagePart(part));
+        responseInput.push({
+            type: 'message',
+            role: 'user',
+            content,
+        });
+        cacheInputMessages.set(inm, responseInput);
         return responseInput;
     }
 
-    public encodeAiMessage(
-        aiMessage: Engine.RoleMessage.Ai.From<fdm>,
+    public encodeOutputMessage(
+        outm: Engine.Message.Output.From<fdm>,
     ): OpenAI.Responses.ResponseInput {
-        if (aiMessage instanceof RoleMessage.Ai) {
-            const nativeAiMessage = aiMessage as RoleMessage.Ai.From<fdm>;
-            const raw = nativeAiMessage.getRaw();
-            if (raw.output.every(item => item.type !== 'computer_call_output')) {} else
-                throw new Error('Computer calls are not supported yet.');
-            return raw.output;
-        }
-        const responseInput: OpenAI.Responses.ResponseInput = [];
-        for (const part of aiMessage.getParts()) {
-            if (part instanceof RoleMessage.Part.Text)
-                responseInput.push({
-                    role: 'assistant',
-                    content: part.text,
-                });
-            else if (part instanceof Function.Call) {
-                const fc = part as Function.Call.From<fdm>;
-                responseInput.push(this.toolCodec.encodeFunctionCall(fc));
-            } else throw new Error('Unknown AI message part type', { cause: part });
-        }
-        return responseInput;
+        if (cacheOutputMessages.has(outm)) return cacheOutputMessages.get(outm)!;
+        throw new Error('Only native output message allowed.', { cause: outm });
     }
 
-    public encodeDeveloperMessage(developerMessage: Engine.RoleMessage.Developer): string {
-        return developerMessage.getOnlyTextParts().map(part => part.text).join('');
+    public encodeDeveloperMessage(developerMessage: Engine.Message.Developer): string {
+        const raw = developerMessage.getOnlyTextParts().map(part => part.raw).join('');
+        cacheDeveloperMessages.set(developerMessage, raw);
+        return raw;
     }
 
     public encodeChatMessage(
         chatMessage: Engine.Session.ChatMessage.From<fdm>,
     ): OpenAI.Responses.ResponseInput {
-        if (chatMessage instanceof Engine.RoleMessage.User) {
-            const userMessage = chatMessage as Engine.RoleMessage.User.From<fdm>;
-            return this.encodeUserMessage(userMessage);
-        } else if (chatMessage instanceof Engine.RoleMessage.Ai) {
-            const aiMessage = chatMessage as Engine.RoleMessage.Ai.From<fdm>;
-            return this.encodeAiMessage(aiMessage);
-        }
-        else throw new Error();
+        if (chatMessage instanceof Engine.Message.Input) {
+            const inm = chatMessage as Engine.Message.Input.From<fdm>;
+            return this.encodeInputMessage(inm);
+        } else if (chatMessage instanceof Engine.Message.Output) {
+            const outm = chatMessage as Engine.Message.Output.From<fdm>;
+            return this.encodeOutputMessage(outm);
+        } else throw new Error();
     }
 }
 

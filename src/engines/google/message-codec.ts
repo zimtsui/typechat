@@ -18,7 +18,7 @@ export class MessageCodec<
     }
 
     public encodeAiMessage(
-        aiMessage: Engine.RoleMessage.Ai.From<fdm>,
+        aiMessage: Engine.Message.Output.From<fdm>,
     ): Google.Content {
         if (aiMessage instanceof RoleMessage.Ai) {
             const nativeAiMessage = aiMessage as RoleMessage.Ai.From<fdm>;
@@ -48,11 +48,11 @@ export class MessageCodec<
         chatMessages: Engine.Session.ChatMessage.From<fdm>[],
     ): Google.Content[] {
         return chatMessages.map(chatMessage => {
-            if (chatMessage instanceof Engine.RoleMessage.User) {
-                const userMessage = chatMessage as Engine.RoleMessage.User.From<fdm>;
+            if (chatMessage instanceof Engine.Message.Input) {
+                const userMessage = chatMessage as Engine.Message.Input.From<fdm>;
                 return this.encodeUserMessage(userMessage);
-            } else if (chatMessage instanceof Engine.RoleMessage.Ai) {
-                const aiMessage = chatMessage as Engine.RoleMessage.Ai.From<fdm>;
+            } else if (chatMessage instanceof Engine.Message.Output) {
+                const aiMessage = chatMessage as Engine.Message.Output.From<fdm>;
                 return this.encodeAiMessage(aiMessage);
             }
             else throw new Error();
@@ -60,11 +60,11 @@ export class MessageCodec<
     }
 
     public encodeUserMessage(
-        userMessage: Engine.RoleMessage.User.From<fdm>,
+        userMessage: Engine.Message.Input.From<fdm>,
     ): Google.Content {
         const apiParts: Google.PartUnion[] = [];
         for (const part of userMessage.getParts()) {
-            if (part instanceof Engine.RoleMessage.Part.Text)
+            if (part instanceof Engine.Message.Part.Text)
                 apiParts.push(Google.createPartFromText(part.text));
             else if (part instanceof Function.Response) {
                 const fr = part as Function.Response.From<fdm>;
@@ -94,9 +94,9 @@ export class MessageCodec<
     }
 
     public encodeDeveloperMessage(
-        developerMessage: Engine.RoleMessage.Developer,
+        developerMessage: Engine.Message.Developer,
     ): Google.Content {
-        const parts = developerMessage.getOnlyTextParts().map(part => Google.createPartFromText(part.text));
+        const parts = developerMessage.getOnlyTextParts().map(part => Google.createPartFromText(part.raw));
         return { parts };
     }
 

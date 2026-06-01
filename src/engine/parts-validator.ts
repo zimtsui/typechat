@@ -1,5 +1,5 @@
 import { Function } from '../function.ts';
-import { RoleMessage } from './message.ts';
+import { Message } from './message.ts';
 import { isRepeating } from '../repetition.ts';
 import * as Exceptions from './exceptions.ts';
 
@@ -9,10 +9,10 @@ export class PartsValidator<
 > {
 
     public validate(
-        message: RoleMessage.Ai<fdu>,
+        message: Message.Output<fdu>,
     ): void {
-        if (message.getParts().length) {} else throw new Exceptions.InferenceError('Empty message.');
-        if (isRepeating(message.getText())) throw new Exceptions.InferenceError('Repeating');
+        if (message.parts.length) {} else throw new Exceptions.InferenceError('Empty message.');
+        if (isRepeating(message.joinText())) throw new Exceptions.InferenceError('Repeating');
     }
 
 }

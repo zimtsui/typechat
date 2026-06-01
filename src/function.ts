@@ -1,10 +1,11 @@
 import { type Static, type TObject, type TSchema } from 'typebox';
 import { Media } from './media.ts';
+import { Text } from './text.ts';
 
 const NOMINAL = Symbol();
 
 export interface Function<in out fd extends Function.Decl.Proto> {
-    (params: Static<fd['parameters']>, fc: Function.Call<fd>): Promise<string | Media>;
+    (params: Static<fd['parameters']>, fc: Function.Call<fd>): Promise<Function.Response.Successful.Part[]>;
 }
 
 export namespace Function {
@@ -148,10 +149,10 @@ export namespace Function {
 
         export class Successful<in out fd extends Function.Decl.Proto> extends Function.Response<fd> {
             protected declare [NOMINAL]: never;
-            public text: string;
+            public parts: Function.Response.Successful.Part[];
             protected constructor(fr: Function.Response.Successful.Options<fd>) {
                 super(fr);
-                this.text = fr.text;
+                this.parts = fr.parts;
             }
             public static of<fdu extends Function.Decl.Proto>(
                 fr: Function.Response.Successful.Options.Of<fdu>,
@@ -176,6 +177,8 @@ export namespace Function {
                     fdm extends Function.Decl.Map.Proto,
                 > = Function.Response.Successful.Options.Of<Function.Decl.From<fdm>>;
             }
+
+            export type Part = Text | Media;
         }
 
         export class Failed<in out fd extends Function.Decl.Proto> extends Function.Response<fd> {

@@ -1,124 +1,102 @@
+import assert from 'node:assert';
 import { Function } from '../function.ts';
+import { Media } from '../media.ts';
+import { Text } from '../text.ts';
 
 const NOMINAL = Symbol();
 
 
-export namespace RoleMessage {
-    export namespace Part {
-        export class Text {
-            protected declare [NOMINAL]: never;
-            public static paragraph(text: string): Text {
-                return new RoleMessage.Part.Text(text.trimEnd() + '\n\n');
-            }
-            public constructor(
-                public text: string,
-            ) {}
-        }
-    }
+export namespace Message {
 
     export class Developer {
         protected declare [NOMINAL]: never;
 
-        public constructor(protected parts: unknown[]) {}
+        public constructor(public parts: Message.Developer.Part[]) {}
         public allTextParts(): boolean {
-            return this.parts.every(part => part instanceof RoleMessage.Part.Text);
+            return this.parts.every(part => part instanceof Text);
         }
-        public getParts(): unknown[] {
-            return this.parts;
-        }
-        public getOnlyTextParts(): RoleMessage.Part.Text[] {
-            if (this.allTextParts()) {} else throw new Error();
+        public getOnlyTextParts(): Text[] {
+            assert(this.allTextParts());
             return this.getTextParts();
         }
-        public getTextParts(): RoleMessage.Part.Text[] {
-            const textParts: RoleMessage.Part.Text[] = [];
-            for (const part of this.parts)
-                if (part instanceof RoleMessage.Part.Text) {
-                    const textPart = part;
-                    textParts.push(textPart);
-                }
-            return textParts;
+        public getTextParts(): Text[] {
+            return this.parts.filter(part => part instanceof Text);
         }
-        public getText(): string {
-            return this.getTextParts().map(part => part.text).join('');
+        public joinText(delimiter = ''): string {
+            return this.getTextParts().map(part => part.raw).join(delimiter);
         }
+
+    }
+    export namespace Developer {
+        export type Part = Text | Media;
     }
 
 
-    export class Ai<
+    export class Output<
         out fdu extends Function.Decl.Proto,
     > {
         protected declare [NOMINAL]: never;
 
-        public constructor(protected parts: unknown[]) {}
-        public getParts(): unknown[] {
-            return this.parts;
+        public constructor(public parts: Message.Output.Part<fdu>[]) {}
+        public allTextParts(): boolean {
+            return this.parts.every(part => part instanceof Text);
         }
-        public allText(): boolean {
-            return this.parts.every(part => part instanceof RoleMessage.Part.Text);
+        public getTextParts(): Text[] {
+            return this.parts.filter(part => part instanceof Text);
         }
-        public getTextParts(): RoleMessage.Part.Text[] {
-            return this.parts.filter(part => part instanceof RoleMessage.Part.Text) as RoleMessage.Part.Text[];
-        }
-        public getText(): string {
-            return this.getTextParts().map(part => part.text).join('');
+        public joinText(delimiter = ''): string {
+            return this.getTextParts().map(part => part.raw).join(delimiter);
         }
         public getFunctionCalls(): Function.Call.Of<fdu>[] {
-            const fcs: Function.Call.Of<fdu>[] = [];
-            for (const part of this.parts)
-                if (part instanceof Function.Call) {
-                    const fc = part as Function.Call.Of<fdu>;
-                    fcs.push(fc);
-                }
-            return fcs;
+            return this.parts.filter(part => part instanceof Function.Call) as Function.Call.Of<fdu>[];
         }
         public getOnlyFunctionCall(): Function.Call.Of<fdu> {
             const fcs = this.getFunctionCalls();
-            if (fcs.length === 1) {} else throw new Error();
+            assert(fcs.length === 1);
             return fcs[0]!;
         }
     }
-    export namespace Ai {
+    export namespace Output {
         export type From<
             fdm extends Function.Decl.Map.Proto,
-        > = RoleMessage.Ai<
-            Function.Decl.From<fdm>
-        >;
+        > = Message.Output<Function.Decl.From<fdm>>;
 
+        export type Part<fdu extends Function.Decl.Proto> = Text | Media | Function.Call.Of<fdu>;
+        export namespace Part {
+            export type From<
+                fdm extends Function.Decl.Map.Proto,
+            > = Message.Output.Part<Function.Decl.From<fdm>>;
+        }
     }
 
-    export class User<
+    export class Input<
         out fdu extends Function.Decl.Proto,
     > {
         protected declare [NOMINAL]: never;
 
-        public constructor(protected parts: unknown[]) {}
-        public getParts(): unknown[] {
-            return this.parts;
-        }
+        public constructor(public parts: Message.Input.Part<fdu>[]) {}
         public getFunctionResponses(): Function.Response.Of<fdu>[] {
-            const frs: Function.Response.Of<fdu>[] = [];
-            for (const part of this.parts)
-                if (part instanceof Function.Response) {
-                    const fr = part as Function.Response.Of<fdu>;
-                    frs.push(fr);
-                }
-            return frs;
+            return this.parts.filter(part => part instanceof Function.Response) as Function.Response.Of<fdu>[];
         }
         public getOnlyFunctionResponse(): Function.Response.Of<fdu> {
-            if (this.parts.length === 1) {} else throw new Error();
-            const part = this.parts[0]!;
-            if (part instanceof Function.Response) {} else throw new Error();
-            const fr = part as Function.Response.Of<fdu>;
-            return fr;
+            assert(this.parts.length === 1 && this.parts[0]! instanceof Function.Response);
+            return this.parts[0]! as Function.Response.Of<fdu>;
         }
-        public getTextParts(): RoleMessage.Part.Text[] {
-            return this.parts.filter(part => part instanceof RoleMessage.Part.Text);
+        public getTextParts(): Text[] {
+            return this.parts.filter(part => part instanceof Text);
         }
     }
-    export namespace User {
+    export namespace Input {
         export type From<
             fdm extends Function.Decl.Map.Proto,
-        > = RoleMessage.User<Function.Decl.From<fdm>>;
+        > = Message.Input<Function.Decl.From<fdm>>;
+
+        export type Part<fdu extends Function.Decl.Proto> = Text | Media | Function.Response.Of<fdu>;
+        export namespace Part {
+            export type From<
+                fdm extends Function.Decl.Map.Proto,
+            > = Message.Input.Part<Function.Decl.From<fdm>>;
+        }
     }
+
 }

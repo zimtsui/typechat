@@ -35,7 +35,7 @@ export class MessageCodec<
     }
 
     public encodeUserMessage(
-        userMessage: Engine.RoleMessage.User.From<fdm>,
+        userMessage: Engine.Message.Input.From<fdm>,
     ): OpenAI.Responses.ResponseInput {
         const responseInput: OpenAI.Responses.ResponseInput = [];
         let content: OpenAI.Responses.ResponseInputContent[] = [];
@@ -50,7 +50,7 @@ export class MessageCodec<
             }
         }
         for (const part of userMessage.getParts()) {
-            if (part instanceof Engine.RoleMessage.Part.Text)
+            if (part instanceof Engine.Message.Part.Text)
                 content.push({
                     type: 'input_text',
                     text: part.text,
@@ -77,7 +77,7 @@ export class MessageCodec<
     }
 
     public encodeAiMessage(
-        aiMessage: Engine.RoleMessage.Ai.From<fdm>,
+        aiMessage: Engine.Message.Output.From<fdm>,
     ): OpenAI.Responses.ResponseInput {
         if (aiMessage instanceof RoleMessage.Ai) {
             const nativeAiMessage = aiMessage as RoleMessage.Ai.From<fdm>;
@@ -101,18 +101,18 @@ export class MessageCodec<
         return responseInput;
     }
 
-    public encodeDeveloperMessage(developerMessage: Engine.RoleMessage.Developer): string {
-        return developerMessage.getOnlyTextParts().map(part => part.text).join('');
+    public encodeDeveloperMessage(developerMessage: Engine.Message.Developer): string {
+        return developerMessage.getOnlyTextParts().map(part => part.raw).join('');
     }
 
     public encodeChatMessage(
         chatMessage: Engine.Session.ChatMessage.From<fdm>,
     ): OpenAI.Responses.ResponseInput {
-        if (chatMessage instanceof Engine.RoleMessage.User) {
-            const userMessage = chatMessage as Engine.RoleMessage.User.From<fdm>;
+        if (chatMessage instanceof Engine.Message.Input) {
+            const userMessage = chatMessage as Engine.Message.Input.From<fdm>;
             return this.encodeUserMessage(userMessage);
-        } else if (chatMessage instanceof Engine.RoleMessage.Ai) {
-            const aiMessage = chatMessage as Engine.RoleMessage.Ai.From<fdm>;
+        } else if (chatMessage instanceof Engine.Message.Output) {
+            const aiMessage = chatMessage as Engine.Message.Output.From<fdm>;
             return this.encodeAiMessage(aiMessage);
         }
         else throw new Error();

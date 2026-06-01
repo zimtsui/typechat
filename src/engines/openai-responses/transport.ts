@@ -1,6 +1,4 @@
 import { type InferenceOptions, type ProviderSpecs, Engine } from '../../engine.ts';
-import { type Session } from '../../engine/session.ts';
-import { RoleMessage } from './message.ts';
 import { Function } from '../../function.ts';
 import OpenAI from 'openai';
 import { type InferenceContext } from '../../inference-context.ts';
@@ -48,7 +46,7 @@ export class Transport<
     }
 
     protected makeParams(
-        session: Session.From<fdm>,
+        session: Engine.Session.From<fdm>,
     ): OpenAI.Responses.ResponseCreateParamsStreaming {
         const tools: OpenAI.Responses.Tool[] = this.toolCodec.encodeFunctionDeclarationMap();
         if (this.applyPatch) tools.push({ type: 'apply_patch' });
@@ -82,9 +80,9 @@ export class Transport<
 
     public async fetch(
         wfctx: InferenceContext,
-        session: Session.From<fdm>,
+        session: Engine.Session.From<fdm>,
         signal?: AbortSignal,
-    ): Promise<RoleMessage.Ai.From<fdm>> {
+    ): Promise<Engine.Message.Output.From<fdm>> {
         await this.throttle.requests(wfctx);
 
         const params = this.makeParams(session);
@@ -122,7 +120,7 @@ export class Transport<
         wfctx.cost?.(this.billing.charge(response.usage));
         loggers.message.info(response.usage);
 
-        return this.messageCodec.decodeAiMessage(response);
+        return this.messageCodec.decodeOutputMessage(response);
     }
 }
 

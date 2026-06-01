@@ -111,7 +111,7 @@ export class Transport<
         wfctx: InferenceContext,
         session: Engine.Session.From<fdm>,
         signal?: AbortSignal,
-    ): Promise<Engine.RoleMessage.Ai.From<fdm>> {
+    ): Promise<Engine.Message.Output.From<fdm>> {
         await this.throttle.requests(wfctx);
 
         const params = this.makeParams(session);

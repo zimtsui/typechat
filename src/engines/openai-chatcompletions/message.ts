@@ -8,7 +8,7 @@ const NOMINAL = Symbol();
 export namespace RoleMessage {
     export class Ai<
         in out fdu extends Function.Decl.Proto,
-    > extends Engine.RoleMessage.Ai<fdu> {
+    > extends Engine.Message.Output<fdu> {
         protected declare [NOMINAL]: never;
         public constructor(
             parts: unknown[],
@@ -28,7 +28,7 @@ export namespace RoleMessage {
         > = Ai<Function.Decl.From<fdm>>;
     }
 
-    export import Part = Engine.RoleMessage.Part;
-    export import User = Engine.RoleMessage.User;
-    export import Developer = Engine.RoleMessage.Developer;
+    export import Part = Engine.Message.Part;
+    export import User = Engine.Message.Input;
+    export import Developer = Engine.Message.Developer;
 }

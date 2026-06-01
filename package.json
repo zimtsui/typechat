@@ -21,8 +21,8 @@
     "url": "git+https://github.com/zimtsui/typechat.git"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.96.0",
-    "@google/genai": "^1.33.0",
+    "@anthropic-ai/sdk": "^0.100.1",
+    "@google/genai": "^2.7.0",
     "@types/node": "^24.12.2",
     "@zimtsui/node-loaders": "^0.0.4",
     "handlebars": "^4.7.8",

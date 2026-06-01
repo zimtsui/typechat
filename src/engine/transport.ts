@@ -1,7 +1,7 @@
 import { Function } from '../function.ts';
 import { type InferenceContext } from '../inference-context.ts';
 import { Session } from './session.ts';
-import { RoleMessage } from './message.ts';
+import { Message } from './message.ts';
 
 
 
@@ -12,5 +12,5 @@ export interface Transport<
         wfctx: InferenceContext,
         session: Session.From<fdm>,
         signal?: AbortSignal,
-    ): Promise<RoleMessage.Ai.From<fdm>>;
+    ): Promise<Message.Output.From<fdm>>;
 }

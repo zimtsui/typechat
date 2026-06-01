@@ -1,7 +1,7 @@
 import { Function } from './function.ts';
 import { EndpointSpec } from './endpoint-spec.ts';
 import { Throttle } from './throttle.ts';
-import { Agent, ProxyAgent, Dispatcher } from 'undici';
+import * as Undici from 'undici';
 import { env } from 'node:process';
 import { type InferenceContext } from './inference-context.ts';
 import { loggers } from './telemetry.ts';
@@ -13,8 +13,7 @@ import * as MiddlewareModule from './engine/middleware.ts';
 import * as ToolChoiceValidatorModule from './engine/tool-choice-validator.ts';
 import * as TransportModule from './engine/transport.ts';
 import { ToolChoice } from './tool-choice.ts';
-import { Media } from './media.ts';
-import * as XmlCodec from './xml.ts';
+import { Text } from './text.ts';
 
 
 export interface Pricing {
@@ -25,7 +24,7 @@ export interface Pricing {
 export interface ProviderSpecs {
     baseUrl: string;
     apiKey: string;
-    dispatcher: Dispatcher;
+    dispatcher: Undici.Dispatcher;
     retry: number;
 }
 export interface InferenceOptions {
@@ -59,12 +58,12 @@ export namespace Engine {
             const proxyUrl = options.endpointSpec.proxy || env.https_proxy || env.HTTPS_PROXY;
 
             const dispatcher = proxyUrl
-                ? new ProxyAgent({
+                ? new Undici.ProxyAgent({
                     uri: proxyUrl,
                     headersTimeout: 0,
                     bodyTimeout: 0,
                 })
-                : new Agent({
+                : new Undici.Agent({
                     headersTimeout: 0,
                     bodyTimeout: 0,
                 });
@@ -106,7 +105,7 @@ export namespace Engine {
         protected async infer(
             wfctx: InferenceContext,
             session: Session.From<fdm>,
-        ): Promise<RoleMessage.Ai.From<fdm>> {
+        ): Promise<Message.Output.From<fdm>> {
             const signalTimeout = this.inferenceOptions.timeout ? AbortSignal.timeout(this.inferenceOptions.timeout) : null;
             const signals: AbortSignal[] = [];
             if (signalTimeout) signals.push(signalTimeout);
@@ -135,7 +134,7 @@ export namespace Engine {
         public async stateless(
             wfctx: InferenceContext,
             session: Session.From<fdm>,
-        ): Promise<RoleMessage.Ai.From<fdm>> {
+        ): Promise<Message.Output.From<fdm>> {
             const middleware = this.compose(this.middlewaresStateless);
             for (let retryProvider = 0, retryInference = 0;;) try {
                 return await middleware(wfctx, session, () => this.infer(wfctx, session));
@@ -165,7 +164,7 @@ export namespace Engine {
         public async stateful(
             wfctx: InferenceContext,
             session: Session.From<fdm>,
-        ): Promise<RoleMessage.Ai.From<fdm>> {
+        ): Promise<Message.Output.From<fdm>> {
             const middleware = this.compose(this.middlewaresStateful);
             for (let retryProvider = 0, retryInference = 0;;) try {
                 const next = async () => {
@@ -225,41 +224,23 @@ export namespace Engine {
         ): AsyncGenerator<string, string, void> {
             for (let i = 0; i < limit; i++) {
                 const response = await this.stateful(wfctx, session);
-                if (response.allText()) return response.getText();
+                if (response.allTextParts()) return response.joinText();
                 const frs: Function.Response.From<fdm>[] = [];
-                const images: Media.Image[] = [];
-                for (const part of response.getParts()) {
-                    if (part instanceof RoleMessage.Part.Text) {
-                        const textPart = part as Engine.RoleMessage.Part.Text;
-                        yield textPart.text;
+                for (const part of response.parts) {
+                    if (part instanceof Text) {
+                        yield part.raw;
                     } else if (part instanceof Function.Call) {
                         const fc = part as Function.Call.From<fdm>;
                         const f = fnm[fc.name];
                         try {
-                            const rawfr = await f.call(fnm, fc.args, fc);
-                            if (typeof rawfr === 'string') {
-                                const fr = Function.Response.Successful.of({
+                            const frparts = await f.call(fnm, fc.args, fc);
+                            frs.push(
+                                Function.Response.Successful.of({
                                     id: fc.id,
                                     name: fc.name,
-                                    text: rawfr,
-                                } as Function.Response.Successful.Options.From<fdm>);
-                                frs.push(fr);
-                            } else if (rawfr instanceof Media.Image) {
-                                const fr = Function.Response.Successful.of({
-                                    id: fc.id,
-                                    name: fc.name,
-                                    text: XmlCodec.System.encode('The image will be loaded in next LLM user-role message.'),
-                                } as Function.Response.Successful.Options.From<fdm>);
-                                frs.push(fr);
-                                images.push(rawfr);
-                            } else if (rawfr instanceof Media.Text) {
-                                const fr = Function.Response.Successful.of({
-                                    id: fc.id,
-                                    name: fc.name,
-                                    text: rawfr.quote(),
-                                } as Function.Response.Successful.Options.From<fdm>);
-                                frs.push(fr);
-                            } else throw new Error('Unsupported function response type');
+                                    parts: frparts,
+                                } as Function.Response.Successful.Options.From<fdm>),
+                            );
                         } catch (e) {
                             if (e instanceof Function.Error) {} else throw e;
                             const fr = Function.Response.Failed.of({
@@ -271,7 +252,7 @@ export namespace Engine {
                         }
                     } else throw new Error();
                 }
-                session.chatMessages.push(new RoleMessage.User([...frs, ...images]));
+                session.chatMessages.push(new Message.Input([...frs]));
             }
             throw new Engine.FunctionCallLimitExceeded('Function call limit exceeded.');
         }
@@ -300,7 +281,7 @@ export namespace Engine {
     export import Transport = TransportModule.Transport;
     export import ToolChoiceValidator = ToolChoiceValidatorModule.ToolChoiceValidator;
     export import Session = SessionModule.Session;
-    export import RoleMessage = MessageModule.RoleMessage;
+    export import Message = MessageModule.Message;
     export import Exceptions = ExceptionsModule;
     export import Middleware = MiddlewareModule.Middleware;
 }

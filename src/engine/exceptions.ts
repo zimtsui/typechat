@@ -1,7 +1,7 @@
 import { Function } from '../function.ts';
 import { type InferenceContext } from '../inference-context.ts';
 import { Session } from './session.ts';
-import { RoleMessage } from './message.ts';
+import { Message } from './message.ts';
 
 
 
@@ -14,22 +14,22 @@ export namespace InferenceError {
         in out fdu extends Function.Decl.Proto,
     > extends InferenceError {
         public constructor(
-            protected response: RoleMessage.Ai<fdu>,
-            protected rejection: RoleMessage.User<fdu>,
+            protected response: Message.Output<fdu>,
+            protected rejection: Message.Input<fdu>,
             ...rest: ConstructorParameters<typeof InferenceError>
         ) {
             super(...rest);
         }
-        public resume(): RoleMessage.Ai<fdu> {
+        public resume(): Message.Output<fdu> {
             return this.response;
         }
-        public recover(): RoleMessage.User<fdu> {
+        public recover(): Message.Input<fdu> {
             return this.rejection;
         }
 
         public static async recover<
             fdu extends Function.Decl.Proto,
-            aim extends RoleMessage.Ai<fdu>,
+            aim extends Message.Output<fdu>,
         >(
             wfctx: InferenceContext,
             session: Session<fdu>,

@@ -114,11 +114,11 @@ export namespace GoogleEngine {
         ): AsyncGenerator<string, string, void> {
             for (let i = 0; i < limit; i++) {
                 const response = await this.stateful(wfctx, session) as RoleMessage.Ai.From<fdm>;
-                if (response.allText()) return response.getText();
+                if (response.allTextParts()) return response.joinText();
                 const frs: Function.Response.From<fdm>[] = [];
                 const images: Media.Image[] = [];
                 for (const part of response.getParts()) {
-                    if (part instanceof Engine.RoleMessage.Part.Text) {
+                    if (part instanceof Engine.Message.Part.Text) {
                         yield part.text;
                     } else if (part instanceof Function.Call) {
                         const fc = part as Function.Call.From<fdm>;

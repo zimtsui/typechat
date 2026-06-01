@@ -15,11 +15,11 @@ export class MessageCodec<
     }
 
     public encodeUserMessage(
-        userMessage: Engine.RoleMessage.User.From<fdm>,
+        userMessage: Engine.Message.Input.From<fdm>,
     ): Anthropic.ContentBlockParam[] {
         const blocks: Anthropic.ContentBlockParam[] = [];
         for (const part of userMessage.getParts())
-            if (part instanceof Engine.RoleMessage.Part.Text)
+            if (part instanceof Engine.Message.Part.Text)
                 blocks.push({
                     type: 'text',
                     text: part.text,
@@ -37,7 +37,7 @@ export class MessageCodec<
     }
 
     public encodeAiMessage(
-        aiMessage: Engine.RoleMessage.Ai.From<fdm>,
+        aiMessage: Engine.Message.Output.From<fdm>,
     ): Anthropic.ContentBlockParam[] {
         if (aiMessage instanceof RoleMessage.Ai) {
             const nativeAiMessage = aiMessage as RoleMessage.Ai.From<fdm>;
@@ -45,7 +45,7 @@ export class MessageCodec<
         }
         const blocks: Anthropic.ContentBlockParam[] = [];
         for (const part of aiMessage.getParts())
-            if (part instanceof Engine.RoleMessage.Part.Text)
+            if (part instanceof Engine.Message.Part.Text)
                 blocks.push({
                     type: 'text',
                     text: part.text,
@@ -58,19 +58,19 @@ export class MessageCodec<
     }
 
     public encodeDeveloperMessage(
-        developerMessage: Engine.RoleMessage.Developer,
+        developerMessage: Engine.Message.Developer,
     ): Anthropic.TextBlockParam[] {
-        return developerMessage.getOnlyTextParts().map(part => ({ type: 'text', text: part.text }));
+        return developerMessage.getOnlyTextParts().map(part => ({ type: 'text', text: part.raw }));
     }
 
     public encodeChatMessage(
         chatMessage: Engine.Session.ChatMessage.From<fdm>,
     ): Anthropic.MessageParam {
-        if (chatMessage instanceof Engine.RoleMessage.User) {
-            const userMessage = chatMessage as Engine.RoleMessage.User.From<fdm>;
+        if (chatMessage instanceof Engine.Message.Input) {
+            const userMessage = chatMessage as Engine.Message.Input.From<fdm>;
             return { role: 'user', content: this.encodeUserMessage(userMessage) };
-        } else if (chatMessage instanceof Engine.RoleMessage.Ai) {
-            const aiMessage = chatMessage as Engine.RoleMessage.Ai.From<fdm>;
+        } else if (chatMessage instanceof Engine.Message.Output) {
+            const aiMessage = chatMessage as Engine.Message.Output.From<fdm>;
             return { role: 'assistant', content: this.encodeAiMessage(aiMessage) };
         }
         else throw new Error('Unsupported chat message type.');

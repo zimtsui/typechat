@@ -36,17 +36,17 @@ export namespace Media {
     }
 
     export class Text extends Media {
-        public constructor(public text: string, public override mimeType: MIMEType) {
+        public constructor(public raw: string, public override mimeType: MIMEType) {
             super();
             if (mimeType.type === 'text') {} else
                 throw new TypeError('Major MIME type of text must be `text`.');
         }
         public quote(): string {
-            return XmlCodec.Quotation.encode(this.mimeType, this.text);
+            return XmlCodec.Quotation.encode(this.mimeType, this.raw);
         }
         public [Symbol.toPrimitive](hint: string): string {
             assert(hint === 'string');
-            return this.text;
+            return this.raw;
         }
     }
 }

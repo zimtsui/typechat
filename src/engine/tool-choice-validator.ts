@@ -1,7 +1,8 @@
 import { ToolChoice } from '../tool-choice.ts';
 import { Function } from '../function.ts';
-import { RoleMessage } from './message.ts';
+import { Message } from './message.ts';
 import * as XmlCodec from '../xml.ts';
+import { Text } from '../text.ts';
 
 
 export class ToolChoiceValidator<
@@ -13,48 +14,47 @@ export class ToolChoiceValidator<
     }
 
     public validate(
-        aiMessage: RoleMessage.Ai<fdu>,
-    ): RoleMessage.User<fdu> | void {
+        aiMessage: Message.Output<fdu>,
+    ): Message.Input<fdu> | void {
         const fcs = aiMessage.getFunctionCalls();
-        const frs = fcs.map(
-            fc => Function.Response.Failed.of({
-                id: fc.id,
-                name: fc.name,
-                error: XmlCodec.System.encode('Cancelled by system.'),
-            } as Function.Response.Failed.Options.Of<fdu>),
-        );
 
         if (this.toolChoice === ToolChoice.REQUIRED) {
-            if (fcs.length) {} else
-                return new RoleMessage.User<fdu>([
-                    new RoleMessage.Part.Text(
+            if (fcs.length === 0)
+                return new Message.Input<fdu>([
+                    new Text(
                         XmlCodec.System.encode(`Error: Function call required, but not found.`),
                     ),
                 ]);
 
         } else if (this.toolChoice === ToolChoice.ANYONE) {
-            if (!fcs.length)
-                return new RoleMessage.User<never>([
-                    new RoleMessage.Part.Text(
+            if (fcs.length === 0)
+                return new Message.Input<never>([
+                    new Text(
                         XmlCodec.System.encode(`Error: Function call required, but not found.`),
                     ),
                 ]);
             if (fcs.length > 1)
-                return new RoleMessage.User<fdu>([
-                    ...frs,
-                    new RoleMessage.Part.Text(
-                        XmlCodec.System.encode(`Error: Only 1 function call allowed, but multiple found.`),
+                return new Message.Input<fdu>(
+                    fcs.map(
+                        fc => Function.Response.Failed.of({
+                            id: fc.id,
+                            name: fc.name,
+                            error: XmlCodec.System.encode('Error: Only 1 function call allowed, but multiple found. This function call is cancelled by system.'),
+                        } as Function.Response.Failed.Options.Of<fdu>),
                     ),
-                ]);
+                );
 
         } else if (this.toolChoice === ToolChoice.NONE) {
             if (fcs.length)
-                return new RoleMessage.User<fdu>([
-                    ...frs,
-                    new RoleMessage.Part.Text(
-                        XmlCodec.System.encode(`Error: No function call allowed.`),
+                return new Message.Input<fdu>(
+                    fcs.map(
+                        fc => Function.Response.Failed.of({
+                            id: fc.id,
+                            name: fc.name,
+                            error: XmlCodec.System.encode('Error: No function call allowed. This function call is cancelled by system.'),
+                        } as Function.Response.Failed.Options.Of<fdu>),
                     ),
-                ]);
+                );
         }
     }
 }
