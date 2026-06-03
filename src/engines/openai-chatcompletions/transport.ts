@@ -120,8 +120,10 @@ export class Transport<
 
         let stock: OpenAI.ChatCompletionChunk | null = null;
         try {
+            signal?.throwIfAborted();
             const stream = await this.client.chat.completions.create(params, { signal });
             for await (const chunk of stream) {
+                signal?.throwIfAborted();
                 loggers.stream.trace(chunk);
 
                 stock ??= {

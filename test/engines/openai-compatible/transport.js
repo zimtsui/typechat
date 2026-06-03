@@ -146,3 +146,26 @@ test('OpenAI compatible transport treats stream shutdown without response as con
 
     t.is(error?.message, 'Stream shut down');
 });
+
+test('OpenAI compatible transport propagates signal reason while streaming', async t => {
+    const transport = makeTransport(ToolChoice.AUTO);
+    const controller = new AbortController();
+    const reason = new Error('cancelled');
+    transport.client = {
+        responses: {
+            create: async function* () {
+                controller.abort(reason);
+                yield { type: 'response.completed' };
+            },
+        },
+    };
+    const session = {
+        chatMessages: [new Message.Input([
+            new Text('Hello.\n'),
+        ])],
+    };
+
+    const error = await t.throwsAsync(() => transport.fetch({}, session, controller.signal));
+
+    t.is(error, reason);
+});

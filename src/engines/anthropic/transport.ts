@@ -71,6 +71,7 @@ export class Transport<
 
         let response: Anthropic.Message | null = null;
         try {
+            signal?.throwIfAborted();
             const stream = this.client.messages.stream(
                 params,
                 {
@@ -79,6 +80,7 @@ export class Transport<
                 },
             );
             for await (const event of stream) {
+                signal?.throwIfAborted();
                 loggers.stream.trace(event);
                 if (event.type === 'message_start') {
                     response = structuredClone(event.message);

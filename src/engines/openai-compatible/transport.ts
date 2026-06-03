@@ -101,8 +101,10 @@ export class Transport<
 
         let response: OpenAI.Responses.Response | null = null;
         try {
+            signal?.throwIfAborted();
             const stream = await this.client.responses.create(params, { signal });
             for await (const event of stream) {
+                signal?.throwIfAborted();
                 loggers.stream.trace(event);
                 if (event.type === 'response.completed')
                     response = event.response;

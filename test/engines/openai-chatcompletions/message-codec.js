@@ -137,6 +137,6 @@ test('OpenAI Chat Completions codec rejects empty assistant message', t => {
         refusal: null,
     }), {
         instanceOf: Engine.Exceptions.InferenceError,
-        message: 'Content or tool calls not found in Response',
+        message: 'Empty message.',
     });
 });

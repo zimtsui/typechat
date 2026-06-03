@@ -74,3 +74,28 @@ test('OpenAI Chat Completions transport forwards additional headers', t => {
 
     t.is(transport.client._options.defaultHeaders.get('x-provider-feature'), 'enabled');
 });
+
+test('OpenAI Chat Completions transport propagates signal reason while streaming', async t => {
+    const transport = makeTransport(false);
+    const controller = new AbortController();
+    const reason = new Error('cancelled');
+    transport.client = {
+        chat: {
+            completions: {
+                create: async function* () {
+                    controller.abort(reason);
+                    yield {};
+                },
+            },
+        },
+    };
+    const session = {
+        chatMessages: [new Message.Input([
+            new Text('Hello.\n'),
+        ])],
+    };
+
+    const error = await t.throwsAsync(() => transport.fetch({}, session, controller.signal));
+
+    t.is(error, reason);
+});
