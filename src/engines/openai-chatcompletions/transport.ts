@@ -169,10 +169,10 @@ export class Transport<
                 stock.usage ??= chunk.usage;
             }
         } catch (e) {
-            if (e instanceof OpenAI.APIConnectionError)
-                throw new Engine.Exceptions.ConnectionError(undefined, { cause: e });
+            if (e instanceof OpenAI.APIError)
+                throw new Engine.Exceptions.Retriable(undefined, { cause: e });
             else if (e instanceof TypeError)
-                throw new Engine.Exceptions.ConnectionError(undefined, { cause: e });
+                throw new Engine.Exceptions.Retriable(undefined, { cause: e });
             else throw e;
         }
 

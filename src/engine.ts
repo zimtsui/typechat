@@ -100,7 +100,7 @@ export namespace Engine {
          * @throws {@link Exceptions.InferenceTimeout} 推理超时
          * @throws {@link Exceptions.InferenceError} 模型抽风
          * @throws {@link Exceptions.Recoverable} 模型抽风但可恢复
-         * @throws {@link Exceptions.ConnectionError} 网络故障
+         * @throws {@link Exceptions.Retriable} 值得重试
          */
         protected async infer(
             wfctx: InferenceContext,
@@ -128,7 +128,7 @@ export namespace Engine {
         /**
         * @throws {@link Exceptions.InferenceTimeout} 推理超时
         * @throws {@link Exceptions.InferenceError} 模型抽风
-        * @throws {@link Exceptions.ConnectionError} 网络故障
+        * @throws {@link Exceptions.Retriable} 值得重试
         */
         public async stateless(
             wfctx: InferenceContext,
@@ -146,7 +146,7 @@ export namespace Engine {
                     if (retryInference < this.inferenceOptions.retry) {} else throw e;
                     loggers.message.warn(e);
                     retryInference++;
-                } else if (e instanceof Exceptions.ConnectionError) {
+                } else if (e instanceof Exceptions.Retriable) {
                     if (retryProvider < this.providerSpecs.retry) {} else throw e;
                     loggers.message.warn(e);
                     retryProvider++;
@@ -157,7 +157,7 @@ export namespace Engine {
         /**
         * @throws {@link Exceptions.InferenceTimeout} 推理超时
         * @throws {@link Exceptions.InferenceError} 模型抽风
-        * @throws {@link Exceptions.ConnectionError} 网络故障
+        * @throws {@link Exceptions.Retriable} 值得重试
         * @param session mutable
         */
         public async stateful(
@@ -181,7 +181,7 @@ export namespace Engine {
                     if (retryInference < this.inferenceOptions.retry) {} else throw e;
                     loggers.message.warn(e);
                     retryInference++;
-                } else if (e instanceof Exceptions.ConnectionError) {
+                } else if (e instanceof Exceptions.Retriable) {
                     if (retryProvider < this.providerSpecs.retry) {} else throw e;
                     loggers.message.warn(e);
                     retryProvider++;

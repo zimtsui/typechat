@@ -130,10 +130,10 @@ export class Transport<
                 }
             }
         } catch (e) {
-            if (e instanceof Anthropic.APIConnectionError)
-                throw new Engine.Exceptions.ConnectionError(undefined, { cause: e });
+            if (e instanceof Anthropic.APIError)
+                throw new Engine.Exceptions.Retriable(undefined, { cause: e });
             else if (e instanceof TypeError)
-                throw new Engine.Exceptions.ConnectionError(undefined, { cause: e });
+                throw new Engine.Exceptions.Retriable(undefined, { cause: e });
             else throw e;
         }
 

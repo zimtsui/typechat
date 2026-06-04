@@ -98,14 +98,14 @@ export class Transport<
                     throw new Engine.Exceptions.InferenceError('Response stream error', { cause: event });
             }
         } catch (e) {
-            if (e instanceof OpenAI.APIConnectionError)
-                throw new Engine.Exceptions.ConnectionError(undefined, { cause: e });
+            if (e instanceof OpenAI.APIError)
+                throw new Engine.Exceptions.Retriable(undefined, { cause: e });
             else if (e instanceof TypeError)
-                throw new Engine.Exceptions.ConnectionError(undefined, { cause: e });
+                throw new Engine.Exceptions.Retriable(undefined, { cause: e });
             else throw e;
         }
 
-        if (response) {} else throw new Engine.Exceptions.ConnectionError('Stream shut down');
+        if (response) {} else throw new Engine.Exceptions.Retriable('Stream shut down');
         loggers.message.debug(response);
         if (response.status === 'completed') {} else
             throw new Engine.Exceptions.InferenceError('Abnormal response status', { cause: response });

@@ -6,7 +6,7 @@ import { Message } from './message.ts';
 
 
 export class InferenceTimeout extends Error {}
-export class ConnectionError extends Error {}
+export class Retriable extends Error {}
 
 export class InferenceError extends Error {}
 export namespace InferenceError {
