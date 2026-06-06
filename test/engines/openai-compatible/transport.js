@@ -127,7 +127,7 @@ test('OpenAI compatible transport uses previous_response_id for cached output co
     }]);
 });
 
-test('OpenAI compatible transport treats stream shutdown without response as retriable', async t => {
+test('OpenAI compatible transport treats stream shutdown without response as API error', async t => {
     const transport = makeTransport(ToolChoice.AUTO);
     transport.client = {
         responses: {
@@ -141,7 +141,7 @@ test('OpenAI compatible transport treats stream shutdown without response as ret
     };
 
     const error = await t.throwsAsync(() => transport.fetch({}, session), {
-        instanceOf: Engine.Exceptions.Retriable,
+        instanceOf: Engine.Exceptions.APIError,
     });
 
     t.is(error?.message, 'Stream shut down');

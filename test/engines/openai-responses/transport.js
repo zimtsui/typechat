@@ -88,7 +88,7 @@ test('OpenAI Responses transport throws on stream error event', async t => {
     t.is(error?.message, 'Response stream error');
 });
 
-test('OpenAI Responses transport treats stream shutdown without response as retriable', async t => {
+test('OpenAI Responses transport treats stream shutdown without response as API error', async t => {
     const transport = makeTransport(true);
     transport.client = {
         responses: {
@@ -102,7 +102,7 @@ test('OpenAI Responses transport treats stream shutdown without response as retr
     };
 
     const error = await t.throwsAsync(() => transport.fetch({}, session), {
-        instanceOf: Engine.Exceptions.Retriable,
+        instanceOf: Engine.Exceptions.APIError,
     });
 
     t.is(error?.message, 'Stream shut down');
