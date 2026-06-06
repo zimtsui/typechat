@@ -78,7 +78,7 @@ export class Transport<
                 dispatcher: this.providerSpec.dispatcher,
                 signal,
             },
-        ).catch(e => e instanceof TypeError ? Promise.reject(new Engine.Exceptions.Retriable(undefined, { cause: e })) : Promise.reject(e));
+        ).catch(e => e instanceof TypeError ? Promise.reject(new Engine.Exceptions.APIError(undefined, { cause: e })) : Promise.reject(e));
         loggers.message.debug(res);
 
         // Get response
@@ -88,18 +88,18 @@ export class Transport<
             const mimeType = new MIMEType(contentType);
             if (mimeType.essence === 'application/json')
                 if (res.status === 429)
-                    throw new Engine.Exceptions.Retriable(res.statusText, { cause: await res.json() });
+                    throw new Engine.Exceptions.APIError(res.statusText, { cause: await res.json() });
                 else
                     throw new Error(res.statusText, { cause: await res.json() });
             else if (mimeType.type === 'text')
                 if (res.status === 429)
-                    throw new Engine.Exceptions.Retriable(res.statusText, { cause: await res.text() });
+                    throw new Engine.Exceptions.APIError(res.statusText, { cause: await res.text() });
                 else
                     throw new Error(res.statusText, { cause: await res.text() });
             else throw new Error(res.statusText, { cause: res });
         }
         const response = <Google.GenerateContentResponse>await res.json()
-            .catch(e => e instanceof TypeError ? Promise.reject(new Engine.Exceptions.Retriable(undefined, { cause: e })) : Promise.reject(e));
+            .catch(e => e instanceof TypeError ? Promise.reject(new Engine.Exceptions.APIError(undefined, { cause: e })) : Promise.reject(e));
         loggers.message.debug(response);
 
         // Validate response

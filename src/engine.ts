@@ -100,7 +100,7 @@ export namespace Engine {
          * @throws {@link Exceptions.InferenceTimeout} 推理超时
          * @throws {@link Exceptions.InferenceError} 模型抽风
          * @throws {@link Exceptions.Recoverable} 模型抽风但可恢复
-         * @throws {@link Exceptions.Retriable} 值得重试
+         * @throws {@link Exceptions.APIError} API 错误
          */
         protected async infer(
             wfctx: InferenceContext,
@@ -128,7 +128,7 @@ export namespace Engine {
         /**
         * @throws {@link Exceptions.InferenceTimeout} 推理超时
         * @throws {@link Exceptions.InferenceError} 模型抽风
-        * @throws {@link Exceptions.Retriable} 值得重试
+        * @throws {@link Exceptions.APIError} API 错误
         */
         public async stateless(
             wfctx: InferenceContext,
@@ -146,7 +146,7 @@ export namespace Engine {
                     if (retryInference < this.inferenceOptions.retry) {} else throw e;
                     loggers.message.warn(e);
                     retryInference++;
-                } else if (e instanceof Exceptions.Retriable) {
+                } else if (e instanceof Exceptions.APIError) {
                     if (retryProvider < this.providerSpecs.retry) {} else throw e;
                     loggers.message.warn(e);
                     retryProvider++;
@@ -157,7 +157,7 @@ export namespace Engine {
         /**
         * @throws {@link Exceptions.InferenceTimeout} 推理超时
         * @throws {@link Exceptions.InferenceError} 模型抽风
-        * @throws {@link Exceptions.Retriable} 值得重试
+        * @throws {@link Exceptions.APIError} API 错误
         * @param session mutable
         */
         public async stateful(
@@ -181,7 +181,7 @@ export namespace Engine {
                     if (retryInference < this.inferenceOptions.retry) {} else throw e;
                     loggers.message.warn(e);
                     retryInference++;
-                } else if (e instanceof Exceptions.Retriable) {
+                } else if (e instanceof Exceptions.APIError) {
                     if (retryProvider < this.providerSpecs.retry) {} else throw e;
                     loggers.message.warn(e);
                     retryProvider++;
@@ -249,12 +249,12 @@ export namespace Engine {
                 }
                 session.chatMessages.push(new Message.Input([...frs]));
             }
-            throw new Engine.FunctionCallLimitExceeded('Function call limit exceeded.');
+            throw new Engine.Exceptions.FunctionCallLimitExceeded('Function call limit exceeded.');
         }
 
     }
 
-    export class FunctionCallLimitExceeded extends Error {}
+
 
     export interface Options<
         in out fdm extends Function.Decl.Map.Proto,

@@ -170,9 +170,9 @@ export class Transport<
             }
         } catch (e) {
             if (e instanceof OpenAI.APIError)
-                throw new Engine.Exceptions.Retriable(undefined, { cause: e });
+                throw new Engine.Exceptions.APIError(undefined, { cause: e });
             else if (e instanceof TypeError)
-                throw new Engine.Exceptions.Retriable(undefined, { cause: e });
+                throw new Engine.Exceptions.APIError(undefined, { cause: e });
             else throw e;
         }
 
