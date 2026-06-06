@@ -13,7 +13,7 @@ XML is introduced in order to help you distinguish
 -   which text parts of your LLM input are framework template.
 -   which text parts of your LLM input are injected variable content.
 
-In text parts of your LLM input, all injected variable content is wrapped within XML tags namespaced with `typechat`.
+In text parts of your LLM input, all injected variable content is wrapped within XML tags namespaced with `typechat`. This helps you clarify the text boundaries of injected content, and also helps you defend against injection attacks.
 
 ## Verbatim Quotation
 
