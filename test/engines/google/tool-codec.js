@@ -1,6 +1,8 @@
 import test from 'ava';
+import { MIMEType } from 'node:util';
 import { Text } from '../../../build/text.js';
 import { Engine } from '../../../build/engine.js';
+import { Media } from '../../../build/media.js';
 import { Function } from '../../../build/function.js';
 import { ToolCodec } from '../../../build/engines/google/tool-codec.js';
 import { functionDeclarationMapWithArgs } from '../../helpers.js';
@@ -76,5 +78,40 @@ test('Google tool codec encodes function responses', t => {
             name: 'echo',
             response: { error: 'failed' },
         },
+    });
+});
+
+test('Google tool codec joins multiple text function response parts', t => {
+    const codec = new ToolCodec({ fdm: functionDeclarationMapWithArgs });
+    const successful = Function.Response.Successful.of({
+        id: 'call_1',
+        name: 'echo',
+        parts: [
+            new Text('plain\n'),
+            new Media.Text('quoted', new MIMEType('text/plain')),
+        ],
+    });
+
+    t.deepEqual(codec.encodeFunctionResponse(successful), {
+        functionResponse: {
+            id: 'call_1',
+            name: 'echo',
+            response: {
+                output: 'plain\n<typechat:quotation mime-type="text/plain"><![CDATA[quoted]]></typechat:quotation>',
+            },
+        },
+    });
+});
+
+test('Google tool codec rejects empty successful function response parts', t => {
+    const codec = new ToolCodec({ fdm: functionDeclarationMapWithArgs });
+    const successful = Function.Response.Successful.of({
+        id: 'call_1',
+        name: 'echo',
+        parts: [],
+    });
+
+    t.throws(() => codec.encodeFunctionResponse(successful), {
+        message: 'Empty function response parts.',
     });
 });

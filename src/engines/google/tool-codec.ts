@@ -88,7 +88,7 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
                         },
                     };
                 } else throw new Error('Unsupported function response part.', { cause: fr.parts[0]! });
-            else {
+            else if (fr.parts.length > 1) {
                 if (fr.parts.every(part => part instanceof Text || part instanceof Media.Text)) {} else
                     throw new Error('Unsupported multimodal function response parts.', { cause: fr.parts });
                 return {
@@ -101,7 +101,8 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
                         },
                     },
                 };
-            }
+            } else
+                throw new Error('Empty function response parts.');
         } else if (fr instanceof Function.Response.Failed)
             return {
                 functionResponse: { id: fr.id, name: fr.name, response: { error: fr.error } },
