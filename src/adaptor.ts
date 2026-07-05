@@ -22,6 +22,11 @@ export class Adaptor {
         }
     }
 
+    public [Symbol.dispose]() {
+        for (const throttle of this.throttles.values())
+            throttle.throw(new Error('Adaptor disposed'));
+    }
+
     public makeEngine<
         fdm extends Function.Decl.Map.Proto,
     >(adaptorOptions: Adaptor.Params<fdm>): Engine<fdm> {

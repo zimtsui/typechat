@@ -18,7 +18,7 @@ export class Throttle {
             wfctx.signal?.throwIfAborted();
 
             const waiting = this.valve.acquire()
-                .finally(() => {
+                .then(() => {
                     this.timer = setTimeout(
                         () => {
                             this.timer = null;
