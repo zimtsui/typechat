@@ -1,4 +1,5 @@
-import test from 'ava';
+import assert from 'node:assert/strict';
+import test from 'node:test';
 import { Function } from '../../build/function.js';
 import { Message } from '../../build/engine/message.js';
 import { ToolChoiceValidator } from '../../build/engine/tool-choice-validator.js';
@@ -28,27 +29,27 @@ function getText(rejection) {
     return rejection.getTextParts().map(part => part.raw).join('');
 }
 
-test('Tool choice validator enforces at least one function call for REQUIRED', t => {
+test('Tool choice validator enforces at least one function call for REQUIRED', () => {
     const rejection = validate(ToolChoice.REQUIRED, [chat]);
 
-    t.regex(getOnlyText(rejection), /Error: Function call required, but not found\./);
-    t.is(validate(ToolChoice.REQUIRED, [fcall]), undefined);
+    assert.match(getOnlyText(rejection), /Error: Function call required, but not found\./);
+    assert.strictEqual(validate(ToolChoice.REQUIRED, [fcall]), undefined);
 });
 
-test('Tool choice validator enforces exactly one function call for ANYONE', t => {
+test('Tool choice validator enforces exactly one function call for ANYONE', () => {
     const missing = validate(ToolChoice.ANYONE, [chat]);
     const duplicated = validate(ToolChoice.ANYONE, [fcall, fcall2]);
 
-    t.regex(getOnlyText(missing), /Error: Function call required, but not found\./);
-    t.is(getText(duplicated), '');
-    t.regex(duplicated.getFunctionResponses()[0].error, /Error: Only 1 function call allowed, but multiple found\./);
-    t.is(validate(ToolChoice.ANYONE, [fcall]), undefined);
+    assert.match(getOnlyText(missing), /Error: Function call required, but not found\./);
+    assert.strictEqual(getText(duplicated), '');
+    assert.match(duplicated.getFunctionResponses()[0].error, /Error: Only 1 function call allowed, but multiple found\./);
+    assert.strictEqual(validate(ToolChoice.ANYONE, [fcall]), undefined);
 });
 
-test('Tool choice validator rejects function calls for NONE', t => {
+test('Tool choice validator rejects function calls for NONE', () => {
     const rejection = validate(ToolChoice.NONE, [fcall]);
 
-    t.is(getText(rejection), '');
-    t.regex(rejection.getFunctionResponses()[0].error, /Error: No function call allowed\./);
-    t.is(validate(ToolChoice.NONE, [chat]), undefined);
+    assert.strictEqual(getText(rejection), '');
+    assert.match(rejection.getFunctionResponses()[0].error, /Error: No function call allowed\./);
+    assert.strictEqual(validate(ToolChoice.NONE, [chat]), undefined);
 });

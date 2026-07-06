@@ -1,4 +1,5 @@
-import test from 'ava';
+import assert from 'node:assert/strict';
+import test from 'node:test';
 import { Throttle } from '../../build/throttle.js';
 import { Engine } from '../../build/engine.js';
 import { Function } from '../../build/function.js';
@@ -39,7 +40,7 @@ function rejectionMessage() {
     ]);
 }
 
-test('Engine stateful retries validator rejection without mutating session by default', async t => {
+test('Engine stateful retries validator rejection without mutating session by default', async () => {
     const rejection = rejectionMessage();
     const engine = new FakeEngine([
         { kind: 'invalid' },
@@ -53,13 +54,13 @@ test('Engine stateful retries validator rejection without mutating session by de
 
     const response = await engine.stateful({}, session);
 
-    t.is(response.kind, 'valid');
-    t.deepEqual(session.chatMessages, [
+    assert.strictEqual(response.kind, 'valid');
+    assert.deepStrictEqual(session.chatMessages, [
         { kind: 'valid' },
     ]);
 });
 
-test('Engine Recoverable middleware appends validator rejection into session history', async t => {
+test('Engine Recoverable middleware appends validator rejection into session history', async () => {
     const rejection = rejectionMessage();
     const engine = new FakeEngine([
         { kind: 'invalid' },
@@ -74,15 +75,15 @@ test('Engine Recoverable middleware appends validator rejection into session his
 
     const response = await recoveringEngine.stateful({}, session);
 
-    t.is(response.kind, 'valid');
-    t.deepEqual(session.chatMessages, [
+    assert.strictEqual(response.kind, 'valid');
+    assert.deepStrictEqual(session.chatMessages, [
         { kind: 'invalid' },
         rejection,
         { kind: 'valid' },
     ]);
 });
 
-test('Engine agentloop passes function call object to function handler', async t => {
+test('Engine agentloop passes function call object to function handler', async () => {
     const fcall = Function.Call.of({
         id: 'call_1',
         name: 'noop',
@@ -101,8 +102,8 @@ test('Engine agentloop passes function call object to function handler', async t
     const session = { chatMessages: [] };
     const fnm = {
         noop: async (args, receivedCall) => {
-            t.deepEqual(args, {});
-            t.is(receivedCall, fcall);
+            assert.deepStrictEqual(args, {});
+            assert.strictEqual(receivedCall, fcall);
             return [new Text('ok')];
         },
     };
@@ -111,8 +112,8 @@ test('Engine agentloop passes function call object to function handler', async t
     for await (const chunk of engine.agentloop({}, session, fnm, 2))
         chunks.push(chunk);
 
-    t.deepEqual(chunks, []);
-    t.deepEqual(session.chatMessages, [
+    assert.deepStrictEqual(chunks, []);
+    assert.deepStrictEqual(session.chatMessages, [
         aiMessage,
         new Message.Input([
             Function.Response.Successful.of({

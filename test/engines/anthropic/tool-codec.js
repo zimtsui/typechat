@@ -1,4 +1,5 @@
-import test from 'ava';
+import assert from 'node:assert/strict';
+import test from 'node:test';
 import { MIMEType } from 'node:util';
 import { Engine } from '../../../build/engine.js';
 import { Function } from '../../../build/function.js';
@@ -9,16 +10,16 @@ import { functionDeclarationMapWithArgs } from '../../helpers.js';
 
 const binary = text => new TextEncoder().encode(text).buffer;
 
-test('Anthropic tool codec encodes function declarations', t => {
+test('Anthropic tool codec encodes function declarations', () => {
     const codec = new ToolCodec({ fdm: functionDeclarationMapWithArgs });
 
-    t.like(codec.encodeFunctionDeclarationMap()[0], {
+    assert.partialDeepStrictEqual(codec.encodeFunctionDeclarationMap()[0], {
         name: 'echo',
         description: 'Echo text.',
     });
 });
 
-test('Anthropic tool codec decodes valid and empty function call arguments', t => {
+test('Anthropic tool codec decodes valid and empty function call arguments', () => {
     const codec = new ToolCodec({ fdm: functionDeclarationMapWithArgs });
 
     const echo = codec.decodeFunctionCall({
@@ -34,30 +35,30 @@ test('Anthropic tool codec decodes valid and empty function call arguments', t =
         input: {},
     });
 
-    t.is(echo.id, 'call_1');
-    t.is(echo.name, 'echo');
-    t.deepEqual(echo.args, { text: 'hello' });
-    t.deepEqual(noop.args, {});
+    assert.strictEqual(echo.id, 'call_1');
+    assert.strictEqual(echo.name, 'echo');
+    assert.deepStrictEqual(echo.args, { text: 'hello' });
+    assert.deepStrictEqual(noop.args, {});
 });
 
-test('Anthropic tool codec rejects invalid function calls', t => {
+test('Anthropic tool codec rejects invalid function calls', () => {
     const codec = new ToolCodec({ fdm: functionDeclarationMapWithArgs });
 
-    t.throws(() => codec.decodeFunctionCall({
+    assert.throws(() => codec.decodeFunctionCall({
         id: 'call_1',
         type: 'tool_use',
         name: 'missing',
         input: {},
-    }), { instanceOf: Engine.Exceptions.InferenceError, message: 'Unknown function call' });
-    t.throws(() => codec.decodeFunctionCall({
+    }), error => error instanceof Engine.Exceptions.InferenceError && error.message === 'Unknown function call');
+    assert.throws(() => codec.decodeFunctionCall({
         id: 'call_1',
         type: 'tool_use',
         name: 'echo',
         input: {},
-    }), { instanceOf: Engine.Exceptions.InferenceError, message: 'Invalid arguments of function call.' });
+    }), error => error instanceof Engine.Exceptions.InferenceError && error.message === 'Invalid arguments of function call.');
 });
 
-test('Anthropic tool codec encodes function responses and requires ids', t => {
+test('Anthropic tool codec encodes function responses and requires ids', () => {
     const codec = new ToolCodec({ fdm: functionDeclarationMapWithArgs });
     const successful = Function.Response.Successful.of({
         id: 'call_1',
@@ -75,7 +76,7 @@ test('Anthropic tool codec encodes function responses and requires ids', t => {
         error: 'failed',
     });
 
-    t.deepEqual(codec.encodeFunctionResponse(successful), {
+    assert.deepStrictEqual(codec.encodeFunctionResponse(successful), {
         type: 'tool_result',
         tool_use_id: 'call_1',
         content: [
@@ -105,12 +106,12 @@ test('Anthropic tool codec encodes function responses and requires ids', t => {
             },
         ],
     });
-    t.deepEqual(codec.encodeFunctionResponse(failed), {
+    assert.deepStrictEqual(codec.encodeFunctionResponse(failed), {
         type: 'tool_result',
         tool_use_id: 'call_2',
         content: 'failed',
     });
-    t.throws(() => codec.encodeFunctionResponse(Function.Response.Successful.of({
+    assert.throws(() => codec.encodeFunctionResponse(Function.Response.Successful.of({
         name: 'echo',
         parts: [new Text('done')],
     })));

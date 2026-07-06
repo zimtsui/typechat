@@ -1,4 +1,5 @@
-import test from 'ava';
+import assert from 'node:assert/strict';
+import test from 'node:test';
 import { MIMEType } from 'node:util';
 import { Function } from '../../../build/function.js';
 import { Engine } from '../../../build/engine.js';
@@ -20,7 +21,7 @@ function makeCodec() {
     });
 }
 
-test('OpenAI compatible codec encodes user input and function responses', t => {
+test('OpenAI compatible codec encodes user input and function responses', () => {
     const messageCodec = makeCodec();
     const inputMessage = new Message.Input([
         Function.Response.Successful.of({
@@ -34,7 +35,7 @@ test('OpenAI compatible codec encodes user input and function responses', t => {
 
     const encoded = messageCodec.encodeInputMessage(inputMessage);
 
-    t.deepEqual(encoded, [
+    assert.deepStrictEqual(encoded, [
         {
             type: 'function_call_output',
             call_id: 'call_1',
@@ -61,7 +62,7 @@ test('OpenAI compatible codec encodes user input and function responses', t => {
     ]);
 });
 
-test('OpenAI compatible codec omits empty user message for pure function responses', t => {
+test('OpenAI compatible codec omits empty user message for pure function responses', () => {
     const messageCodec = makeCodec();
     const inputMessage = new Message.Input([
         Function.Response.Successful.of({
@@ -73,7 +74,7 @@ test('OpenAI compatible codec omits empty user message for pure function respons
 
     const encoded = messageCodec.encodeInputMessage(inputMessage);
 
-    t.deepEqual(encoded, [{
+    assert.deepStrictEqual(encoded, [{
         type: 'function_call_output',
         call_id: 'call_1',
         output: [{
@@ -83,7 +84,7 @@ test('OpenAI compatible codec omits empty user message for pure function respons
     }]);
 });
 
-test('OpenAI compatible codec decodes output and replays cached raw output', t => {
+test('OpenAI compatible codec decodes output and replays cached raw output', () => {
     const messageCodec = makeCodec();
     const raw = {
         id: 'resp_1',
@@ -115,17 +116,17 @@ test('OpenAI compatible codec decodes output and replays cached raw output', t =
 
     const outputMessage = messageCodec.decodeOutputMessage(raw);
 
-    t.is(outputMessage.joinText(), 'hello');
-    t.is(outputMessage.getFunctionCalls()[0].name, 'noop');
-    t.deepEqual(messageCodec.encodeOutputMessage(outputMessage), raw.output);
-    t.is(messageCodec.getResponseId(outputMessage), 'resp_1');
+    assert.strictEqual(outputMessage.joinText(), 'hello');
+    assert.strictEqual(outputMessage.getFunctionCalls()[0].name, 'noop');
+    assert.deepStrictEqual(messageCodec.encodeOutputMessage(outputMessage), raw.output);
+    assert.strictEqual(messageCodec.getResponseId(outputMessage), 'resp_1');
 });
 
-test('OpenAI compatible codec rejects uncached output messages', t => {
+test('OpenAI compatible codec rejects uncached output messages', () => {
     const messageCodec = makeCodec();
     const outputMessage = new Message.Output([new Text('hello')]);
 
-    t.throws(() => messageCodec.encodeOutputMessage(outputMessage), {
+    assert.throws(() => messageCodec.encodeOutputMessage(outputMessage), {
         message: 'Only native output message allowed.',
     });
 });

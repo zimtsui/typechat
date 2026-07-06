@@ -1,4 +1,5 @@
-import test from 'ava';
+import assert from 'node:assert/strict';
+import test from 'node:test';
 import { Engine } from '../../../build/engine.js';
 import { Message } from '../../../build/engine/message.js';
 import { Text } from '../../../build/text.js';
@@ -35,7 +36,7 @@ function makeTransport(parallelToolCall) {
     });
 }
 
-test('OpenAI Responses transport reads parallelToolCall from inference params', t => {
+test('OpenAI Responses transport reads parallelToolCall from inference params', () => {
     const transport = makeTransport(true);
     const session = {
         chatMessages: [new Message.Input([
@@ -45,12 +46,12 @@ test('OpenAI Responses transport reads parallelToolCall from inference params', 
 
     const params = transport.makeParams(session);
 
-    t.is(params.parallel_tool_calls, true);
-    t.deepEqual(params.include, ['reasoning.encrypted_content']);
-    t.false(params.tools.some(tool => tool.type === 'apply_patch'));
+    assert.strictEqual(params.parallel_tool_calls, true);
+    assert.deepStrictEqual(params.include, ['reasoning.encrypted_content']);
+    assert.strictEqual(params.tools.some(tool => tool.type === 'apply_patch'), false);
 });
 
-test('OpenAI Responses transport reads disabled parallelToolCall from inferenceParams', t => {
+test('OpenAI Responses transport reads disabled parallelToolCall from inferenceParams', () => {
     const transport = makeTransport(false);
     const session = {
         chatMessages: [new Message.Input([
@@ -60,11 +61,11 @@ test('OpenAI Responses transport reads disabled parallelToolCall from inferenceP
 
     const params = transport.makeParams(session);
 
-    t.is(params.parallel_tool_calls, false);
-    t.true(params.stream);
+    assert.strictEqual(params.parallel_tool_calls, false);
+    assert.strictEqual(params.stream, true);
 });
 
-test('OpenAI Responses transport throws on stream error event', async t => {
+test('OpenAI Responses transport throws on stream error event', async () => {
     const transport = makeTransport(true);
     transport.client = {
         responses: {
@@ -83,12 +84,17 @@ test('OpenAI Responses transport throws on stream error event', async t => {
         ])],
     };
 
-    const error = await t.throwsAsync(() => transport.fetch({}, session));
+    let error;
+    try {
+        await transport.fetch({}, session);
+    } catch (caught) {
+        error = caught;
+    }
 
-    t.is(error?.message, 'Response stream error');
+    assert.strictEqual(error?.message, 'Response stream error');
 });
 
-test('OpenAI Responses transport treats stream shutdown without response as API error', async t => {
+test('OpenAI Responses transport treats stream shutdown without response as API error', async () => {
     const transport = makeTransport(true);
     transport.client = {
         responses: {
@@ -101,9 +107,13 @@ test('OpenAI Responses transport treats stream shutdown without response as API 
         ])],
     };
 
-    const error = await t.throwsAsync(() => transport.fetch({}, session), {
-        instanceOf: Engine.Exceptions.APIError,
-    });
+    let error;
+    try {
+        await transport.fetch({}, session);
+    } catch (caught) {
+        error = caught;
+    }
 
-    t.is(error?.message, 'Stream shut down');
+    assert.ok(error instanceof Engine.Exceptions.APIError);
+    assert.strictEqual(error?.message, 'Stream shut down');
 });

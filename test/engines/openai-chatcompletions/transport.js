@@ -1,4 +1,5 @@
-import test from 'ava';
+import assert from 'node:assert/strict';
+import test from 'node:test';
 import { Engine } from '../../../build/engine.js';
 import { Message } from '../../../build/engine/message.js';
 import { Text } from '../../../build/text.js';
@@ -36,7 +37,7 @@ function makeTransport(parallelToolCall, additionalHeaders) {
     });
 }
 
-test('OpenAI Chat Completions transport reads parallelToolCall from inferenceParams', t => {
+test('OpenAI Chat Completions transport reads parallelToolCall from inferenceParams', () => {
     const transport = makeTransport(true);
     const session = {
         chatMessages: [new Message.Input([
@@ -46,11 +47,11 @@ test('OpenAI Chat Completions transport reads parallelToolCall from inferencePar
 
     const params = transport.makeParams(session);
 
-    t.is(params.parallel_tool_calls, true);
-    t.true(params.stream);
+    assert.strictEqual(params.parallel_tool_calls, true);
+    assert.strictEqual(params.stream, true);
 });
 
-test('OpenAI Chat Completions transport streams usage by default', t => {
+test('OpenAI Chat Completions transport streams usage by default', () => {
     const transport = makeTransport(false);
     const session = {
         chatMessages: [new Message.Input([
@@ -60,17 +61,17 @@ test('OpenAI Chat Completions transport streams usage by default', t => {
 
     const params = transport.makeParams(session);
 
-    t.is(params.parallel_tool_calls, false);
-    t.true(params.stream);
-    t.deepEqual(params.stream_options, {
+    assert.strictEqual(params.parallel_tool_calls, false);
+    assert.strictEqual(params.stream, true);
+    assert.deepStrictEqual(params.stream_options, {
         include_usage: true,
     });
 });
 
-test('OpenAI Chat Completions transport forwards additional headers', t => {
+test('OpenAI Chat Completions transport forwards additional headers', () => {
     const transport = makeTransport(false, {
         'x-provider-feature': 'enabled',
     });
 
-    t.is(transport.client._options.defaultHeaders.get('x-provider-feature'), 'enabled');
+    assert.strictEqual(transport.client._options.defaultHeaders.get('x-provider-feature'), 'enabled');
 });

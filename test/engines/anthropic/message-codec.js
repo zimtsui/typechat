@@ -1,4 +1,5 @@
-import test from 'ava';
+import assert from 'node:assert/strict';
+import test from 'node:test';
 import { MIMEType } from 'node:util';
 import { Media } from '../../../build/media.js';
 import { Engine } from '../../../build/engine.js';
@@ -18,18 +19,16 @@ function makeCodec() {
     });
 }
 
-test('Anthropic codec rejects media user message', t => {
+test('Anthropic codec rejects media user message', () => {
     const messageCodec = makeCodec();
     const userMessage = new Message.Input([
         new Media.Pdf(binary('pdf')),
     ]);
 
-    const error = t.throws(() => messageCodec.encodeInputMessage(userMessage));
-
-    t.truthy(error);
+    assert.throws(() => messageCodec.encodeInputMessage(userMessage));
 });
 
-test('Anthropic codec encodes text media as quoted text', t => {
+test('Anthropic codec encodes text media as quoted text', () => {
     const messageCodec = makeCodec();
     const userMessage = new Message.Input([
         new Media.Text('hello', new MIMEType('text/plain')),
@@ -37,13 +36,13 @@ test('Anthropic codec encodes text media as quoted text', t => {
 
     const encoded = messageCodec.encodeInputMessage(userMessage);
 
-    t.deepEqual(encoded, [{
+    assert.deepStrictEqual(encoded, [{
         type: 'text',
         text: '<typechat:quotation mime-type="text/plain"><![CDATA[hello]]></typechat:quotation>',
     }]);
 });
 
-test('Anthropic codec decodes text and tool use blocks', t => {
+test('Anthropic codec decodes text and tool use blocks', () => {
     const messageCodec = makeCodec();
 
     const raw = [
@@ -62,21 +61,21 @@ test('Anthropic codec decodes text and tool use blocks', t => {
 
     const outputMessage = messageCodec.decodeOutputMessage(raw);
 
-    t.is(outputMessage.joinText(), 'hello');
-    t.is(outputMessage.getOnlyFunctionCall().name, 'noop');
-    t.deepEqual(messageCodec.encodeOutputMessage(outputMessage), raw);
+    assert.strictEqual(outputMessage.joinText(), 'hello');
+    assert.strictEqual(outputMessage.getOnlyFunctionCall().name, 'noop');
+    assert.deepStrictEqual(messageCodec.encodeOutputMessage(outputMessage), raw);
 });
 
-test('Anthropic codec rejects uncached output messages', t => {
+test('Anthropic codec rejects uncached output messages', () => {
     const messageCodec = makeCodec();
     const outputMessage = new Message.Output([new Text('hello')]);
 
-    t.throws(() => messageCodec.encodeOutputMessage(outputMessage), {
+    assert.throws(() => messageCodec.encodeOutputMessage(outputMessage), {
         message: 'Only native output message allowed.',
     });
 });
 
-test('Anthropic codec preserves thinking blocks in cached raw output', t => {
+test('Anthropic codec preserves thinking blocks in cached raw output', () => {
     const messageCodec = makeCodec();
     const raw = [
         {
@@ -97,6 +96,6 @@ test('Anthropic codec preserves thinking blocks in cached raw output', t => {
 
     const outputMessage = messageCodec.decodeOutputMessage(raw);
 
-    t.is(outputMessage.joinText(), 'hello');
-    t.deepEqual(messageCodec.encodeOutputMessage(outputMessage), raw);
+    assert.strictEqual(outputMessage.joinText(), 'hello');
+    assert.deepStrictEqual(messageCodec.encodeOutputMessage(outputMessage), raw);
 });

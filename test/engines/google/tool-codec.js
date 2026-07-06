@@ -1,4 +1,5 @@
-import test from 'ava';
+import assert from 'node:assert/strict';
+import test from 'node:test';
 import { MIMEType } from 'node:util';
 import { Text } from '../../../build/text.js';
 import { Engine } from '../../../build/engine.js';
@@ -10,16 +11,16 @@ import { functionDeclarationMapWithArgs } from '../../helpers.js';
 const binary = text => new TextEncoder().encode(text).buffer;
 
 
-test('Google tool codec encodes function declarations', t => {
+test('Google tool codec encodes function declarations', () => {
     const codec = new ToolCodec({ fdm: functionDeclarationMapWithArgs });
 
-    t.like(codec.encodeFunctionDeclarationMap()[0], {
+    assert.partialDeepStrictEqual(codec.encodeFunctionDeclarationMap()[0], {
         name: 'echo',
         description: 'Echo text.',
     });
 });
 
-test('Google tool codec decodes valid and empty function call arguments', t => {
+test('Google tool codec decodes valid and empty function call arguments', () => {
     const codec = new ToolCodec({ fdm: functionDeclarationMapWithArgs });
 
     const echo = codec.decodeFunctionCall({
@@ -33,28 +34,28 @@ test('Google tool codec decodes valid and empty function call arguments', t => {
         args: {},
     });
 
-    t.is(echo.id, 'call_1');
-    t.is(echo.name, 'echo');
-    t.deepEqual(echo.args, { text: 'hello' });
-    t.deepEqual(noop.args, {});
+    assert.strictEqual(echo.id, 'call_1');
+    assert.strictEqual(echo.name, 'echo');
+    assert.deepStrictEqual(echo.args, { text: 'hello' });
+    assert.deepStrictEqual(noop.args, {});
 });
 
-test('Google tool codec rejects invalid function calls', t => {
+test('Google tool codec rejects invalid function calls', () => {
     const codec = new ToolCodec({ fdm: functionDeclarationMapWithArgs });
 
-    t.throws(() => codec.decodeFunctionCall({
+    assert.throws(() => codec.decodeFunctionCall({
         id: 'call_1',
         name: 'missing',
         args: {},
-    }), { instanceOf: Engine.Exceptions.InferenceError, message: 'Unknown function call' });
-    t.throws(() => codec.decodeFunctionCall({
+    }), error => error instanceof Engine.Exceptions.InferenceError && error.message === 'Unknown function call');
+    assert.throws(() => codec.decodeFunctionCall({
         id: 'call_1',
         name: 'echo',
         args: {},
-    }), { instanceOf: Engine.Exceptions.InferenceError, message: 'Invalid arguments of function call.' });
+    }), error => error instanceof Engine.Exceptions.InferenceError && error.message === 'Invalid arguments of function call.');
 });
 
-test('Google tool codec encodes function responses', t => {
+test('Google tool codec encodes function responses', () => {
     const codec = new ToolCodec({ fdm: functionDeclarationMapWithArgs });
     const successful = Function.Response.Successful.of({
         id: 'call_1',
@@ -67,14 +68,14 @@ test('Google tool codec encodes function responses', t => {
         error: 'failed',
     });
 
-    t.deepEqual(codec.encodeFunctionResponse(successful), {
+    assert.deepStrictEqual(codec.encodeFunctionResponse(successful), {
         functionResponse: {
             id: 'call_1',
             name: 'echo',
             response: { output: 'done' },
         },
     });
-    t.deepEqual(codec.encodeFunctionResponse(failed), {
+    assert.deepStrictEqual(codec.encodeFunctionResponse(failed), {
         functionResponse: {
             id: 'call_2',
             name: 'echo',
@@ -83,7 +84,7 @@ test('Google tool codec encodes function responses', t => {
     });
 });
 
-test('Google tool codec joins multiple text function response parts', t => {
+test('Google tool codec joins multiple text function response parts', () => {
     const codec = new ToolCodec({ fdm: functionDeclarationMapWithArgs });
     const successful = Function.Response.Successful.of({
         id: 'call_1',
@@ -94,7 +95,7 @@ test('Google tool codec joins multiple text function response parts', t => {
         ],
     });
 
-    t.deepEqual(codec.encodeFunctionResponse(successful), {
+    assert.deepStrictEqual(codec.encodeFunctionResponse(successful), {
         functionResponse: {
             id: 'call_1',
             name: 'echo',
@@ -105,7 +106,7 @@ test('Google tool codec joins multiple text function response parts', t => {
     });
 });
 
-test('Google tool codec encodes binary function response media with MIME essence', t => {
+test('Google tool codec encodes binary function response media with MIME essence', () => {
     const codec = new ToolCodec({ fdm: functionDeclarationMapWithArgs });
     const successful = Function.Response.Successful.of({
         id: 'call_1',
@@ -115,7 +116,7 @@ test('Google tool codec encodes binary function response media with MIME essence
         ],
     });
 
-    t.deepEqual(codec.encodeFunctionResponse(successful), {
+    assert.deepStrictEqual(codec.encodeFunctionResponse(successful), {
         functionResponse: {
             id: 'call_1',
             name: 'echo',
@@ -135,7 +136,7 @@ test('Google tool codec encodes binary function response media with MIME essence
     });
 });
 
-test('Google tool codec rejects empty successful function response parts', t => {
+test('Google tool codec rejects empty successful function response parts', () => {
     const codec = new ToolCodec({ fdm: functionDeclarationMapWithArgs });
     const successful = Function.Response.Successful.of({
         id: 'call_1',
@@ -143,7 +144,7 @@ test('Google tool codec rejects empty successful function response parts', t => 
         parts: [],
     });
 
-    t.throws(() => codec.encodeFunctionResponse(successful), {
+    assert.throws(() => codec.encodeFunctionResponse(successful), {
         message: 'Empty function response parts.',
     });
 });

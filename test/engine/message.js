@@ -1,23 +1,24 @@
-import test from 'ava';
+import assert from 'node:assert/strict';
+import test from 'node:test';
 import { Function } from '../../build/function.js';
 import { Message } from '../../build/engine/message.js';
 import { Text } from '../../build/text.js';
 
 
-test('Text paragraph helper trims trailing whitespace and appends paragraph break', t => {
-    t.is(Text.paragraph('hello  ').raw, 'hello\n\n');
+test('Text paragraph helper trims trailing whitespace and appends paragraph break', () => {
+    assert.strictEqual(Text.paragraph('hello  ').raw, 'hello\n\n');
 });
 
-test('Developer message requires only text parts for getOnlyTextParts', t => {
+test('Developer message requires only text parts for getOnlyTextParts', () => {
     const text = new Text('hello');
     const valid = new Message.Developer([text]);
     const invalid = new Message.Developer([text, { kind: 'unknown' }]);
 
-    t.deepEqual(valid.getOnlyTextParts(), [text]);
-    t.throws(() => invalid.getOnlyTextParts());
+    assert.deepStrictEqual(valid.getOnlyTextParts(), [text]);
+    assert.throws(() => invalid.getOnlyTextParts());
 });
 
-test('Output message separates text and function calls', t => {
+test('Output message separates text and function calls', () => {
     const text = new Text('chat');
     const text2 = new Text('more');
     const call = Function.Call.of({
@@ -27,19 +28,19 @@ test('Output message separates text and function calls', t => {
     });
     const message = new Message.Output([text, text2, call]);
 
-    t.false(message.allTextParts());
-    t.is(message.joinText(), 'chatmore');
-    t.deepEqual(message.getFunctionCalls(), [call]);
-    t.is(message.getOnlyFunctionCall(), call);
+    assert.strictEqual(message.allTextParts(), false);
+    assert.strictEqual(message.joinText(), 'chatmore');
+    assert.deepStrictEqual(message.getFunctionCalls(), [call]);
+    assert.strictEqual(message.getOnlyFunctionCall(), call);
 });
 
-test('Output message rejects getOnly helpers unless exactly one function call exists', t => {
+test('Output message rejects getOnly helpers unless exactly one function call exists', () => {
     const empty = new Message.Output([]);
     const twoCalls = new Message.Output([
         Function.Call.of({ id: 'call_1', name: 'noop', args: {} }),
         Function.Call.of({ id: 'call_2', name: 'noop', args: {} }),
     ]);
 
-    t.throws(() => empty.getOnlyFunctionCall());
-    t.throws(() => twoCalls.getOnlyFunctionCall());
+    assert.throws(() => empty.getOnlyFunctionCall());
+    assert.throws(() => twoCalls.getOnlyFunctionCall());
 });

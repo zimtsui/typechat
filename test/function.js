@@ -1,22 +1,23 @@
-import test from 'ava';
+import assert from 'node:assert/strict';
+import test from 'node:test';
 import { Function } from '../build/function.js';
 import { Message } from '../build/engine/message.js';
 import { Text } from '../build/text.js';
 
 
-test('Function call stores id, name and typed args', t => {
+test('Function call stores id, name and typed args', () => {
     const call = Function.Call.of({
         id: 'call_1',
         name: 'echo',
         args: { text: 'hello' },
     });
 
-    t.is(call.id, 'call_1');
-    t.is(call.name, 'echo');
-    t.deepEqual(call.args, { text: 'hello' });
+    assert.strictEqual(call.id, 'call_1');
+    assert.strictEqual(call.name, 'echo');
+    assert.deepStrictEqual(call.args, { text: 'hello' });
 });
 
-test('Function successful response is collected from user message', t => {
+test('Function successful response is collected from user message', () => {
     const response = Function.Response.Successful.of({
         id: 'call_1',
         name: 'echo',
@@ -24,17 +25,17 @@ test('Function successful response is collected from user message', t => {
     });
     const userMessage = new Message.Input([response]);
 
-    t.deepEqual(userMessage.getFunctionResponses(), [response]);
-    t.is(userMessage.getOnlyFunctionResponse(), response);
+    assert.deepStrictEqual(userMessage.getFunctionResponses(), [response]);
+    assert.strictEqual(userMessage.getOnlyFunctionResponse(), response);
 });
 
-test('Function failed response preserves error text', t => {
+test('Function failed response preserves error text', () => {
     const response = Function.Response.Failed.of({
         id: 'call_1',
         name: 'echo',
         error: 'failed',
     });
 
-    t.true(response instanceof Function.Response);
-    t.is(response.error, 'failed');
+    assert.strictEqual(response instanceof Function.Response, true);
+    assert.strictEqual(response.error, 'failed');
 });

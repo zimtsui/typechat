@@ -1,8 +1,9 @@
-import test from 'ava';
+import assert from 'node:assert/strict';
+import test from 'node:test';
 import { Throttle } from '../build/throttle.js';
 
 
-test('Throttle bypasses locking when rpm is unlimited', async t => {
+test('Throttle bypasses locking when rpm is unlimited', async () => {
     const throttle = new Throttle(Number.POSITIVE_INFINITY);
     let acquireReadCalls = 0;
     let releaseReadCalls = 0;
@@ -18,11 +19,11 @@ test('Throttle bypasses locking when rpm is unlimited', async t => {
         },
     });
 
-    t.is(acquireReadCalls, 0);
-    t.is(releaseReadCalls, 0);
+    assert.strictEqual(acquireReadCalls, 0);
+    assert.strictEqual(releaseReadCalls, 0);
 });
 
-test('Throttle acquires and releases busy lock when rpm is finite', async t => {
+test('Throttle acquires and releases busy lock when rpm is finite', async () => {
     const throttle = new Throttle(60000);
     let acquireReadCalls = 0;
     let releaseReadCalls = 0;
@@ -38,11 +39,11 @@ test('Throttle acquires and releases busy lock when rpm is finite', async t => {
         },
     });
 
-    t.is(acquireReadCalls, 1);
-    t.is(releaseReadCalls, 1);
+    assert.strictEqual(acquireReadCalls, 1);
+    assert.strictEqual(releaseReadCalls, 1);
 });
 
-test('Throttle throw rejects current waiters', async t => {
+test('Throttle throw rejects current waiters', async () => {
     const throttle = new Throttle(1000);
     await throttle.requests({});
 
@@ -51,7 +52,12 @@ test('Throttle throw rejects current waiters', async t => {
     await Promise.resolve();
     throttle.throw(failure);
 
-    const error = await t.throwsAsync(request);
+    let error;
+    try {
+        await request;
+    } catch (caught) {
+        error = caught;
+    }
 
-    t.is(error, failure);
+    assert.strictEqual(error, failure);
 });

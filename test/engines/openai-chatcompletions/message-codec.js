@@ -1,4 +1,5 @@
-import test from 'ava';
+import assert from 'node:assert/strict';
+import test from 'node:test';
 import { MIMEType } from 'node:util';
 import { Function } from '../../../build/function.js';
 import { Media } from '../../../build/media.js';
@@ -19,18 +20,18 @@ function makeCodec() {
     });
 }
 
-test('OpenAI chat completions codec rejects media user message', t => {
+test('OpenAI chat completions codec rejects media user message', () => {
     const messageCodec = makeCodec();
     const userMessage = new Message.Input([
         new Media.Image(binary('hello'), new MIMEType('image/png')),
     ]);
 
-    const error = t.throws(() => messageCodec.encodeInputMessage(userMessage));
-
-    t.is(error?.message, 'Unsupported part type.');
+    assert.throws(() => messageCodec.encodeInputMessage(userMessage), {
+        message: 'Unsupported part type.',
+    });
 });
 
-test('OpenAI chat completions codec splits mixed function responses and text', t => {
+test('OpenAI chat completions codec splits mixed function responses and text', () => {
     const messageCodec = makeCodec();
     const userMessage = new Message.Input([
         Function.Response.Failed.of({
@@ -43,7 +44,7 @@ test('OpenAI chat completions codec splits mixed function responses and text', t
 
     const encoded = messageCodec.encodeInputMessage(userMessage);
 
-    t.deepEqual(encoded, [
+    assert.deepStrictEqual(encoded, [
         {
             role: 'tool',
             tool_call_id: 'call_1',
@@ -59,7 +60,7 @@ test('OpenAI chat completions codec splits mixed function responses and text', t
     ]);
 });
 
-test('OpenAI chat completions codec omits empty user message for pure tool responses', t => {
+test('OpenAI chat completions codec omits empty user message for pure tool responses', () => {
     const messageCodec = makeCodec();
     const userMessage = new Message.Input([
         Function.Response.Successful.of({
@@ -71,14 +72,14 @@ test('OpenAI chat completions codec omits empty user message for pure tool respo
 
     const encoded = messageCodec.encodeInputMessage(userMessage);
 
-    t.deepEqual(encoded, [{
+    assert.deepStrictEqual(encoded, [{
         role: 'tool',
         tool_call_id: 'call_1',
         content: 'done',
     }]);
 });
 
-test('OpenAI chat completions codec encodes text media as quoted text', t => {
+test('OpenAI chat completions codec encodes text media as quoted text', () => {
     const messageCodec = makeCodec();
     const userMessage = new Message.Input([
         new Media.Text('hello', new MIMEType('text/plain')),
@@ -86,7 +87,7 @@ test('OpenAI chat completions codec encodes text media as quoted text', t => {
 
     const encoded = messageCodec.encodeInputMessage(userMessage);
 
-    t.deepEqual(encoded, [{
+    assert.deepStrictEqual(encoded, [{
         role: 'user',
         content: [{
             type: 'text',
@@ -95,7 +96,7 @@ test('OpenAI chat completions codec encodes text media as quoted text', t => {
     }]);
 });
 
-test('OpenAI Chat Completions codec decodes text and tool calls', t => {
+test('OpenAI Chat Completions codec decodes text and tool calls', () => {
     const messageCodec = makeCodec();
 
     const raw = {
@@ -114,29 +115,26 @@ test('OpenAI Chat Completions codec decodes text and tool calls', t => {
 
     const outputMessage = messageCodec.decodeOutputMessage(raw);
 
-    t.is(outputMessage.joinText(), 'hello');
-    t.is(outputMessage.getOnlyFunctionCall().name, 'noop');
-    t.deepEqual(messageCodec.encodeOutputMessage(outputMessage), raw);
+    assert.strictEqual(outputMessage.joinText(), 'hello');
+    assert.strictEqual(outputMessage.getOnlyFunctionCall().name, 'noop');
+    assert.deepStrictEqual(messageCodec.encodeOutputMessage(outputMessage), raw);
 });
 
-test('OpenAI Chat Completions codec rejects uncached output messages', t => {
+test('OpenAI Chat Completions codec rejects uncached output messages', () => {
     const messageCodec = makeCodec();
     const outputMessage = new Message.Output([new Text('hello')]);
 
-    t.throws(() => messageCodec.encodeOutputMessage(outputMessage), {
+    assert.throws(() => messageCodec.encodeOutputMessage(outputMessage), {
         message: 'Only native output message allowed.',
     });
 });
 
-test('OpenAI Chat Completions codec rejects empty assistant message', t => {
+test('OpenAI Chat Completions codec rejects empty assistant message', () => {
     const messageCodec = makeCodec();
 
-    t.throws(() => messageCodec.decodeOutputMessage({
+    assert.throws(() => messageCodec.decodeOutputMessage({
         role: 'assistant',
         content: null,
         refusal: null,
-    }), {
-        instanceOf: Engine.Exceptions.InferenceError,
-        message: 'Empty message.',
-    });
+    }), error => error instanceof Engine.Exceptions.InferenceError && error.message === 'Empty message.');
 });

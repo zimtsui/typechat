@@ -1,10 +1,11 @@
-import test from 'ava';
+import assert from 'node:assert/strict';
+import test from 'node:test';
 import { AssertionError } from 'node:assert';
 import { Type } from 'typebox';
 import { addAdditionalProperties, removeAdditionalProperties } from '../../build/function/parameters.js';
 
 
-test('Function parameters add additionalProperties to nested objects', t => {
+test('Function parameters add additionalProperties to nested objects', () => {
     const schema = Type.Object({
         regular: Type.Array(Type.Object({
             x: Type.String(),
@@ -24,13 +25,13 @@ test('Function parameters add additionalProperties to nested objects', t => {
 
     const encoded = addAdditionalProperties(schema);
 
-    t.is(encoded.additionalProperties, false);
-    t.is(encoded.properties.regular.items.additionalProperties, false);
-    t.is(encoded.properties.tuple.items[0].additionalProperties, false);
-    t.is(encoded.properties.union.anyOf[0].additionalProperties, false);
+    assert.strictEqual(encoded.additionalProperties, false);
+    assert.strictEqual(encoded.properties.regular.items.additionalProperties, false);
+    assert.strictEqual(encoded.properties.tuple.items[0].additionalProperties, false);
+    assert.strictEqual(encoded.properties.union.anyOf[0].additionalProperties, false);
 });
 
-test('Function parameters remove additionalProperties from nested objects', t => {
+test('Function parameters remove additionalProperties from nested objects', () => {
     const schema = Type.Object({
         regular: Type.Array(Type.Object({
             x: Type.String(),
@@ -50,17 +51,17 @@ test('Function parameters remove additionalProperties from nested objects', t =>
 
     const encoded = removeAdditionalProperties(schema);
 
-    t.is(encoded.additionalProperties, undefined);
-    t.is(encoded.properties.regular.items.additionalProperties, undefined);
-    t.is(encoded.properties.tuple.items[0].additionalProperties, undefined);
-    t.is(encoded.properties.union.anyOf[0].additionalProperties, undefined);
+    assert.strictEqual(encoded.additionalProperties, undefined);
+    assert.strictEqual(encoded.properties.regular.items.additionalProperties, undefined);
+    assert.strictEqual(encoded.properties.tuple.items[0].additionalProperties, undefined);
+    assert.strictEqual(encoded.properties.union.anyOf[0].additionalProperties, undefined);
 });
 
-test('Function parameters reject record schemas', t => {
+test('Function parameters reject record schemas', () => {
     const schema = Type.Object({
         record: Type.Record(Type.String(), Type.String()),
     });
 
-    t.throws(() => addAdditionalProperties(schema), { instanceOf: AssertionError });
-    t.throws(() => removeAdditionalProperties(schema), { instanceOf: AssertionError });
+    assert.throws(() => addAdditionalProperties(schema), error => error instanceof AssertionError);
+    assert.throws(() => removeAdditionalProperties(schema), error => error instanceof AssertionError);
 });

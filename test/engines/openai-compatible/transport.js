@@ -1,4 +1,5 @@
-import test from 'ava';
+import assert from 'node:assert/strict';
+import test from 'node:test';
 import { Engine } from '../../../build/engine.js';
 import { Message } from '../../../build/engine/message.js';
 import { Text } from '../../../build/text.js';
@@ -36,7 +37,7 @@ function makeTransport(toolChoice, additionalHeaders) {
     });
 }
 
-test('OpenAI compatible transport downgrades required tool choice to auto', t => {
+test('OpenAI compatible transport downgrades required tool choice to auto', () => {
     const transport = makeTransport(ToolChoice.REQUIRED);
     const session = {
         chatMessages: [new Message.Input([
@@ -46,10 +47,10 @@ test('OpenAI compatible transport downgrades required tool choice to auto', t =>
 
     const params = transport.makeParams(session);
 
-    t.is(params.tool_choice, 'auto');
+    assert.strictEqual(params.tool_choice, 'auto');
 });
 
-test('OpenAI compatible transport downgrades anyone tool choice to auto', t => {
+test('OpenAI compatible transport downgrades anyone tool choice to auto', () => {
     const transport = makeTransport(ToolChoice.ANYONE);
     const session = {
         chatMessages: [new Message.Input([
@@ -59,18 +60,18 @@ test('OpenAI compatible transport downgrades anyone tool choice to auto', t => {
 
     const params = transport.makeParams(session);
 
-    t.is(params.tool_choice, 'auto');
+    assert.strictEqual(params.tool_choice, 'auto');
 });
 
-test('OpenAI compatible transport forwards additional headers', t => {
+test('OpenAI compatible transport forwards additional headers', () => {
     const transport = makeTransport(ToolChoice.AUTO, {
         'x-provider-feature': 'enabled',
     });
 
-    t.is(transport.client._options.defaultHeaders.get('x-provider-feature'), 'enabled');
+    assert.strictEqual(transport.client._options.defaultHeaders.get('x-provider-feature'), 'enabled');
 });
 
-test('OpenAI compatible transport preserves responses continuation options', t => {
+test('OpenAI compatible transport preserves responses continuation options', () => {
     const transport = makeTransport(ToolChoice.AUTO);
     const session = {
         chatMessages: [new Message.Input([
@@ -80,11 +81,11 @@ test('OpenAI compatible transport preserves responses continuation options', t =
 
     const params = transport.makeParams(session);
 
-    t.true(params.store);
-    t.deepEqual(params.include, ['reasoning.encrypted_content']);
+    assert.strictEqual(params.store, true);
+    assert.deepStrictEqual(params.include, ['reasoning.encrypted_content']);
 });
 
-test('OpenAI compatible transport uses previous_response_id for cached output continuation', t => {
+test('OpenAI compatible transport uses previous_response_id for cached output continuation', () => {
     const transport = makeTransport(ToolChoice.AUTO);
     const raw = {
         id: 'resp_1',
@@ -115,9 +116,9 @@ test('OpenAI compatible transport uses previous_response_id for cached output co
 
     const params = transport.makeParams(session);
 
-    t.is(params.previous_response_id, 'resp_1');
-    t.is(params.instructions, undefined);
-    t.deepEqual(params.input, [{
+    assert.strictEqual(params.previous_response_id, 'resp_1');
+    assert.strictEqual(params.instructions, undefined);
+    assert.deepStrictEqual(params.input, [{
         type: 'message',
         role: 'user',
         content: [{
@@ -127,7 +128,7 @@ test('OpenAI compatible transport uses previous_response_id for cached output co
     }]);
 });
 
-test('OpenAI compatible transport treats stream shutdown without response as API error', async t => {
+test('OpenAI compatible transport treats stream shutdown without response as API error', async () => {
     const transport = makeTransport(ToolChoice.AUTO);
     transport.client = {
         responses: {
@@ -140,9 +141,13 @@ test('OpenAI compatible transport treats stream shutdown without response as API
         ])],
     };
 
-    const error = await t.throwsAsync(() => transport.fetch({}, session), {
-        instanceOf: Engine.Exceptions.APIError,
-    });
+    let error;
+    try {
+        await transport.fetch({}, session);
+    } catch (caught) {
+        error = caught;
+    }
 
-    t.is(error?.message, 'Stream shut down');
+    assert.ok(error instanceof Engine.Exceptions.APIError);
+    assert.strictEqual(error?.message, 'Stream shut down');
 });

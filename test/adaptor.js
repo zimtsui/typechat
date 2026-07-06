@@ -1,4 +1,5 @@
-import test from 'ava';
+import assert from 'node:assert/strict';
+import test from 'node:test';
 import { Adaptor } from '../build/adaptor.js';
 import { OpenAIResponsesEngine } from '../build/engines/openai-responses.js';
 import { GoogleEngine } from '../build/engines/google.js';
@@ -8,7 +9,7 @@ import { OpenAICompatibleEngine } from '../build/engines/openai-compatible.js';
 import { functionDeclarationMap } from './helpers.js';
 
 
-test('Adaptor creates engines matching endpoint apiType', t => {
+test('Adaptor creates engines matching endpoint apiType', () => {
     const adaptor = Adaptor.create({
         endpoints: {
             openai: {
@@ -70,14 +71,14 @@ test('Adaptor creates engines matching endpoint apiType', t => {
         functionDeclarationMap,
     });
 
-    t.true(openaiEngine instanceof OpenAIResponsesEngine.Instance);
-    t.true(googleEngine instanceof GoogleEngine.Instance);
-    t.true(openaiChatCompletionsEngine instanceof OpenAIChatCompletionsEngine.Instance);
-    t.true(anthropicEngine instanceof AnthropicEngine.Instance);
-    t.true(openAICompatibleEngine instanceof OpenAICompatibleEngine.Instance);
+    assert.strictEqual(openaiEngine instanceof OpenAIResponsesEngine.Instance, true);
+    assert.strictEqual(googleEngine instanceof GoogleEngine.Instance, true);
+    assert.strictEqual(openaiChatCompletionsEngine instanceof OpenAIChatCompletionsEngine.Instance, true);
+    assert.strictEqual(anthropicEngine instanceof AnthropicEngine.Instance, true);
+    assert.strictEqual(openAICompatibleEngine instanceof OpenAICompatibleEngine.Instance, true);
 });
 
-test('Adaptor applies cache price fallback and override', t => {
+test('Adaptor applies cache price fallback and override', () => {
     const adaptor = Adaptor.create({
         endpoints: {
             fallback: {
@@ -109,19 +110,17 @@ test('Adaptor applies cache price fallback and override', t => {
         functionDeclarationMap,
     });
 
-    t.is(fallback.pricing.cachePrice, 1.25);
-    t.is(explicit.pricing.cachePrice, 0.125);
+    assert.strictEqual(fallback.pricing.cachePrice, 1.25);
+    assert.strictEqual(explicit.pricing.cachePrice, 0.125);
 });
 
-test('Adaptor rejects unknown endpoint ids', t => {
+test('Adaptor rejects unknown endpoint ids', () => {
     const adaptor = Adaptor.create({
         endpoints: {},
     });
 
-    const error = t.throws(() => adaptor.makeEngine({
+    assert.throws(() => adaptor.makeEngine({
         endpoint: 'missing',
         functionDeclarationMap,
     }));
-
-    t.truthy(error);
 });

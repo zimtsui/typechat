@@ -1,4 +1,5 @@
-import test from 'ava';
+import assert from 'node:assert/strict';
+import test from 'node:test';
 import { MIMEType } from 'node:util';
 import { Function } from '../../../build/function.js';
 import { Media } from '../../../build/media.js';
@@ -19,7 +20,7 @@ function makeCodec() {
     });
 }
 
-test('OpenAI responses codec encodes multimodal user message', t => {
+test('OpenAI responses codec encodes multimodal user message', () => {
     const messageCodec = makeCodec();
     const userMessage = new Message.Input([
         Function.Response.Successful.of({
@@ -34,7 +35,7 @@ test('OpenAI responses codec encodes multimodal user message', t => {
 
     const encoded = messageCodec.encodeInputMessage(userMessage);
 
-    t.deepEqual(encoded, [
+    assert.deepStrictEqual(encoded, [
         {
             type: 'function_call_output',
             call_id: 'call_1',
@@ -65,7 +66,7 @@ test('OpenAI responses codec encodes multimodal user message', t => {
     ]);
 });
 
-test('OpenAI responses codec encodes PDF file input as raw base64', t => {
+test('OpenAI responses codec encodes PDF file input as raw base64', () => {
     const messageCodec = makeCodec();
     const userMessage = new Message.Input([
         new Media.Pdf(binary('pdf')),
@@ -73,7 +74,7 @@ test('OpenAI responses codec encodes PDF file input as raw base64', t => {
 
     const encoded = messageCodec.encodeInputMessage(userMessage);
 
-    t.deepEqual(encoded, [{
+    assert.deepStrictEqual(encoded, [{
         type: 'message',
         role: 'user',
         content: [{
@@ -83,7 +84,7 @@ test('OpenAI responses codec encodes PDF file input as raw base64', t => {
     }]);
 });
 
-test('OpenAI responses codec encodes text media as quoted text', t => {
+test('OpenAI responses codec encodes text media as quoted text', () => {
     const messageCodec = makeCodec();
     const userMessage = new Message.Input([
         new Media.Text('hello', new MIMEType('text/plain')),
@@ -91,7 +92,7 @@ test('OpenAI responses codec encodes text media as quoted text', t => {
 
     const encoded = messageCodec.encodeInputMessage(userMessage);
 
-    t.deepEqual(encoded, [{
+    assert.deepStrictEqual(encoded, [{
         type: 'message',
         role: 'user',
         content: [{
@@ -101,7 +102,7 @@ test('OpenAI responses codec encodes text media as quoted text', t => {
     }]);
 });
 
-test('OpenAI responses codec omits empty user message for pure tool responses', t => {
+test('OpenAI responses codec omits empty user message for pure tool responses', () => {
     const messageCodec = makeCodec();
     const userMessage = new Message.Input([
         Function.Response.Successful.of({
@@ -113,7 +114,7 @@ test('OpenAI responses codec omits empty user message for pure tool responses', 
 
     const encoded = messageCodec.encodeInputMessage(userMessage);
 
-    t.deepEqual(encoded, [{
+    assert.deepStrictEqual(encoded, [{
         type: 'function_call_output',
         call_id: 'call_1',
         output: [{
@@ -123,7 +124,7 @@ test('OpenAI responses codec omits empty user message for pure tool responses', 
     }]);
 });
 
-test('OpenAI responses codec decodes text and function calls', t => {
+test('OpenAI responses codec decodes text and function calls', () => {
     const messageCodec = makeCodec();
     const raw = {
         id: 'resp_1',
@@ -154,16 +155,16 @@ test('OpenAI responses codec decodes text and function calls', t => {
     };
     const outputMessage = messageCodec.decodeOutputMessage(raw);
 
-    t.is(outputMessage.joinText(), 'hello');
-    t.is(outputMessage.getFunctionCalls()[0].name, 'noop');
-    t.deepEqual(messageCodec.encodeOutputMessage(outputMessage), raw.output);
+    assert.strictEqual(outputMessage.joinText(), 'hello');
+    assert.strictEqual(outputMessage.getFunctionCalls()[0].name, 'noop');
+    assert.deepStrictEqual(messageCodec.encodeOutputMessage(outputMessage), raw.output);
 });
 
-test('OpenAI responses codec rejects uncached output messages', t => {
+test('OpenAI responses codec rejects uncached output messages', () => {
     const messageCodec = makeCodec();
     const outputMessage = new Message.Output([new Text('hello')]);
 
-    t.throws(() => messageCodec.encodeOutputMessage(outputMessage), {
+    assert.throws(() => messageCodec.encodeOutputMessage(outputMessage), {
         message: 'Only native output message allowed.',
     });
 });
