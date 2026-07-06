@@ -76,7 +76,7 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
                             parts: [{
                                 inlineData: {
                                     data: String(media),
-                                    mimeType: String(media.mimeType),
+                                    mimeType: String(media.mimeType.essence),
                                     displayName: 'media',
                                 },
                             }],
