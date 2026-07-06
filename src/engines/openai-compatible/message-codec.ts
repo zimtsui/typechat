@@ -59,7 +59,7 @@ export class MessageCodec<
         else if (part instanceof Media.Image)
             return {
                 type: 'input_image',
-                image_url: `data:${part.mimeType};base64,${part}`,
+                image_url: `data:${part.mimeType.essence};base64,${part}`,
                 detail: 'auto',
             };
         else throw new Error('Unsupported user message part.', { cause: part });

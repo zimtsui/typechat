@@ -57,13 +57,13 @@ export class MessageCodec<
         else if (part instanceof Media.Image)
             return {
                 type: 'input_image',
-                image_url: `data:${part.mimeType};base64,${part}`,
+                image_url: `data:${part.mimeType.essence};base64,${part}`,
                 detail: 'high',
             };
         else if (part instanceof Media.Pdf)
             return {
                 type: 'input_file',
-                file_data: `data:${part.mimeType};base64,${part}`,
+                file_data: `data:${part.mimeType.essence};base64,${part}`,
             };
         else throw new Error('Unsupported user message part.', { cause: part });
     }
