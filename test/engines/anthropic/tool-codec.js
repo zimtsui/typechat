@@ -65,7 +65,7 @@ test('Anthropic tool codec encodes function responses and requires ids', t => {
         parts: [
             new Text('done'),
             new Media.Text('quoted', new MIMEType('text/plain')),
-            new Media.Image(binary('png'), new MIMEType('image/png')),
+            new Media.Image(binary('png'), new MIMEType('image/png;charset=utf-8')),
             new Media.Pdf(binary('pdf')),
         ],
     });

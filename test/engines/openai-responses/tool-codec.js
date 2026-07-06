@@ -1,9 +1,13 @@
 import test from 'ava';
+import { MIMEType } from 'node:util';
 import { Engine } from '../../../build/engine.js';
 import { Function } from '../../../build/function.js';
+import { Media } from '../../../build/media.js';
 import { Text } from '../../../build/text.js';
 import { ToolCodec } from '../../../build/engines/openai-responses/tool-codec.js';
 import { functionDeclarationMapWithArgs } from '../../helpers.js';
+
+const binary = text => new TextEncoder().encode(text).buffer;
 
 
 test('OpenAI Responses tool codec encodes function declarations', t => {
@@ -92,4 +96,32 @@ test('OpenAI Responses tool codec encodes function responses and requires ids', 
         name: 'echo',
         parts: [new Text('done')],
     })));
+});
+
+test('OpenAI Responses tool codec encodes binary function response media with MIME essence', t => {
+    const codec = new ToolCodec({ fdm: functionDeclarationMapWithArgs });
+    const successful = Function.Response.Successful.of({
+        id: 'call_1',
+        name: 'echo',
+        parts: [
+            new Media.Image(binary('png'), new MIMEType('image/png;charset=utf-8')),
+            new Media.Pdf(binary('pdf')),
+        ],
+    });
+
+    t.deepEqual(codec.encodeFunctionResponse(successful), {
+        type: 'function_call_output',
+        call_id: 'call_1',
+        output: [
+            {
+                type: 'input_image',
+                image_url: 'data:image/png;base64,cG5n',
+                detail: 'high',
+            },
+            {
+                type: 'input_file',
+                file_data: 'data:application/pdf;base64,cGRm',
+            },
+        ],
+    });
 });

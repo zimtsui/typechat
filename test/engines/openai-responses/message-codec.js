@@ -28,7 +28,7 @@ test('OpenAI responses codec encodes multimodal user message', t => {
             parts: [new Text('done')],
         }),
         new Text('Hello.\n'),
-        new Media.Image(binary('hello'), new MIMEType('image/png')),
+        new Media.Image(binary('hello'), new MIMEType('image/png;charset=utf-8')),
         new Media.Pdf(binary('pdf')),
     ]);
 

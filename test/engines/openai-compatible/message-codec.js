@@ -1,11 +1,15 @@
 import test from 'ava';
+import { MIMEType } from 'node:util';
 import { Function } from '../../../build/function.js';
 import { Engine } from '../../../build/engine.js';
 import { Message } from '../../../build/engine/message.js';
+import { Media } from '../../../build/media.js';
 import { Text } from '../../../build/text.js';
 import { ToolCodec } from '../../../build/engines/openai-responses/tool-codec.js';
 import { MessageCodec } from '../../../build/engines/openai-compatible/message-codec.js';
 import { functionDeclarationMap } from '../../helpers.js';
+
+const binary = text => new TextEncoder().encode(text).buffer;
 
 
 function makeCodec() {
@@ -25,6 +29,7 @@ test('OpenAI compatible codec encodes user input and function responses', t => {
             parts: [new Text('done')],
         }),
         new Text('Hello.\n'),
+        new Media.Image(binary('hello'), new MIMEType('image/png;charset=utf-8')),
     ]);
 
     const encoded = messageCodec.encodeInputMessage(inputMessage);
@@ -41,10 +46,17 @@ test('OpenAI compatible codec encodes user input and function responses', t => {
         {
             type: 'message',
             role: 'user',
-            content: [{
-                type: 'input_text',
-                text: 'Hello.\n',
-            }],
+            content: [
+                {
+                    type: 'input_text',
+                    text: 'Hello.\n',
+                },
+                {
+                    type: 'input_image',
+                    image_url: 'data:image/png;base64,aGVsbG8=',
+                    detail: 'auto',
+                },
+            ],
         },
     ]);
 });

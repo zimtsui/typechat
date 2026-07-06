@@ -38,6 +38,26 @@ test('Google codec encodes PDF user message', t => {
     }]);
 });
 
+test('Google codec encodes image user message with MIME essence', t => {
+    const messageCodec = makeCodec();
+    const userMessage = new Message.Input([
+        new Media.Image(binary('png'), new MIMEType('image/png;charset=utf-8')),
+    ]);
+
+    const encoded = messageCodec.encodeInputMessage(userMessage);
+
+    t.is(encoded.role, 'user');
+    t.deepEqual(encoded.parts, [{
+        inlineData: {
+            data: 'cG5n',
+            mimeType: 'image/png',
+        },
+        mediaResolution: {
+            level: 'MEDIA_RESOLUTION_HIGH',
+        },
+    }]);
+});
+
 test('Google codec encodes text media as quoted text', t => {
     const messageCodec = makeCodec();
     const userMessage = new Message.Input([
