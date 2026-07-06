@@ -70,7 +70,7 @@ export class ToolCodec<in out fdm extends Function.Decl.Map.Proto> {
                 source: {
                     type: 'base64',
                     data: String(part),
-                    media_type: String(part.mimeType) as Anthropic.Base64ImageSource['media_type'],
+                    media_type: String(part.mimeType.essence) as Anthropic.Base64ImageSource['media_type'],
                 },
             };
         else if (part instanceof Media.Pdf)
