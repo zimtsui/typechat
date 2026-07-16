@@ -29,4 +29,4 @@ The attribute `author` is optional, indicating the source of the quotation.
 
 AI agent system messages are in the form of
 
-<typechat:system></typechat:system>
+<typechat:system>SYSTEM MESSAGE</typechat:system>
