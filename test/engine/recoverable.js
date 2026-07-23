@@ -13,13 +13,15 @@ class FakeEngine extends Engine.Instance {
     constructor(responses, toolChoiceValidator) {
         super({
             throttle: new Throttle(Number.POSITIVE_INFINITY),
-            endpointSpec: {
+            endpointConfig: {
                 name: 'Fake Engine',
                 baseUrl: 'https://example.invalid/fake',
-                apiKey: 'test-key',
                 model: 'test-model',
                 apiType: 'openai-responses',
                 parallelToolCall: false,
+            },
+            endpointSecret: {
+                apiKey: 'test-key',
             },
             functionDeclarationMap,
             inferenceRetry: 1,

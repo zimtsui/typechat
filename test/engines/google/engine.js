@@ -7,16 +7,18 @@ import { functionDeclarationMap } from '../../helpers.js';
 
 test('Google engine rejects disabling parallel tool calls', () => {
     const adaptor = Adaptor.create({
-        endpoints: {
-            google: {
-                apiType: 'google',
-                baseUrl: 'https://example.invalid/google',
-                apiKey: 'test-key',
-                model: 'test-model',
-                name: 'Google',
-                parallelToolCall: false,
+        config: {
+            endpoints: {
+                google: {
+                    apiType: 'google',
+                    baseUrl: 'https://example.invalid/google',
+                    model: 'test-model',
+                    name: 'Google',
+                    parallelToolCall: false,
+                },
             },
         },
+        secret: { endpoints: { google: { apiKey: 'test-key' } } },
     });
 
     assert.throws(() => adaptor.makeEngine({
@@ -29,15 +31,17 @@ test('Google engine rejects disabling parallel tool calls', () => {
 
 test('Google engine allows omitted parallel tool call option', () => {
     const adaptor = Adaptor.create({
-        endpoints: {
-            google: {
-                apiType: 'google',
-                baseUrl: 'https://example.invalid/google',
-                apiKey: 'test-key',
-                model: 'test-model',
-                name: 'Google',
+        config: {
+            endpoints: {
+                google: {
+                    apiType: 'google',
+                    baseUrl: 'https://example.invalid/google',
+                    model: 'test-model',
+                    name: 'Google',
+                },
             },
         },
+        secret: { endpoints: { google: { apiKey: 'test-key' } } },
     });
 
     const engine = adaptor.makeEngine({

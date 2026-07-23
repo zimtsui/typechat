@@ -11,41 +11,47 @@ import { functionDeclarationMap } from './helpers.js';
 
 test('Adaptor creates engines matching endpoint apiType', () => {
     const adaptor = Adaptor.create({
-        endpoints: {
-            openai: {
-                apiType: 'openai-responses',
-                baseUrl: 'https://example.invalid/openai',
-                apiKey: 'test-key',
-                model: 'test-model',
-                name: 'OpenAI Responses',
+        config: {
+            endpoints: {
+                openai: {
+                    apiType: 'openai-responses',
+                    baseUrl: 'https://example.invalid/openai',
+                    model: 'test-model',
+                    name: 'OpenAI Responses',
+                },
+                google: {
+                    apiType: 'google',
+                    baseUrl: 'https://example.invalid/google',
+                    model: 'test-model',
+                    name: 'Google',
+                },
+                openaiChatCompletions: {
+                    apiType: 'openai-chatcompletions',
+                    baseUrl: 'https://example.invalid/openai-chatcompletions',
+                    model: 'test-model',
+                    name: 'OpenAI Chat Completions',
+                },
+                anthropic: {
+                    apiType: 'anthropic',
+                    baseUrl: 'https://example.invalid/anthropic',
+                    model: 'test-model',
+                    name: 'Anthropic',
+                },
+                openaiCompatible: {
+                    apiType: 'openai-compatible',
+                    baseUrl: 'https://example.invalid/openai-compatible',
+                    model: 'test-model',
+                    name: 'OpenAI Compatible',
+                },
             },
-            google: {
-                apiType: 'google',
-                baseUrl: 'https://example.invalid/google',
-                apiKey: 'test-key',
-                model: 'test-model',
-                name: 'Google',
-            },
-            openaiChatCompletions: {
-                apiType: 'openai-chatcompletions',
-                baseUrl: 'https://example.invalid/openai-chatcompletions',
-                apiKey: 'test-key',
-                model: 'test-model',
-                name: 'OpenAI Chat Completions',
-            },
-            anthropic: {
-                apiType: 'anthropic',
-                baseUrl: 'https://example.invalid/anthropic',
-                apiKey: 'test-key',
-                model: 'test-model',
-                name: 'Anthropic',
-            },
-            openaiCompatible: {
-                apiType: 'openai-compatible',
-                baseUrl: 'https://example.invalid/openai-compatible',
-                apiKey: 'test-key',
-                model: 'test-model',
-                name: 'OpenAI Compatible',
+        },
+        secret: {
+            endpoints: {
+                openai: { apiKey: 'test-key' },
+                google: { apiKey: 'test-key' },
+                openaiChatCompletions: { apiKey: 'test-key' },
+                anthropic: { apiKey: 'test-key' },
+                openaiCompatible: { apiKey: 'test-key' },
             },
         },
     });
@@ -80,23 +86,29 @@ test('Adaptor creates engines matching endpoint apiType', () => {
 
 test('Adaptor applies cache price fallback and override', () => {
     const adaptor = Adaptor.create({
-        endpoints: {
-            fallback: {
-                apiType: 'openai-responses',
-                baseUrl: 'https://example.invalid/openai',
-                apiKey: 'test-key',
-                model: 'test-model',
-                name: 'OpenAI Responses',
-                inputPrice: 1.25,
+        config: {
+            endpoints: {
+                fallback: {
+                    apiType: 'openai-responses',
+                    baseUrl: 'https://example.invalid/openai',
+                    model: 'test-model',
+                    name: 'OpenAI Responses',
+                    inputPrice: 1.25,
+                },
+                explicit: {
+                    apiType: 'openai-responses',
+                    baseUrl: 'https://example.invalid/openai',
+                    model: 'test-model',
+                    name: 'OpenAI Responses',
+                    inputPrice: 1.25,
+                    cachePrice: 0.125,
+                },
             },
-            explicit: {
-                apiType: 'openai-responses',
-                baseUrl: 'https://example.invalid/openai',
-                apiKey: 'test-key',
-                model: 'test-model',
-                name: 'OpenAI Responses',
-                inputPrice: 1.25,
-                cachePrice: 0.125,
+        },
+        secret: {
+            endpoints: {
+                fallback: { apiKey: 'test-key' },
+                explicit: { apiKey: 'test-key' },
             },
         },
     });
@@ -116,7 +128,8 @@ test('Adaptor applies cache price fallback and override', () => {
 
 test('Adaptor rejects unknown endpoint ids', () => {
     const adaptor = Adaptor.create({
-        endpoints: {},
+        config: { endpoints: {} },
+        secret: { endpoints: {} },
     });
 
     assert.throws(() => adaptor.makeEngine({
