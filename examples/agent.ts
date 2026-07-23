@@ -1,6 +1,6 @@
 import * as TypeChat from '@zimtsui/typechat';
 import { Type } from 'typebox';
-import { config } from './config.ts';
+import { config, secret } from './config.ts';
 
 // 声明函数工具
 const fdm = {
@@ -46,9 +46,9 @@ const session: TypeChat.Engine.Session<fdu> = {
 };
 
 // 选择推理引擎
-const adaptor = TypeChat.Adaptor.create(config);
+const adaptor = TypeChat.Adaptor.create({ config, secret });
 const engine = adaptor.makeEngine<fdm>({
-    endpoint: 'gpt-5.4-mini',
+    endpoint: 'gpt-5.6-luna',
     functionDeclarationMap: fdm,
     toolChoice: TypeChat.ToolChoice.REQUIRED,
 });

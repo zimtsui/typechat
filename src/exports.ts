@@ -3,7 +3,6 @@ export * from './function.ts';
 export * from './xml.ts';
 export * from './config.ts';
 export * from './inference-context.ts';
-export * from './endpoint-spec.ts';
 export * from './engine.ts';
 export * from './media.ts';
 export * from './text.ts';

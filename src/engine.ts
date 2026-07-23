@@ -1,9 +1,9 @@
 import { Function } from './function.ts';
-import { EndpointSpec } from './endpoint-spec.ts';
 import { Throttle } from './throttle.ts';
 import * as Undici from 'undici';
 import { env } from 'node:process';
 import { type InferenceContext } from './inference-context.ts';
+import { Endpoint } from './config.ts';
 import { loggers } from './telemetry.ts';
 import * as SessionModule from './engine/session.ts';
 import * as MessageModule from './engine/message.ts';
@@ -55,7 +55,7 @@ export namespace Engine {
         protected abstract transport: Engine.Transport<fdm>;
 
         public constructor(options: Engine.Options<fdm>) {
-            const proxyUrl = options.endpointSpec.proxy || env.https_proxy || env.HTTPS_PROXY;
+            const proxyUrl = options.endpointSecret.proxy || env.https_proxy || env.HTTPS_PROXY;
 
             const dispatcher = proxyUrl
                 ? new Undici.ProxyAgent({
@@ -68,26 +68,26 @@ export namespace Engine {
                     bodyTimeout: 0,
                 });
             this.providerSpecs = {
-                baseUrl: options.endpointSpec.baseUrl,
-                apiKey: options.endpointSpec.apiKey,
+                baseUrl: options.endpointConfig.baseUrl,
+                apiKey: options.endpointSecret.apiKey,
                 dispatcher,
                 retry: options.providerRetry ?? 2,
             };
 
-            this.name = options.endpointSpec.name;
+            this.name = options.endpointConfig.name;
             this.inferenceOptions = {
-                model: options.endpointSpec.model,
-                additionalHeaders: options.endpointSpec.additionalHeaders,
-                additionalOptions: options.endpointSpec.additionalOptions,
-                timeout: options.endpointSpec.timeout,
-                parallelToolCall: options.endpointSpec.parallelToolCall,
+                model: options.endpointConfig.model,
+                additionalHeaders: options.endpointConfig.additionalHeaders,
+                additionalOptions: options.endpointConfig.additionalOptions,
+                timeout: options.endpointConfig.timeout,
+                parallelToolCall: options.endpointConfig.parallelToolCall,
                 retry: options.inferenceRetry ?? 2,
             };
 
             this.pricing = {
-                inputPrice: options.endpointSpec.inputPrice ?? 0,
-                outputPrice: options.endpointSpec.outputPrice ?? 0,
-                cachePrice: options.endpointSpec.cachePrice ?? options.endpointSpec.inputPrice ?? 0,
+                inputPrice: options.endpointConfig.inputPrice ?? 0,
+                outputPrice: options.endpointConfig.outputPrice ?? 0,
+                cachePrice: options.endpointConfig.cachePrice ?? options.endpointConfig.inputPrice ?? 0,
             };
             this.fdm = options.functionDeclarationMap;
             this.toolChoice = options.toolChoice ?? ToolChoice.AUTO;
@@ -260,7 +260,8 @@ export namespace Engine {
         in out fdm extends Function.Decl.Map.Proto,
     > {
         throttle: Throttle;
-        endpointSpec: EndpointSpec;
+        endpointConfig: Endpoint.Config;
+        endpointSecret: Endpoint.Secret;
         functionDeclarationMap: fdm;
         toolChoice?: ToolChoice;
         providerRetry?: number;

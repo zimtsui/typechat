@@ -40,24 +40,11 @@ export namespace OpenAIResponsesEngine {
         }
     }
 
+    create satisfies Engine.Create;
     export function create<
         fdm extends Function.Decl.Map.Proto,
-    >(options: Engine.Options<fdm>): OpenAIResponsesEngine<fdm> {
-        return new Instance(options);
-    }
-
-    createEngine satisfies Engine.Create;
-    export function createEngine<
-        fdm extends Function.Decl.Map.Proto,
     >(options: Engine.Options<fdm>): Engine<fdm> {
-        return new Instance({
-            endpointSpec: options.endpointSpec,
-            functionDeclarationMap: options.functionDeclarationMap,
-            throttle: options.throttle,
-            toolChoice: options.toolChoice,
-            providerRetry: options.providerRetry,
-            inferenceRetry: options.inferenceRetry,
-        });
+        return new Instance(options);
     }
 
     export import Transport = TransportModule.Transport;

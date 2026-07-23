@@ -21,7 +21,7 @@ export namespace GoogleEngine {
         public constructor(protected options: Engine.Options<fdm>) {
             super(options);
 
-            if (options.endpointSpec.parallelToolCall === false) throw new Error('Parallel tool calling is required by Google engine.');
+            if (options.endpointConfig.parallelToolCall === false) throw new Error('Parallel tool calling is required by Google engine.');
             this.toolCodec = new ToolCodec({
                 fdm: this.fdm,
             });
@@ -43,23 +43,11 @@ export namespace GoogleEngine {
         }
     }
 
+    create satisfies Engine.Create;
     export function create<
         fdm extends Function.Decl.Map.Proto,
-    >(options: Engine.Options<fdm>): GoogleEngine<fdm> {
-        return new Instance(options);
-    }
-
-    export function createEngine<
-        fdm extends Function.Decl.Map.Proto,
     >(options: Engine.Options<fdm>): Engine<fdm> {
-        return new Instance({
-            endpointSpec: options.endpointSpec,
-            functionDeclarationMap: options.functionDeclarationMap,
-            throttle: options.throttle,
-            toolChoice: options.toolChoice,
-            providerRetry: options.providerRetry,
-            inferenceRetry: options.inferenceRetry,
-        });
+        return new Instance(options);
     }
 
     export import Transport = TransportModule.Transport;

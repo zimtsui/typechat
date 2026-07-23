@@ -1,5 +1,5 @@
 import * as TypeChat from '@zimtsui/typechat';
-import { config } from './config.ts';
+import { config, secret } from './config.ts';
 
 // 创建会话
 const session: TypeChat.Engine.Session<never> = {
@@ -12,9 +12,9 @@ const session: TypeChat.Engine.Session<never> = {
 };
 
 // 选择推理引擎
-const adaptor = TypeChat.Adaptor.create(config);
+const adaptor = TypeChat.Adaptor.create({ config, secret });
 const engine = adaptor.makeEngine<{}>({
-    endpoint: 'gpt-5.4-mini',
+    endpoint: 'gpt-5.6-luna',
     functionDeclarationMap: {},
 });
 

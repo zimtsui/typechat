@@ -39,12 +39,12 @@ export namespace OpenAIChatCompletionsEngine {
         }
     }
 
-    export import Transport = TransportModule.Transport;
-
-    createEngine satisfies Engine.Create;
-    export function createEngine<
+    create satisfies Engine.Create;
+    export function create<
         fdm extends Function.Decl.Map.Proto,
     >(options: Engine.Options<fdm>): Engine<fdm> {
         return new Instance(options);
     }
+
+    export import Transport = TransportModule.Transport;
 }
