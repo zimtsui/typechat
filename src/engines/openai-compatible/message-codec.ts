@@ -38,7 +38,7 @@ export class MessageCodec<
         }
         const outm = new Engine.Message.Output(parts);
         this.messageValidator.validateOutputMessage(outm);
-        if (raw.output.every(item => item.type !== 'computer_call_output')) {} else
+        if (raw.output.every(item => item.type !== 'computer_call_output' && item.type !== 'additional_tools')) {} else
             throw new Error('Computer calls are not supported yet.');
         this.cacheOutputMessages.set(outm, raw.output);
         this.cacheResponseIds.set(outm, raw.id);
