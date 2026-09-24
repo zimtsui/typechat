@@ -13,6 +13,13 @@ test('Message validator rejects empty output messages', () => {
     assert.throws(() => validator.validateOutputMessage(outputMessage), error => error instanceof Engine.Exceptions.InferenceError && error.message === 'Empty message.');
 });
 
+test('Message validator accepts repeating output messages', () => {
+    const validator = new Engine.MessageValidator();
+    const outputMessage = new Message.Output([new Text('a'.repeat(1024))]);
+
+    assert.doesNotThrow(() => validator.validateOutputMessage(outputMessage));
+});
+
 test('Message validator rejects invalid input message part order', () => {
     const validator = new Engine.MessageValidator();
     const response = Function.Response.Successful.of({

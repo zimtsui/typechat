@@ -6,6 +6,7 @@ import './media.js';
 import './throttle.js';
 import './engine/message.js';
 import './engine/message-validator.js';
+import './engine/middleware.js';
 import './engine/recoverable.js';
 import './engine/tool-choice-validator.js';
 import './engines/anthropic/message-codec.js';

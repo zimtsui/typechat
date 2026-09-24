@@ -3,7 +3,8 @@
   "version": "0.0.136",
   "exports": {
     ".": "./build/exports.js",
-    "./xml": "./build/exports/xml.js"
+    "./xml": "./build/exports/xml.js",
+    "./repetition": "./build/repetition.js"
   },
   "engines": {
     "node": ">=24"

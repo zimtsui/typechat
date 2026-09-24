@@ -166,12 +166,9 @@ export namespace Engine {
         ): Promise<Message.Output.From<fdm>> {
             const middleware = this.compose(this.middlewaresStateful);
             for (let retryProvider = 0, retryInference = 0;;) try {
-                const next = async () => {
-                    const aiMessage = await this.infer(wfctx, session);
-                    session.chatMessages.push(aiMessage);
-                    return aiMessage;
-                }
-                return await middleware(wfctx, session, next);
+                const aiMessage = await middleware(wfctx, session, () => this.infer(wfctx, session));
+                session.chatMessages.push(aiMessage);
+                return aiMessage;
             } catch (e) {
                 if (e instanceof Exceptions.InferenceTimeout) {
                     if (retryInference < this.inferenceOptions.retry) {} else throw e;

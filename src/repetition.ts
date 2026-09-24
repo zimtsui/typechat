@@ -1,4 +1,24 @@
 
+import { Function } from './function.ts';
+import { type InferenceContext } from './inference-context.ts';
+import { Message } from './engine/message.ts';
+import { Session } from './engine/session.ts';
+import { InferenceError } from './engine/exceptions.ts';
+
+
+export async function rejectRepetition<
+    fdu extends Function.Decl.Proto,
+    aim extends Message.Output<fdu>,
+>(
+    _wfctx: InferenceContext,
+    _session: Session<fdu>,
+    next: () => Promise<aim>,
+): Promise<aim> {
+    const message = await next();
+    if (isRepeating(message.joinText())) throw new InferenceError('Repeating');
+    return message;
+}
+
 export function isRepeating(text: string, threshold = .9): boolean {
     text = text.split(/\s+/).join('');
     return text.length >= 1024 && diversity(text) < threshold;

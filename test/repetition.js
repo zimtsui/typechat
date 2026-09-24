@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import fs from 'node:fs';
-import { isRepeating } from '../build/repetition.js';
+import { isRepeating } from '@zimtsui/typechat/repetition';
 
 const deepseek = fs.readFileSync(new URL('./repetition/deepseek.txt', import.meta.url), 'utf8');
 const synthetic = fs.readFileSync(new URL('./repetition/synthetic.txt', import.meta.url), 'utf8');
