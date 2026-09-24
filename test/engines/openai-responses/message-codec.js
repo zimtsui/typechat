@@ -168,3 +168,15 @@ test('OpenAI responses codec rejects uncached output messages', () => {
         message: 'Only native output message allowed.',
     });
 });
+
+test('OpenAI responses codec rejects additional tools output', () => {
+    const messageCodec = makeCodec();
+    const raw = {
+        id: 'resp_1',
+        output: [{ type: 'additional_tools' }],
+    };
+
+    assert.throws(() => messageCodec.decodeOutputMessage(raw), {
+        message: 'Unsupported API output item.',
+    });
+});

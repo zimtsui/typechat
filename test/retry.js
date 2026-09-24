@@ -61,3 +61,31 @@ test('Retry respects zero retries for both error categories', async () => {
         assert.strictEqual(attempts, 1);
     }
 });
+
+test('Retry defaults to two retries per category', async () => {
+    const response = new Engine.Message.Output([]);
+    const result = await invokeRetry(undefined, [
+        new Engine.Exceptions.InferenceError(),
+        new Engine.Exceptions.InferenceTimeout(),
+        new Engine.Exceptions.APIError(),
+        new Engine.Exceptions.APIError(),
+        response,
+    ]);
+
+    assert.strictEqual(result.response, response);
+    assert.strictEqual(result.attempts, 5);
+});
+
+test('Retry starts with a fresh budget on each invocation', async () => {
+    const middleware = retry({ providerRetry: 0, inferenceRetry: 1 });
+    const response = new Engine.Message.Output([]);
+
+    for (let invocation = 0; invocation < 2; invocation++) {
+        let attempts = 0;
+        assert.strictEqual(await middleware({}, { chatMessages: [] }, async () => {
+            if (attempts++ === 0) throw new Engine.Exceptions.InferenceError();
+            return response;
+        }), response);
+        assert.strictEqual(attempts, 2);
+    }
+});

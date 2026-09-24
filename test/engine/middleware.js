@@ -69,11 +69,17 @@ test('use registers the same middleware once in both independent chains, in regi
 });
 
 test('Repetition is allowed without middleware', async () => {
-    const response = repeating();
-    const engine = new FakeEngine([response]);
+    const statelessResponse = repeating();
+    const statefulResponse = repeating();
+    const engine = new FakeEngine([statelessResponse, statefulResponse]);
+    const statelessSession = { chatMessages: [] };
+    const statefulSession = { chatMessages: [] };
 
-    assert.strictEqual(await engine.stateless({}, { chatMessages: [] }), response);
-    assert.strictEqual(engine.requests, 1);
+    assert.strictEqual(await engine.stateless({}, statelessSession), statelessResponse);
+    assert.deepStrictEqual(statelessSession.chatMessages, []);
+    assert.strictEqual(await engine.stateful({}, statefulSession), statefulResponse);
+    assert.deepStrictEqual(statefulSession.chatMessages, [statefulResponse]);
+    assert.strictEqual(engine.requests, 2);
 });
 
 test('Stateful does not retry without retry middleware', async () => {
@@ -108,6 +114,22 @@ test('Stateless repetition middleware retries and does not mutate the session', 
     assert.strictEqual(await engine.stateless({}, session), response);
     assert.strictEqual(engine.requests, 2);
     assert.deepStrictEqual(session.chatMessages, []);
+});
+
+test('use enables retry and repetition checks in both independent chains', async () => {
+    const statelessResponse = normal();
+    const statefulResponse = normal();
+    const engine = new FakeEngine([repeating(), statelessResponse, repeating(), statefulResponse])
+        .use(retry({ inferenceRetry: 1 }))
+        .use(rejectRepetition);
+    const statelessSession = { chatMessages: [] };
+    const statefulSession = { chatMessages: [] };
+
+    assert.strictEqual(await engine.stateless({}, statelessSession), statelessResponse);
+    assert.deepStrictEqual(statelessSession.chatMessages, []);
+    assert.strictEqual(await engine.stateful({}, statefulSession), statefulResponse);
+    assert.deepStrictEqual(statefulSession.chatMessages, [statefulResponse]);
+    assert.strictEqual(engine.requests, 4);
 });
 
 test('Stateless retry must wrap repetition middleware to catch its rejection', async () => {
