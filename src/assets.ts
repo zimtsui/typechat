@@ -1,4 +1,4 @@
-import { loadtext } from '@zimtsui/node-loaders';
+import { loadtext } from '@zimtsui/node-utilities';
 import { fileURLToPath } from 'node:url';
 
 
