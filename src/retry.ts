@@ -14,8 +14,8 @@ export function retry(options: Retry.Options = {}) {
         fdu extends Function.Decl.Proto,
         aim extends Message.Output<fdu>,
     >(
-        _wfctx: InferenceContext,
-        _session: Session<fdu>,
+        wfctx: InferenceContext,
+        session: Session<fdu>,
         next: () => Promise<aim>,
     ): Promise<aim> {
         for (let retriedProvider = 0, retriedInference = 0;;) try {

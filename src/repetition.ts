@@ -10,8 +10,8 @@ export async function rejectRepetition<
     fdu extends Function.Decl.Proto,
     aim extends Message.Output<fdu>,
 >(
-    _wfctx: InferenceContext,
-    _session: Session<fdu>,
+    wfctx: InferenceContext,
+    session: Session<fdu>,
     next: () => Promise<aim>,
 ): Promise<aim> {
     const message = await next();
