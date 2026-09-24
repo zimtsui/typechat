@@ -28,6 +28,13 @@ export namespace InferenceError {
             return this.rejection;
         }
 
+        /**
+         * Used only as stateful middleware
+         * @param wfctx
+         * @param session
+         * @param next
+         * @returns
+         */
         public static async recover<
             fdu extends Function.Decl.Proto,
             aim extends Message.Output<fdu>,
