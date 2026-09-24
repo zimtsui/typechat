@@ -4,7 +4,6 @@ import * as Undici from 'undici';
 import { env } from 'node:process';
 import { type InferenceContext } from './inference-context.ts';
 import { Endpoint } from './config.ts';
-import { loggers } from './telemetry.ts';
 import * as SessionModule from './engine/session.ts';
 import * as MessageModule from './engine/message.ts';
 import * as MessageValidatorModule from './engine/message-validator.ts';
@@ -25,7 +24,6 @@ export interface ProviderSpecs {
     baseUrl: string;
     apiKey: string;
     dispatcher: Undici.Dispatcher;
-    retry: number;
 }
 export interface InferenceOptions {
     model: string;
@@ -33,7 +31,6 @@ export interface InferenceOptions {
     additionalOptions?: Record<string, unknown>;
     parallelToolCall?: boolean;
     timeout?: number;
-    retry: number;
 }
 
 export type Engine<
@@ -71,7 +68,6 @@ export namespace Engine {
                 baseUrl: options.endpointConfig.baseUrl,
                 apiKey: options.endpointSecret.apiKey,
                 dispatcher,
-                retry: options.providerRetry ?? 2,
             };
 
             this.name = options.endpointConfig.name;
@@ -81,7 +77,6 @@ export namespace Engine {
                 additionalOptions: options.endpointConfig.additionalOptions,
                 timeout: options.endpointConfig.timeout,
                 parallelToolCall: options.endpointConfig.parallelToolCall,
-                retry: options.inferenceRetry ?? 2,
             };
 
             this.pricing = {
@@ -135,23 +130,7 @@ export namespace Engine {
             session: Session.From<fdm>,
         ): Promise<Message.Output.From<fdm>> {
             const middleware = this.compose(this.middlewaresStateless);
-            for (let retryProvider = 0, retryInference = 0;;) try {
-                return await middleware(wfctx, session, () => this.infer(wfctx, session));
-            } catch (e) {
-                if (e instanceof Exceptions.InferenceTimeout) {
-                    if (retryInference < this.inferenceOptions.retry) {} else throw e;
-                    loggers.message.warn(e);
-                    retryInference++;
-                } else if (e instanceof Exceptions.InferenceError) {
-                    if (retryInference < this.inferenceOptions.retry) {} else throw e;
-                    loggers.message.warn(e);
-                    retryInference++;
-                } else if (e instanceof Exceptions.APIError) {
-                    if (retryProvider < this.providerSpecs.retry) {} else throw e;
-                    loggers.message.warn(e);
-                    retryProvider++;
-                } else throw e;
-            }
+            return middleware(wfctx, session, () => this.infer(wfctx, session));
         }
 
         /**
@@ -165,25 +144,9 @@ export namespace Engine {
             session: Session.From<fdm>,
         ): Promise<Message.Output.From<fdm>> {
             const middleware = this.compose(this.middlewaresStateful);
-            for (let retryProvider = 0, retryInference = 0;;) try {
-                const aiMessage = await middleware(wfctx, session, () => this.infer(wfctx, session));
-                session.chatMessages.push(aiMessage);
-                return aiMessage;
-            } catch (e) {
-                if (e instanceof Exceptions.InferenceTimeout) {
-                    if (retryInference < this.inferenceOptions.retry) {} else throw e;
-                    loggers.message.warn(e);
-                    retryInference++;
-                } else if (e instanceof Exceptions.InferenceError) {
-                    if (retryInference < this.inferenceOptions.retry) {} else throw e;
-                    loggers.message.warn(e);
-                    retryInference++;
-                } else if (e instanceof Exceptions.APIError) {
-                    if (retryProvider < this.providerSpecs.retry) {} else throw e;
-                    loggers.message.warn(e);
-                    retryProvider++;
-                } else throw e;
-            }
+            const aiMessage = await middleware(wfctx, session, () => this.infer(wfctx, session));
+            session.chatMessages.push(aiMessage);
+            return aiMessage;
         }
 
         protected middlewaresStateless: Middleware.From<fdm>[] = [];
@@ -194,6 +157,11 @@ export namespace Engine {
         protected middlewaresStateful: Middleware.From<fdm>[] = [];
         public useStateful(middleware: Middleware.From<fdm>): this {
             this.middlewaresStateful.push(middleware);
+            return this;
+        }
+        public use(middleware: Middleware.From<fdm>): this {
+            this.useStateless(middleware);
+            this.useStateful(middleware);
             return this;
         }
         protected compose(middlewares: Middleware.From<fdm>[]): Middleware.From<fdm> {
@@ -261,8 +229,6 @@ export namespace Engine {
         endpointSecret: Endpoint.Secret;
         functionDeclarationMap: fdm;
         toolChoice?: ToolChoice;
-        providerRetry?: number;
-        inferenceRetry?: number;
     }
 
     export interface Create {

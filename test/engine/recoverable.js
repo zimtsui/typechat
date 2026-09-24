@@ -7,6 +7,7 @@ import * as XmlCodec from '../../build/xml.js';
 import { Message } from '../../build/engine/message.js';
 import { Text } from '../../build/text.js';
 import { functionDeclarationMap } from '../helpers.js';
+import { retry } from '@zimtsui/typechat/retry';
 
 
 class FakeEngine extends Engine.Instance {
@@ -24,7 +25,6 @@ class FakeEngine extends Engine.Instance {
                 apiKey: 'test-key',
             },
             functionDeclarationMap,
-            inferenceRetry: 1,
         });
         this.responses = responses;
         this.toolChoiceValidator = toolChoiceValidator;
@@ -42,7 +42,7 @@ function rejectionMessage() {
     ]);
 }
 
-test('Engine stateful retries validator rejection without mutating session by default', async () => {
+test('Engine stateful does not retry validator rejection by default', async () => {
     const rejection = rejectionMessage();
     const engine = new FakeEngine([
         { kind: 'invalid' },
@@ -54,12 +54,9 @@ test('Engine stateful retries validator rejection without mutating session by de
     });
     const session = { chatMessages: [] };
 
-    const response = await engine.stateful({}, session);
-
-    assert.strictEqual(response.kind, 'valid');
-    assert.deepStrictEqual(session.chatMessages, [
-        { kind: 'valid' },
-    ]);
+    await assert.rejects(engine.stateful({}, session), Engine.Exceptions.InferenceError.Recoverable);
+    assert.deepStrictEqual(session.chatMessages, []);
+    assert.strictEqual(engine.responses.length, 1);
 });
 
 test('Engine Recoverable middleware appends validator rejection into session history', async () => {
@@ -72,7 +69,9 @@ test('Engine Recoverable middleware appends validator rejection into session his
             if (message.kind === 'invalid') return rejection;
         },
     });
-    const recoveringEngine = engine.useStateful(Engine.Exceptions.InferenceError.Recoverable.recover);
+    const recoveringEngine = engine
+        .useStateful(retry({ inferenceRetry: 1 }))
+        .useStateful(Engine.Exceptions.InferenceError.Recoverable.recover);
     const session = { chatMessages: [] };
 
     const response = await recoveringEngine.stateful({}, session);

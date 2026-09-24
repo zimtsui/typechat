@@ -65,8 +65,6 @@ export namespace Adaptor {
         endpoint: string;
         functionDeclarationMap: fdm;
         toolChoice?: ToolChoice;
-        providerRetry?: number;
-        inferenceRetry?: number;
     }
 
     export interface Options {

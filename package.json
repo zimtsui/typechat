@@ -4,7 +4,8 @@
   "exports": {
     ".": "./build/exports.js",
     "./xml": "./build/exports/xml.js",
-    "./repetition": "./build/repetition.js"
+    "./repetition": "./build/repetition.js",
+    "./retry": "./build/retry.js"
   },
   "engines": {
     "node": ">=24"
