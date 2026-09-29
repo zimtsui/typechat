@@ -5,7 +5,6 @@ import { OpenAIResponsesEngine } from '../build/engines/openai-responses.js';
 import { GoogleEngine } from '../build/engines/google.js';
 import { OpenAIChatCompletionsEngine } from '../build/engines/openai-chatcompletions.js';
 import { AnthropicEngine } from '../build/engines/anthropic.js';
-import { OpenAICompatibleEngine } from '../build/engines/openai-compatible.js';
 import { functionDeclarationMap } from './helpers.js';
 
 
@@ -37,12 +36,6 @@ test('Adaptor creates engines matching endpoint apiType', () => {
                     model: 'test-model',
                     name: 'Anthropic',
                 },
-                openaiCompatible: {
-                    apiType: 'openai-compatible',
-                    baseUrl: 'https://example.invalid/openai-compatible',
-                    model: 'test-model',
-                    name: 'OpenAI Compatible',
-                },
             },
         },
         secret: {
@@ -51,7 +44,6 @@ test('Adaptor creates engines matching endpoint apiType', () => {
                 google: { apiKey: 'test-key' },
                 openaiChatCompletions: { apiKey: 'test-key' },
                 anthropic: { apiKey: 'test-key' },
-                openaiCompatible: { apiKey: 'test-key' },
             },
         },
     });
@@ -72,16 +64,11 @@ test('Adaptor creates engines matching endpoint apiType', () => {
         endpoint: 'anthropic',
         functionDeclarationMap,
     });
-    const openAICompatibleEngine = adaptor.makeEngine({
-        endpoint: 'openaiCompatible',
-        functionDeclarationMap,
-    });
 
     assert.strictEqual(openaiEngine instanceof OpenAIResponsesEngine.Instance, true);
     assert.strictEqual(googleEngine instanceof GoogleEngine.Instance, true);
     assert.strictEqual(openaiChatCompletionsEngine instanceof OpenAIChatCompletionsEngine.Instance, true);
     assert.strictEqual(anthropicEngine instanceof AnthropicEngine.Instance, true);
-    assert.strictEqual(openAICompatibleEngine instanceof OpenAICompatibleEngine.Instance, true);
 });
 
 test('Adaptor applies cache price fallback and override', () => {

@@ -5,7 +5,6 @@ import { GoogleEngine } from './engines/google.ts';
 import { OpenAIResponsesEngine } from './engines/openai-responses.ts';
 import { OpenAIChatCompletionsEngine } from './engines/openai-chatcompletions.ts';
 import { AnthropicEngine } from './engines/anthropic.ts';
-import { OpenAICompatibleEngine } from './engines/openai-compatible.ts';
 import { Engine } from './engine.ts';
 import { ToolChoice } from './tool-choice.ts';
 
@@ -54,8 +53,6 @@ export class Adaptor {
             return AnthropicEngine.create<fdm>(options);
         else if (endpointConfig.apiType === 'openai-chatcompletions')
             return OpenAIChatCompletionsEngine.create<fdm>(options);
-        else if (endpointConfig.apiType === 'openai-compatible')
-            return OpenAICompatibleEngine.create<fdm>(options);
         else throw new Error();
     }
 }

@@ -8,5 +8,4 @@ test('Public exports omit concrete engine namespaces', () => {
     assert.strictEqual(TypeChat.OpenAIResponsesEngine, undefined);
     assert.strictEqual(TypeChat.OpenAIChatCompletionsEngine, undefined);
     assert.strictEqual(TypeChat.AnthropicEngine, undefined);
-    assert.strictEqual(TypeChat.OpenAICompatibleEngine, undefined);
 });

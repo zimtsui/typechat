@@ -13,7 +13,6 @@ export namespace Endpoint {
                 Type.Literal('openai-responses'),
                 Type.Literal('google'),
                 Type.Literal('anthropic'),
-                Type.Literal('openai-compatible'),
             ]),
             inputPrice: Type.Optional(Type.Number()),
             outputPrice: Type.Optional(Type.Number()),
