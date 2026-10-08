@@ -13,7 +13,7 @@ export class Throttle {
     public async requests(wfctx: InferenceContext): Promise<void> {
         if (this.interval === 0) return;
 
-        await using lock = await wfctx.busy?.acquireReadRaii();
+        await using busyRaii = await wfctx.busy?.acquireReadRaii(wfctx.signal);
 
         wfctx.signal?.throwIfAborted();
 
