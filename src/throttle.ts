@@ -3,7 +3,7 @@ import { Mutex } from '@zimtsui/typelocks';
 
 
 export class Throttle {
-    protected valve = Mutex.release();
+    protected valve = new Mutex.Void();
     protected timer: NodeJS.Timeout | null = null;
     protected interval: number;
     public constructor(protected rpm: number) {
@@ -13,33 +13,30 @@ export class Throttle {
     public async requests(wfctx: InferenceContext): Promise<void> {
         if (this.interval === 0) return;
 
-        await wfctx.busy?.acquireRead();
-        try {
-            wfctx.signal?.throwIfAborted();
+        await using lock = await wfctx.busy?.acquireReadRaii();
 
-            const waiting = this.valve.acquire()
-                .then(() => {
-                    this.timer = setTimeout(
-                        () => {
-                            this.timer = null;
-                            void this.valve.release();
-                        },
-                        this.interval,
-                    );
-                });
+        wfctx.signal?.throwIfAborted();
 
-            await new Promise<void>((resolve, reject) => {
-                waiting.then(resolve, reject);
-                wfctx.signal?.addEventListener('abort', reject, { signal: wfctx.signal });
+        const waiting = this.valve.acquire()
+            .then(() => {
+                this.timer = setTimeout(
+                    () => {
+                        this.timer = null;
+                        void this.valve.release();
+                    },
+                    this.interval,
+                );
             });
 
-        } finally {
-            wfctx.busy?.releaseRead();
-        }
+        await new Promise<void>((resolve, reject) => {
+            waiting.then(resolve, reject);
+            wfctx.signal?.addEventListener('abort', reject, { signal: wfctx.signal });
+        });
+
     }
 
-    public throw(e: Error) {
+    public abort(e: unknown) {
         if (this.timer) clearTimeout(this.timer);
-        this.valve.unblock(e);
+        this.valve.abort(e);
     }
 }

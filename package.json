@@ -35,7 +35,7 @@
   "peerDependencies": {
     "@types/whatwg-mimetype": "^5.0.0",
     "@zimtsui/typelemetry": "^0.0.54",
-    "@zimtsui/typelocks": "^0.0.28",
+    "@zimtsui/typelocks": "^0.0.30",
     "typebox": "^1.1.31"
   },
   "devDependencies": {

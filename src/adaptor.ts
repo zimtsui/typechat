@@ -28,7 +28,7 @@ export class Adaptor {
 
     public [Symbol.dispose]() {
         for (const throttle of this.throttles.values())
-            throttle.throw(new Error('Adaptor disposed'));
+            throttle.abort(new Error('Adaptor disposed'));
     }
 
     public makeEngine<
